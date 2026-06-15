@@ -251,7 +251,8 @@
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold sticky top-0 z-10">
                                     <tr>
                                         <th class="py-2.5 md:py-3 px-3 md:px-4 w-12 text-center whitespace-nowrap">번호</th>
-                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-28 md:w-32 whitespace-nowrap">설비명</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-32 md:w-40 whitespace-nowrap">설비명</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-16 text-center whitespace-nowrap">구분</th>
                                         <th class="py-2.5 md:py-3 px-3 md:px-4 w-16 text-center whitespace-nowrap">주차</th>
                                         <th class="py-2.5 md:py-3 px-3 md:px-4 min-w-[200px]">작업 세부사항 (내용)</th>
                                         <th class="py-2.5 md:py-3 px-3 md:px-4 w-20 text-center whitespace-nowrap">상태</th>
@@ -304,7 +305,8 @@
 
                     <!-- 1. 예방 점검 항목 등록 섹션 -->
                     <section id="section-inspection-input">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-10 w-full">
+                        <!-- ★ 추가: 기계/전기 드롭다운을 포함한 4칸 그리드로 변경 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 w-full">
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">대상 설비 라인</label>
                                 <select id="regLineInsp" onchange="window.updateCategoryOptionsInsp()" class="w-full bg-slate-50 border border-slate-200 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm transition">
@@ -317,6 +319,14 @@
                                 <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">설비명</label>
                                 <select id="regCategoryInsp" onchange="window.loadSubItemsInsp()" class="w-full bg-slate-50 border border-slate-200 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm transition">
                                     <!-- JS에서 동적 주입 -->
+                                </select>
+                            </div>
+                            <!-- ★ 신규: 기계/전기 분류 선택 -->
+                            <div class="space-y-2 md:space-y-3">
+                                <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">점검 분류 (기계/전기)</label>
+                                <select id="regPartTypeInsp" class="w-full bg-slate-50 border border-slate-200 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm transition">
+                                    <option value="기계" selected>기계</option>
+                                    <option value="전기">전기</option>
                                 </select>
                             </div>
                             <div class="space-y-2 md:space-y-3">
@@ -352,7 +362,8 @@
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadInsp').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 작업 세부사항, D열: 점검주기</p>
+                            <!-- ★ 추가: E열 기계/전기 구분 안내 -->
+                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 작업 세부사항, D열: 점검주기, E열: 기계/전기 구분(기계 또는 전기)</p>
                             <input type="file" id="excelUploadInsp" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'inspection')">
                         </div>
                     </section>
@@ -499,8 +510,6 @@
                     <thead class="sticky top-0 bg-white shadow-sm z-10">
                         <tr class="border-b-2 border-slate-100 text-slate-500">
                             <th class="py-2.5 px-2 font-bold w-16 text-center cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('recordType')">구분 <span id="sort-icon-recordType" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
-                            
-                            <!-- ★ 설비라인 명확한 필터 드롭다운 디자인 -->
                             <th class="py-2.5 px-2 font-bold w-24 select-none">
                                 <select id="modalLineFilter" onchange="window.filterModalByLine(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm">
                                     <option value="all">설비라인 (전체)</option>
@@ -514,14 +523,11 @@
                                     <option value="SSCL">SSCL</option>
                                 </select>
                             </th>
-                            
-                            <!-- ★ 설비/분류 명확한 필터 드롭다운 디자인 -->
                             <th class="py-2.5 px-2 font-bold w-32 select-none">
                                 <select id="modalCategoryFilter" onchange="window.filterModalByCategory(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm truncate">
                                     <option value="all">설비/분류 (전체)</option>
                                 </select>
                             </th>
-                            
                             <th class="py-2.5 px-2 font-bold min-w-[150px] cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('subItem')">상세/내용 <span id="sort-icon-subItem" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
                             <th class="py-2.5 px-2 font-bold w-20 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('cycle')">주기 <span id="sort-icon-cycle" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
                             <th class="py-2.5 px-2 font-bold w-28 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('date')">일자 <span id="sort-icon-date" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
@@ -688,6 +694,7 @@
                 category: r.category || '기타',
                 subItem: r.subItem || '항목없음',
                 type: r.type || '기타',
+                partType: r.partType || '기계', // ★ 신규: 기계/전기 명시적 필드
                 cycle: r.cycle || 'none',
                 date: r.date || window.currentTargetDate,
                 status: r.status || 'uninspected',
@@ -738,50 +745,60 @@
             window.renderSummaryGrid();
         }
 
+        // ★ 메인화면 "조회기간별 미점검 대비 실적" 산출 로직 완벽 적용
         window.updateAllLineScores = function() {
             const targetDateObj = new Date(window.currentTargetDate);
+            const targetYear = targetDateObj.getFullYear();
+            const targetMonth = targetDateObj.getMonth();
+
             Object.keys(lineStore).forEach(line => {
-                const periodRecords = window.systemRecords.filter(r => {
-                    if (r.recordType !== 'inspection' || r.line !== line) return false;
+                let mechTotal = 0, mechComp = 0, elecTotal = 0, elecComp = 0;
+
+                window.systemRecords.forEach(r => {
+                    if (r.recordType !== 'inspection' || r.line !== line) return;
                     
                     const rDate = new Date(r.date);
-                    
-                    // ★ 수정 핵심: 미점검 상태인 항목은 기간에 상관없이 오늘 날짜 이전이면 모두 "해야 할 일(분모)"에 포함시킵니다.
-                    if (r.status === 'uninspected') {
-                        return r.date <= window.currentTargetDate;
-                    }
-                    
-                    // 완료된 항목은 사용자가 클릭한 조회 기간(일/주/월/년) 내에 속한 것만 "완료 실적(분자)"으로 인정합니다.
+                    let isIncluded = false;
+
+                    // ★ 수정: 상태에 상관없이(미점검이든 완료든) '선택된 기간'에 해당하는 항목만 집계합니다.
                     if (window.currentSummaryPeriod === 'daily') {
-                        return r.date === window.currentTargetDate;
+                        if (r.date === window.currentTargetDate) isIncluded = true;
                     } else if (window.currentSummaryPeriod === 'weekly') {
                         const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
-                        return diffDays >= 0 && diffDays < 7;
-                    } else if (window.currentSummaryPeriod === 'monthly') {
-                        return rDate.getFullYear() === targetDateObj.getFullYear() && rDate.getMonth() === targetDateObj.getMonth();
-                    } else if (window.currentSummaryPeriod === 'yearly') {
-                        return rDate.getFullYear() === targetDateObj.getFullYear();
+                        if (diffDays >= 0 && diffDays <= 6) isIncluded = true;
                     }
-                    return false;
-                });
-                
-                let mechTotal = 0, mechComp = 0, elecTotal = 0, elecComp = 0;
-                periodRecords.forEach(r => {
-                    // 판넬(PANEL) 등 전기 설비 필터링 조건 추가 보완
-                    const isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || 
-                                   r.category.includes('전장') || r.category.toUpperCase().includes('PLC') || 
-                                   r.category.toUpperCase().includes('X-RAY') || r.category.toUpperCase().includes('PANEL');
-                    
-                    if(isElec) { 
-                        elecTotal++; 
-                        if(r.status === 'completed') elecComp++; 
-                    } else { 
-                        mechTotal++; 
-                        if(r.status === 'completed') mechComp++; 
+                    else if (window.currentSummaryPeriod === 'monthly') {
+                        if (rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) isIncluded = true;
+                    }
+                    else if (window.currentSummaryPeriod === 'yearly') {
+                        if (rDate.getFullYear() === targetYear) isIncluded = true;
+                    }
+
+                    if (isIncluded) {
+                        // ★ 정확한 기계/전기 구분 
+                        let isElec = false;
+                        if (r.partType === '전기') {
+                            isElec = true;
+                        } else if (r.partType === '기계') {
+                            isElec = false;
+                        } else {
+                            // 구버전 데이터 호환용
+                            isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || 
+                                           r.category.includes('전장') || r.category.toUpperCase().includes('PLC') || 
+                                           r.category.toUpperCase().includes('X-RAY') || r.category.toUpperCase().includes('PANEL');
+                        }
+                        
+                        if(isElec) { 
+                            elecTotal++; 
+                            if(r.status === 'completed') elecComp++; 
+                        } else { 
+                            mechTotal++; 
+                            if(r.status === 'completed') mechComp++; 
+                        }
                     }
                 });
 
-                lineStore[line].total = periodRecords.length;
+                lineStore[line].total = mechTotal + elecTotal;
                 lineStore[line].completed = mechComp + elecComp;
                 lineStore[line].mechTotal = mechTotal;
                 lineStore[line].mechComp = mechComp;
@@ -1130,6 +1147,7 @@
             }
         }
 
+        // ★ 메인화면 "조회기간별 미점검 대비 실적" 명확하게 표시하도록 UI 수정 완료
         window.renderSummaryGrid = function() {
             const grid = document.getElementById('statusGrid');
             if(!grid) return;
@@ -1141,34 +1159,43 @@
                 const elecPercent = data.elecTotal === 0 ? 0 : Math.round((data.elecComp / data.elecTotal) * 100);
 
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer";
+                card.className = "bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer flex flex-col justify-between";
                 card.onclick = () => window.showDetail(key);
                 
                 card.innerHTML = `
-                    <h4 class="text-lg md:text-xl font-black text-slate-800 tracking-tight mb-4 md:mb-6">${key}</h4>
-                    
-                    <div class="mb-3 md:mb-4">
-                        <div class="flex justify-between items-end mb-1">
-                            <span class="text-[10px] md:text-xs font-bold text-slate-500">기계</span>
-                            <span class="text-xs md:text-sm font-black text-blue-600">${mechPercent}%</span>
+                    <div>
+                        <h4 class="text-lg md:text-xl font-black text-slate-800 tracking-tight mb-4 md:mb-6">${key}</h4>
+                        
+                        <div class="mb-3 md:mb-4">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-[10px] md:text-xs font-bold text-slate-500">기계 점검</span>
+                                <span class="text-xs md:text-sm font-black text-blue-600">${mechPercent}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: ${mechPercent}%"></div>
+                            </div>
                         </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5 md:h-1.5">
-                            <div class="bg-blue-500 h-1.5 md:h-1.5 rounded-full transition-all duration-500" style="width: ${mechPercent}%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3 md:mb-4">
-                        <div class="flex justify-between items-end mb-1">
-                            <span class="text-[10px] md:text-xs font-bold text-slate-500">전기</span>
-                            <span class="text-xs md:text-sm font-black text-emerald-500">${elecPercent}%</span>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5 md:h-1.5">
-                            <div class="bg-emerald-400 h-1.5 md:h-1.5 rounded-full transition-all duration-500" style="width: ${elecPercent}%"></div>
+                        
+                        <div class="mb-3 md:mb-4">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-[10px] md:text-xs font-bold text-slate-500">전기 점검</span>
+                                <span class="text-xs md:text-sm font-black text-emerald-500">${elecPercent}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-emerald-400 h-2 rounded-full transition-all duration-500" style="width: ${elecPercent}%"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="text-[9px] md:text-[10px] text-slate-400 font-semibold mt-4 md:mt-6 pt-3 md:pt-4 border-t border-slate-50">
-                        기계: ${data.mechComp}/${data.mechTotal} | 전기: ${data.elecComp}/${data.elecTotal}
+                    <div class="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-slate-50 flex flex-col gap-1.5">
+                        <div class="flex justify-between text-[10px] md:text-[11px]">
+                            <span class="text-slate-400 font-semibold">기계 실적 / 해당기간 총합</span>
+                            <span class="font-black text-slate-600"><span class="text-blue-600">${data.mechComp}</span> / ${data.mechTotal}</span>
+                        </div>
+                        <div class="flex justify-between text-[10px] md:text-[11px]">
+                            <span class="text-slate-400 font-semibold">전기 실적 / 해당기간 총합</span>
+                            <span class="font-black text-slate-600"><span class="text-emerald-500">${data.elecComp}</span> / ${data.elecTotal}</span>
+                        </div>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -1202,7 +1229,7 @@
             let compCount = 0;
 
             if (filteredRecords.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-12 text-center text-slate-400 font-bold">등록된 점검 항목 내역이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="py-12 text-center text-slate-400 font-bold">등록된 점검 항목 내역이 없습니다.</td></tr>`;
                 document.getElementById('detailLineProgress').innerText = `해당 조회조건 점검 완료율: 0/0`;
                 document.getElementById('detailPagination').innerHTML = '';
                 return;
@@ -1232,6 +1259,11 @@
                 const remarkBtnText = remark ? '수정' : '작성';
                 const remarkBtnClass = remark ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
                 
+                // ★ 기계/전기 배지를 독립된 컬럼에 맞게 깔끔한 고정 너비(w-[40px])로 변경
+                const partTypeBadge = r.partType === '전기' 
+                    ? '<span class="bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-1 rounded-md text-[10px] font-bold inline-block w-[40px] text-center">전기</span>' 
+                    : '<span class="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md text-[10px] font-bold inline-block w-[40px] text-center">기계</span>';
+
                 let dateBadge = '';
                 if (status === 'uninspected') {
                     let deadline = new Date(r.date);
@@ -1246,10 +1278,12 @@
                     }
                 }
 
+                // ★ 테이블 열을 8개로 쪼개어 설비명과 구분을 완벽 분리
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
+                    <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center text-slate-400 whitespace-nowrap">${idx + 1}</td>
-                        <td class="py-2.5 md:py-4 px-3 md:px-4 text-slate-800 font-bold whitespace-nowrap md:whitespace-normal">${r.category}</td>
+                        <td class="py-2.5 md:py-4 px-3 md:px-4 text-slate-800 font-bold whitespace-nowrap md:whitespace-normal break-keep">${r.category}</td>
+                        <td class="py-2.5 md:py-4 px-3 md:px-4 text-center whitespace-nowrap">${partTypeBadge}</td>
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center whitespace-nowrap"><span class="px-2 py-0.5 rounded bg-slate-100 text-[9px] md:text-[10px] text-slate-500 font-black">${cycleKo}</span></td>
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-slate-500 text-[11px] md:text-xs leading-relaxed min-w-[200px]">${r.subItem}${dateBadge}</td>
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center whitespace-nowrap"><span class="px-2 md:px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black tracking-wider ${statusClass}">${statusText}</span></td>
@@ -1332,6 +1366,7 @@
                             category: record.category,
                             subItem: record.subItem,
                             type: record.type,
+                            partType: record.partType || '기계',
                             cycle: record.cycle,
                             date: nextDateStr,
                             status: 'uninspected',
@@ -1458,6 +1493,7 @@
                                 <tr>
                                     <th class="py-2.5 md:py-3 px-3 md:px-4 w-24 md:w-28 text-center whitespace-nowrap">점검 완료 일자</th>
                                     <th class="py-2.5 md:py-3 px-3 md:px-4 w-28 md:w-32 whitespace-nowrap">설비명</th>
+                                    <th class="py-2.5 md:py-3 px-3 md:px-4 w-16 text-center whitespace-nowrap">구분</th>
                                     <th class="py-2.5 md:py-3 px-3 md:px-4 min-w-[150px]">작업 세부사항</th>
                                     <th class="py-2.5 md:py-3 px-3 md:px-4 w-20 md:w-24 text-center whitespace-nowrap">상태</th>
                                     <th class="py-2.5 md:py-3 px-3 md:px-4 min-w-[150px]">특이사항 (메모)</th>
@@ -1466,9 +1502,14 @@
                             <tbody class="divide-y divide-slate-100">`;
                             
             currentItems.forEach(log => {
-                html += `<tr class="hover:bg-slate-50 transition">
+                const partTypeBadge = log.partType === '전기' 
+                    ? '<span class="bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-1 rounded-md text-[10px] font-bold inline-block w-[40px] text-center">전기</span>' 
+                    : '<span class="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-md text-[10px] font-bold inline-block w-[40px] text-center">기계</span>';
+
+                html += `<tr class="hover:bg-slate-50 transition border-b border-slate-50">
                             <td class="py-2.5 md:py-3 px-3 md:px-4 text-center text-slate-500 font-bold whitespace-nowrap">${log.date}</td>
-                            <td class="py-2.5 md:py-3 px-3 md:px-4 text-blue-700 font-bold whitespace-nowrap md:whitespace-normal">${log.category}</td>
+                            <td class="py-2.5 md:py-3 px-3 md:px-4 text-blue-700 font-bold whitespace-nowrap md:whitespace-normal break-keep">${log.category}</td>
+                            <td class="py-2.5 md:py-3 px-3 md:px-4 text-center whitespace-nowrap">${partTypeBadge}</td>
                             <td class="py-2.5 md:py-3 px-3 md:px-4 text-slate-700 font-medium">${log.subItem}</td>
                             <td class="py-2.5 md:py-3 px-3 md:px-4 text-center whitespace-nowrap"><span class="px-2 md:px-2.5 py-1 rounded-md text-[10px] md:text-[11px] font-black bg-emerald-100 text-emerald-700">점검완료</span></td>
                             <td class="py-2.5 md:py-3 px-3 md:px-4 text-slate-600 text-[11px] md:text-xs">${log.remark || '<span class="text-slate-300">-</span>'}</td>
@@ -1688,11 +1729,16 @@
 
                 const line = document.getElementById('regLineInsp').value;
                 const category = document.getElementById('regCategoryInsp').value;
+                const partType = document.getElementById('regPartTypeInsp').value; 
                 const cycle = document.getElementById('regCycleInsp').value; 
                 const inputDate = window.currentTargetDate; 
                 const regDescText = window.selectedSubItemInsp;
                 
-                const newRecord = { id: generateUUID(), recordType: 'inspection', line: line, category: category, subItem: window.selectedSubItemInsp, type: typeMap[category] || '기타', cycle: cycle, date: inputDate, status: 'uninspected', desc: regDescText, remark: '' };
+                const newRecord = { 
+                    id: generateUUID(), recordType: 'inspection', line: line, category: category, 
+                    subItem: window.selectedSubItemInsp, type: typeMap[category] || '기타', partType: partType, 
+                    cycle: cycle, date: inputDate, status: 'uninspected', desc: regDescText, remark: '' 
+                };
 
                 if (window.isFirebaseActive && window.firebaseHandler) {
                     await window.firebaseHandler.add(sanitizeRecord(newRecord));
@@ -1725,9 +1771,11 @@
                 const regDescText = document.getElementById('regDescFault').value.trim() || `${window.selectedSubItemFault} 고장 발생 및 조치 내역`;
                 const fileUrl = document.getElementById('regFileUrlFault').value.trim();
 
+                const partType = ['xray', 'plc', 'electric', 'relay'].includes(category) ? '전기' : '기계';
+
                 const newRecord = { 
                     id: generateUUID(), recordType: 'fault', line: line, category: category, 
-                    subItem: window.selectedSubItemFault, type: typeMap[category] || '기타', cycle: 'none', 
+                    subItem: window.selectedSubItemFault, type: typeMap[category] || '기타', partType: partType, cycle: 'none', 
                     date: inputDate, status: 'fault', desc: regDescText, fileUrl: fileUrl 
                 };
 
@@ -1932,9 +1980,18 @@
                     subOptions = currentMap[row.category].map(sub => `<option value="${sub}" ${row.subItem === sub ? 'selected' : ''}>${sub}</option>`).join('');
                 }
                 
+                // ★ 기계/전기 선택 드롭다운 UI 스타일 개선 (이모지 제거, 깔끔한 텍스트 디자인)
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="py-2.5 md:py-3 px-2 text-center whitespace-nowrap">${badge}</td>
+                    <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
+                        <td class="py-2.5 md:py-3 px-2 text-center whitespace-nowrap">
+                            <div class="flex flex-col items-center gap-1.5">
+                                ${badge}
+                                <select onchange="window.updateTempRecord(${absIdx}, 'partType', this.value); window.renderModalRows();" class="bg-white border border-slate-200 rounded px-1.5 py-1 text-[10px] font-bold outline-none w-14 text-center cursor-pointer shadow-sm focus:ring-1 focus:ring-blue-500 text-slate-600 hover:bg-slate-50">
+                                    <option value="기계" ${row.partType !== '전기' ? 'selected' : ''}>기계</option>
+                                    <option value="전기" ${row.partType === '전기' ? 'selected' : ''}>전기</option>
+                                </select>
+                            </div>
+                        </td>
                         <td class="py-2.5 md:py-3 pr-2 w-24 md:w-28 whitespace-nowrap"><select onchange="window.updateTempRecord(${absIdx}, 'line', this.value); window.renderModalRows();" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 md:py-2 text-[10px] md:text-xs font-semibold text-slate-700 w-full">${lineOptions}</select></td>
                         <td class="py-2.5 md:py-3 pr-2 w-28 md:w-32 whitespace-nowrap"><select onchange="window.handleModalCategoryChange(${absIdx}, this.value, ${isFault})" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 md:py-2 text-[10px] md:text-xs font-semibold text-slate-700 w-full">${catOptions}</select></td>
                         <td class="py-2.5 md:py-3 pr-2 min-w-[150px]"><select id="modal-sub-${absIdx}" onchange="window.updateTempRecord(${absIdx}, 'subItem', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 md:py-2 text-[10px] md:text-xs font-semibold text-blue-600 w-full">${subOptions}</select></td>
@@ -2056,6 +2113,7 @@
                             let cat = String(json[i][1] || '').trim();
                             let sub = String(json[i][2] || '').trim();
                             let cycleStr = String(json[i][3] || '').trim();
+                            let partTypeStr = String(json[i][4] || '').trim(); 
                             
                             if (matchedLine === 'CPL' && String(json[i][2] || '').match(/^K\d+/)) {
                                 sub = String(json[i][5] || '').trim(); 
@@ -2069,10 +2127,11 @@
                                 else if (cycleStr.includes('분기')) cycleVal = 'quarterly';
                                 
                                 const typeStr = typeMap[cat] || '기타';
+                                const partTypeVal = partTypeStr === '전기' ? '전기' : '기계'; 
                                 
                                 window.parsedExcelData.push(sanitizeRecord({ 
                                     id: generateUUID(), recordType: 'inspection', line: matchedLine, category: cat, 
-                                    type: typeStr, cycle: cycleVal, subItem: sub, date: window.currentTargetDate, status: 'uninspected', desc: sub, remark: ''
+                                    type: typeStr, partType: partTypeVal, cycle: cycleVal, subItem: sub, date: window.currentTargetDate, status: 'uninspected', desc: sub, remark: ''
                                 }));
                             }
                         }
@@ -2088,10 +2147,11 @@
                                 let dateStr = json[i][3];
                                 if(typeof dateStr === 'number') dateStr = new Date(Math.round((dateStr - 25569)*86400*1000)).toISOString().split('T')[0];
                                 const meta = window.resolveRecordMetadata(json[i][1]);
+                                const partTypeVal = ['xray', 'plc', 'electric', 'relay'].includes(meta.category) ? '전기' : '기계';
                                 
                                 window.parsedExcelData.push(sanitizeRecord({ 
                                     id: generateUUID(), recordType: 'fault', line: String(json[i][0]).trim(), category: meta.category, 
-                                    subItem: String(json[i][2]).trim(), type: meta.type, cycle: 'none', date: String(dateStr).trim(), status: 'fault', desc: String(json[i][4] || "엑셀 고장 마이그레이션").trim(),
+                                    subItem: String(json[i][2]).trim(), type: meta.type, partType: partTypeVal, cycle: 'none', date: String(dateStr).trim(), status: 'fault', desc: String(json[i][4] || "엑셀 고장 마이그레이션").trim(),
                                     fileUrl: String(json[i][5] || '').trim() 
                                 }));
                             }
@@ -2103,7 +2163,7 @@
                 
                 window.parsedExcelData.slice(0, 10).forEach(r => {
                     const badge = r.recordType === 'fault' ? '<span class="text-red-500 font-bold">고장</span>' : '<span class="text-emerald-500 font-bold">점검내역</span>';
-                    tbody.innerHTML += `<tr><td>${r.line}</td><td>${r.category}</td><td>${r.subItem}</td><td>${r.date || '-'}</td><td>${badge}</td></tr>`;
+                    tbody.innerHTML += `<tr><td>${r.line}</td><td>${r.category} (${r.partType || '기계'})</td><td>${r.subItem}</td><td>${r.date || '-'}</td><td>${badge}</td></tr>`;
                 });
                 document.getElementById('previewSection').classList.remove('hidden');
                 event.target.value = '';
@@ -2147,7 +2207,7 @@
         }
         
         window.downloadSampleExcel = function(type) { 
-            if(type === 'inspection') window.showCustomAlert('점검 양식: A열(라인명), B열(설비명), C열(작업 세부사항), D열(점검주기)', 'info'); 
+            if(type === 'inspection') window.showCustomAlert('점검 양식: A열(라인명), B열(설비명), C열(작업 세부사항), D열(점검주기), E열:구분(기계 또는 전기)', 'info'); 
             else window.showCustomAlert('고장 양식: A열(라인명), B열(고장부류), C열(상세항목), D열(발생일자), E열(조치내용), F열:관련문서URL(선택)', 'info'); 
         }
 
