@@ -61,7 +61,7 @@
         @media print {
             @page { size: auto; margin: 10mm; }
             body { background-color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: visible !important; }
-            #sidebar, header, .no-print, #previewSection, #editDataModal, #descEditModal, #remarkModal, #customAlert, #loadingOverlay, #loginOverlay, #sidebarOverlay { display: none !important; }
+            #sidebar, header, .no-print, #previewSection, #editDataModal, #descEditModal, #remarkModal, #customAlert, #loadingOverlay, #loginOverlay, #sidebarOverlay, #adminAuthModal, #changePasswordModal, #confirmDeleteModal, #fileUrlModal { display: none !important; }
             main { width: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; flex: none !important; }
             .content-panel { display: none !important; }
             .content-panel.active { display: block !important; }
@@ -198,8 +198,9 @@
                 </button>
             </div>
             <div class="flex items-center space-x-2 shrink-0 pl-2">
-                <button onclick="window.openEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl transition shadow-sm border border-slate-200 whitespace-nowrap">
-                    수정<span class="hidden sm:inline">/관리</span>
+                <!-- ★ 수정: 버튼 클릭 시 비밀번호 검증 모달을 띄움 -->
+                <button onclick="window.checkAndOpenEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl transition shadow-sm border border-slate-200 whitespace-nowrap">
+                    <span class="mr-1">🔒</span>수정<span class="hidden sm:inline">/관리</span>
                 </button>
             </div>
         </header>
@@ -305,7 +306,6 @@
 
                     <!-- 1. 예방 점검 항목 등록 섹션 -->
                     <section id="section-inspection-input">
-                        <!-- ★ 추가: 기계/전기 드롭다운을 포함한 4칸 그리드로 변경 -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 w-full">
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">대상 설비 라인</label>
@@ -321,7 +321,6 @@
                                     <!-- JS에서 동적 주입 -->
                                 </select>
                             </div>
-                            <!-- ★ 신규: 기계/전기 분류 선택 -->
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">점검 분류 (기계/전기)</label>
                                 <select id="regPartTypeInsp" class="w-full bg-slate-50 border border-slate-200 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm transition">
@@ -362,7 +361,6 @@
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadInsp').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <!-- ★ 추가: E열 기계/전기 구분 안내 -->
                             <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 작업 세부사항, D열: 점검주기, E열: 기계/전기 구분(기계 또는 전기)</p>
                             <input type="file" id="excelUploadInsp" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'inspection')">
                         </div>
@@ -400,13 +398,6 @@
                             </div>
                         </div>
 
-                        <!-- ★ 수정: 비용 문제 방지를 위해 파일 업로드를 제거하고 URL 입력(텍스트) 방식으로 원복 -->
-                        <div class="space-y-2 md:space-y-3 mb-6 w-full">
-                            <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">관련 자료 링크 (URL - 구글 드라이브 등 권장)</label>
-                            <input type="text" id="regFileUrlFault" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition placeholder-red-300" placeholder="문서/드라이브 링크 복사해서 붙여넣기">
-                            <p class="text-[10px] text-red-400 font-bold mt-1">※ 클라우드 트래픽/저장 비용을 방지하기 위해 사내 드라이브(Google Drive, OneDrive, SharePoint) 링크 사용을 강력히 권장합니다.</p>
-                        </div>
-
                         <div class="space-y-2 md:space-y-3 mb-8 md:mb-10 w-full">
                             <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">고장 현상 및 정비 내용</label>
                             <textarea id="regDescFault" rows="4" class="w-full bg-red-50/50 border border-red-100 p-4 md:p-5 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition leading-relaxed font-medium text-slate-700">원인 : 
@@ -430,7 +421,7 @@
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadFault').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">A열: 설비라인, B열: 고장부류, C열: 상세부품, D열: 발생일자(YYYY-MM-DD), E열: 조치내용, F열: 관련문서URL</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">A열: 설비라인, B열: 고장부류, C열: 상세부품, D열: 발생일자(YYYY-MM-DD), E열: 조치내용</p>
                             <input type="file" id="excelUploadFault" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'fault')">
                         </div>
                     </section>
@@ -499,21 +490,29 @@
         </div>
     </main>
 
-    <!-- ★ 수정 모달 (반응형 최적화 및 구분(점검/고장) 필터 적용) ★ -->
+    <!-- ★ 수정 모달 (반응형 최적화 및 필터/삭제 적용) ★ -->
     <div id="editDataModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[200] flex items-center justify-center hidden p-2 sm:p-4">
-        <div class="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 max-w-[90rem] w-full max-h-[95vh] flex flex-col shadow-2xl border border-slate-200">
+        <div class="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 max-w-[90rem] w-full max-h-[95vh] flex flex-col shadow-2xl border border-slate-200 relative">
+            
+            <!-- 관리자용 마스터 비밀번호 변경 버튼 (숨겨진 유틸리티) -->
+            <button onclick="window.openChangePasswordModal()" class="absolute top-6 right-16 text-[10px] md:text-xs font-bold text-slate-400 hover:text-blue-600 transition flex items-center">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                비밀번호 변경
+            </button>
+
             <div class="flex justify-between items-center mb-4 md:mb-6 border-b pb-3 md:pb-4 shrink-0">
                 <h3 class="text-lg md:text-2xl font-black text-slate-800 tracking-tight">데이터 편집 (마스터)</h3>
                 <button onclick="window.closeEditModal()" class="text-slate-400 hover:text-slate-600 transition p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
+            
             <div class="flex-grow overflow-x-auto overflow-y-auto custom-scroll pr-1 md:pr-2 border border-slate-100 rounded-lg" id="modalTableContainer">
                 <table class="w-full text-left border-collapse text-xs md:text-sm min-w-[800px]">
                     <thead class="sticky top-0 bg-white shadow-sm z-10">
                         <tr class="border-b-2 border-slate-100 text-slate-500">
-                            <!-- ★ 신규: 점검/고장 분류 드롭다운 필터 추가 -->
+                            <!-- 구분(점검/고장) 드롭다운 필터 -->
                             <th class="py-2.5 px-2 font-bold w-20 select-none">
                                 <select id="modalRecordTypeFilter" onchange="window.filterModalByRecordType(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm">
-                                    <option value="all">구분 (전체) ▼</option>
+                                    <option value="all">구분 (전체)</option>
                                     <option value="inspection">점검내역</option>
                                     <option value="fault">고장발생</option>
                                 </select>
@@ -521,7 +520,7 @@
                             
                             <th class="py-2.5 px-2 font-bold w-24 select-none">
                                 <select id="modalLineFilter" onchange="window.filterModalByLine(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm">
-                                    <option value="all">설비라인 (전체) ▼</option>
+                                    <option value="all">설비라인 (전체)</option>
                                     <option value="CPL">CPL</option>
                                     <option value="CRM">CRM</option>
                                     <option value="CGL">CGL</option>
@@ -532,11 +531,13 @@
                                     <option value="SSCL">SSCL</option>
                                 </select>
                             </th>
+                            
                             <th class="py-2.5 px-2 font-bold w-32 select-none">
                                 <select id="modalCategoryFilter" onchange="window.filterModalByCategory(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm truncate">
-                                    <option value="all">설비/분류 (전체) ▼</option>
+                                    <option value="all">설비/분류 (전체)</option>
                                 </select>
                             </th>
+                            
                             <th class="py-2.5 px-2 font-bold min-w-[150px] cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('subItem')">상세/내용 <span id="sort-icon-subItem" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
                             <th class="py-2.5 px-2 font-bold w-20 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('cycle')">주기 <span id="sort-icon-cycle" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
                             <th class="py-2.5 px-2 font-bold w-28 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('date')">일자 <span id="sort-icon-date" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
@@ -550,9 +551,83 @@
             
             <div id="modalPagination" class="shrink-0 mb-3 md:mb-4 border-b border-slate-100 pb-2 mt-2"></div>
             
-            <div class="flex justify-end items-center pt-2 shrink-0 space-x-2 md:space-x-3">
-                <button onclick="window.closeEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold px-4 py-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl transition text-xs md:text-sm">취소</button>
-                <button onclick="window.saveEditedData()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl transition text-xs md:text-sm shadow-md shadow-blue-700/20">변경사항 저장</button>
+            <div class="flex flex-col sm:flex-row justify-between items-center pt-2 shrink-0 gap-3 sm:gap-0">
+                <!-- ★ 일괄 삭제 버튼 -->
+                <button onclick="window.openConfirmDeleteModal()" class="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 font-bold px-4 py-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl transition text-xs md:text-sm border border-red-200 flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    현재 목록 모두 삭제
+                </button>
+                
+                <div class="flex space-x-2 md:space-x-3 w-full sm:w-auto justify-end">
+                    <button onclick="window.closeEditModal()" class="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold px-4 py-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl transition text-xs md:text-sm">취소</button>
+                    <button onclick="window.saveEditedData()" class="flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl transition text-xs md:text-sm shadow-md shadow-blue-700/20">변경사항 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★ 마스터 권한 (비밀번호) 확인 모달 -->
+    <div id="adminAuthModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[300] flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center">
+            <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-lg">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-2">관리자 권한 확인</h3>
+            <p class="text-xs text-slate-500 font-medium mb-6 text-center">데이터 수정 및 관리를 위해<br>마스터 비밀번호를 입력해주세요.</p>
+            
+            <input type="password" id="adminPasswordInput" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-center text-lg font-bold tracking-widest outline-none focus:ring-2 focus:ring-blue-500 transition mb-6" placeholder="****" onkeydown="if(event.key==='Enter') window.verifyAdminPassword()">
+            
+            <div class="flex gap-3 w-full">
+                <button onclick="document.getElementById('adminAuthModal').classList.add('hidden')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3.5 rounded-xl transition text-sm">취소</button>
+                <button onclick="window.verifyAdminPassword()" class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl transition shadow-md shadow-blue-600/20 text-sm">접근 승인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★ 마스터 비밀번호 변경 모달 -->
+    <div id="changePasswordModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[300] flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center">
+            <h3 class="text-lg font-black text-slate-800 mb-2">마스터 비밀번호 변경</h3>
+            <p class="text-xs text-slate-500 font-medium mb-6 text-center">새로운 숫자 또는 문자 조합을 입력하세요.<br>(최소 4자리 이상)</p>
+            
+            <input type="password" id="newPasswordInput" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-center text-base font-bold outline-none focus:ring-2 focus:ring-blue-500 transition mb-6" placeholder="새 비밀번호 입력" onkeydown="if(event.key==='Enter') window.saveNewAdminPassword()">
+            
+            <div class="flex gap-3 w-full">
+                <button onclick="document.getElementById('changePasswordModal').classList.add('hidden')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3.5 rounded-xl transition text-sm">취소</button>
+                <button onclick="window.saveNewAdminPassword()" class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl transition shadow-md text-sm">비밀번호 설정</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★ 전체 삭제 확인 커스텀 모달 -->
+    <div id="confirmDeleteModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[300] flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center">
+            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 mb-2">정말 모두 삭제하시겠습니까?</h3>
+            <p class="text-xs text-slate-500 font-semibold mb-8 leading-relaxed">
+                현재 필터링되어 화면에 보이는 <br>
+                <b class="text-red-500">모든 항목이 임시 삭제</b>됩니다.<br>
+                (이후 [변경사항 저장]을 눌러야 최종 반영됩니다)
+            </p>
+            
+            <div class="flex gap-3 w-full">
+                <button onclick="window.closeConfirmDeleteModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3.5 rounded-xl transition text-sm">취소</button>
+                <button onclick="window.executeDeleteAllFiltered()" class="flex-[2] bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl transition shadow-md shadow-red-600/20 text-sm">네, 모두 삭제합니다</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★ 첨부파일 URL 수정/입력 모달 (prompt 대체) -->
+    <div id="fileUrlModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[300] flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center">
+            <h3 class="text-lg font-black text-slate-800 mb-2">관련 문서/PPT 링크 첨부</h3>
+            <p class="text-xs text-slate-500 font-medium mb-6 text-center">사내 클라우드, 구글 드라이브 등 <br>관련 파일의 웹 주소(URL)를 붙여넣으세요.</p>
+            <input type="text" id="fileUrlInput" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500 transition mb-6" placeholder="https://..." onkeydown="if(event.key==='Enter') window.saveFileUrl()">
+            <div class="flex gap-3 w-full">
+                <button onclick="window.closeFileUrlModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition text-sm">취소</button>
+                <button onclick="window.saveFileUrl()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl transition shadow-md text-sm">링크 저장</button>
             </div>
         </div>
     </div>
@@ -605,11 +680,13 @@
         window.currentDetailTablePage = 0;
         window.currentReportTablePage = 0;
         
-        // 모달 전용 상태 변수
+        // ★ 마스터 권한 및 필터 상태
+        window.adminPassword = '0000'; // 초기 기본 비밀번호
         window.currentModalPage = 0; 
-        window.currentModalRecordTypeFilter = 'all'; // ★ 신규: 점검/고장 필터
+        window.currentModalRecordTypeFilter = 'all'; 
         window.currentModalLineFilter = 'all';
         window.currentModalCategoryFilter = 'all';
+        window.targetFileIdx = -1; // 파일 링크 수정 대상 인덱스
 
         const todayDate = new Date();
         window.currentTargetDate = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
@@ -755,7 +832,6 @@
             window.renderSummaryGrid();
         }
 
-        // ★ 메인화면 "조회기간별 미점검 대비 실적" 산출 로직 완벽 적용
         window.updateAllLineScores = function() {
             const targetDateObj = new Date(window.currentTargetDate);
             const targetYear = targetDateObj.getFullYear();
@@ -770,7 +846,6 @@
                     const rDate = new Date(r.date);
                     let isIncluded = false;
 
-                    // ★ 수정: 상태에 상관없이(미점검이든 완료든) '선택된 기간'에 해당하는 항목만 집계합니다.
                     if (window.currentSummaryPeriod === 'daily') {
                         if (r.date === window.currentTargetDate) isIncluded = true;
                     } else if (window.currentSummaryPeriod === 'weekly') {
@@ -785,14 +860,12 @@
                     }
 
                     if (isIncluded) {
-                        // ★ 정확한 기계/전기 구분 
                         let isElec = false;
                         if (r.partType === '전기') {
                             isElec = true;
                         } else if (r.partType === '기계') {
                             isElec = false;
                         } else {
-                            // 구버전 데이터 호환용
                             isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || 
                                            r.category.includes('전장') || r.category.toUpperCase().includes('PLC') || 
                                            r.category.toUpperCase().includes('X-RAY') || r.category.toUpperCase().includes('PANEL');
@@ -1777,7 +1850,7 @@
                 const category = document.getElementById('regCategoryFault').value;
                 const regDescText = document.getElementById('regDescFault').value.trim() || `${window.selectedSubItemFault} 고장 발생 및 조치 내역`;
                 
-                // ★ 직접 업로드 제거 및 URL 입력으로 원복
+                // ★ 기존의 prompt URL 입력 대신 첨부 모달(fileUrlModal) 적용
                 const fileUrl = document.getElementById('regFileUrlFault').value.trim();
 
                 const partType = ['xray', 'plc', 'electric', 'relay'].includes(category) ? '전기' : '기계';
@@ -1803,6 +1876,23 @@
                 console.error(err); 
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 window.showCustomAlert("시스템 에러: " + err.message, "danger"); 
+            }
+        }
+
+        // ★ 신규: 수정/관리 버튼 클릭 시 바로 모달창이 열리는게 아니라 비밀번호 확인 모달을 먼저 띄움
+        window.checkAndOpenEditModal = function() {
+            document.getElementById('adminAuthModal').classList.remove('hidden');
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('adminPasswordInput').focus();
+        }
+
+        window.verifyAdminPassword = function() {
+            const input = document.getElementById('adminPasswordInput').value;
+            if (input === window.adminPassword) {
+                document.getElementById('adminAuthModal').classList.add('hidden');
+                window.openEditModal(); // 비밀번호 맞으면 원래 모달창 오픈
+            } else {
+                window.showCustomAlert('마스터 비밀번호가 일치하지 않습니다.', 'danger');
             }
         }
 
@@ -1852,13 +1942,26 @@
             window.closeDescEditModal();
         }
 
-        // ★ 직접 업로드 제거 및 URL 입력으로 원복
+        // ★ 신규: prompt 제거, 링크 직접 입력을 위한 전용 모달 오픈
         window.editFileUrl = function(idx) {
+            window.targetFileIdx = idx;
             const row = window.tempRecords[idx];
-            const url = prompt("해당 항목과 관련된 문서/PPT 링크(URL)를 입력하세요.\n(사내 클라우드, 구글 드라이브 등 비용 발생이 없는 링크를 사용해 주세요)", row.fileUrl || '');
-            if (url !== null) {
-                window.updateTempRecord(idx, 'fileUrl', url.trim());
+            document.getElementById('fileUrlInput').value = row.fileUrl || '';
+            document.getElementById('fileUrlModal').classList.remove('hidden');
+            document.getElementById('fileUrlInput').focus();
+        }
+
+        window.closeFileUrlModal = function() {
+            document.getElementById('fileUrlModal').classList.add('hidden');
+            window.targetFileIdx = -1;
+        }
+
+        window.saveFileUrl = function() {
+            if (window.targetFileIdx > -1) {
+                const url = document.getElementById('fileUrlInput').value.trim();
+                window.updateTempRecord(window.targetFileIdx, 'fileUrl', url);
                 window.renderModalRows();
+                window.closeFileUrlModal();
             }
         }
 
@@ -1900,6 +2003,65 @@
         window.changeModalPage = function(dir) {
             window.currentModalPage += dir;
             window.renderModalRows();
+        }
+
+        // ★ 신규: 전체 삭제 확인 모달 제어
+        window.openConfirmDeleteModal = function() {
+            document.getElementById('confirmDeleteModal').classList.remove('hidden');
+        }
+
+        window.closeConfirmDeleteModal = function() {
+            document.getElementById('confirmDeleteModal').classList.add('hidden');
+        }
+
+        window.executeDeleteAllFiltered = function() {
+            let typeFilteredRecords = window.tempRecords;
+            if (window.currentModalRecordTypeFilter !== 'all') {
+                typeFilteredRecords = typeFilteredRecords.filter(r => r.recordType === window.currentModalRecordTypeFilter);
+            }
+
+            let lineFilteredRecords = typeFilteredRecords;
+            if (window.currentModalLineFilter !== 'all') {
+                lineFilteredRecords = lineFilteredRecords.filter(r => r.line === window.currentModalLineFilter);
+            }
+
+            let filteredRecords = lineFilteredRecords;
+            if (window.currentModalCategoryFilter !== 'all') {
+                filteredRecords = filteredRecords.filter(r => r.category === window.currentModalCategoryFilter);
+            }
+
+            const idsToDelete = filteredRecords.map(r => r.id);
+            window.tempRecords = window.tempRecords.filter(r => !idsToDelete.includes(r.id));
+            
+            window.currentModalPage = 0;
+            window.renderModalRows();
+            window.closeConfirmDeleteModal();
+            window.showCustomAlert('현재 필터링된 항목이 모두 임시 삭제되었습니다.\n하단의 [변경사항 저장]을 누르셔야 최종 반영됩니다.', 'success');
+        }
+
+        // ★ 신규: 비밀번호 변경 모달 제어
+        window.openChangePasswordModal = function() {
+            document.getElementById('changePasswordModal').classList.remove('hidden');
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('newPasswordInput').focus();
+        }
+
+        window.saveNewAdminPassword = async function() {
+            const newPw = document.getElementById('newPasswordInput').value.trim();
+            if(newPw.length < 4) return window.showCustomAlert('보안을 위해 비밀번호는 최소 4자리 이상 입력해주세요.', 'danger');
+            
+            try {
+                if (window.isFirebaseActive && window._setDoc && window._doc && window._db && window._appId) {
+                    const docRef = window._doc(window._db, 'artifacts', window._appId, 'public', 'data', 'settings', 'adminSettings');
+                    await window._setDoc(docRef, { password: newPw });
+                } else {
+                    window.adminPassword = newPw;
+                }
+                document.getElementById('changePasswordModal').classList.add('hidden');
+                window.showCustomAlert('마스터 비밀번호가 성공적으로 변경되었습니다.', 'success');
+            } catch(e) {
+                window.showCustomAlert('비밀번호 변경 실패: ' + e.message, 'danger');
+            }
         }
 
         window.renderModalRows = function() {
@@ -1956,7 +2118,8 @@
                 return tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-bold">수정할 이력이 존재하지 않습니다.</td></tr>`;
             }
             
-            const ITEMS_PER_PAGE = 15; 
+            // ★ 수정: 페이지 표시 개수를 15개에서 30개로 두 배 확대!
+            const ITEMS_PER_PAGE = 30; 
             const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
             if (window.currentModalPage >= totalPages && totalPages > 0) window.currentModalPage = totalPages - 1;
             
@@ -2007,7 +2170,7 @@
                 
                 const hasFile = row.fileUrl && row.fileUrl.trim() !== '';
                 const linkBtnClass = hasFile ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200' : 'bg-indigo-50 text-indigo-500 hover:bg-indigo-100';
-                const linkBtnTitle = hasFile ? '첨부파일 변경 (현재 파일 존재)' : '관련 파일 첨부 (PPT/PDF 등)';
+                const linkBtnTitle = hasFile ? '첨부파일 변경 (현재 파일 존재)' : '관련 파일 첨부 (웹 URL 링크)';
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
@@ -2050,27 +2213,9 @@
             document.getElementById('modalPagination').innerHTML = paginationHtml;
         }
 
-        window.handleModalCategoryChange = function(idx, newCat, isFault) {
-            if (window.tempRecords[idx]) {
-                const row = window.tempRecords[idx];
-                if (isFault) {
-                    row.category = newCat;
-                    row.subItem = subItemMapFault[newCat][0];
-                } else {
-                    let targetMap = subItemMapInsp[row.line] || subItemMapInsp['CRM'];
-                    if(!targetMap[newCat]) targetMap[newCat] = ['기타'];
-                    row.category = newCat;
-                    row.subItem = targetMap[newCat][0];
-                }
-                window.renderModalRows();
-            }
-        }
-
-        window.updateTempRecord = function(idx, field, value) { if (window.tempRecords[idx]) window.tempRecords[idx][field] = value; }
-        
         window.deleteRowInModal = function(idx) { 
             window.tempRecords.splice(idx, 1); 
-            const ITEMS_PER_PAGE = 15;
+            const ITEMS_PER_PAGE = 30; // 삭제 시에도 30개로 유지 검증
             const totalPages = Math.ceil(window.tempRecords.length / ITEMS_PER_PAGE);
             if (window.currentModalPage >= totalPages && window.currentModalPage > 0) {
                 window.currentModalPage--;
@@ -2254,7 +2399,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
+
         const firebaseConfig = { 
             apiKey: "AIzaSyD25Sgz50I6bJ27ac3Cbt2bASuaNVuVJg0", 
             authDomain: "equip-analytics1-common.firebaseapp.com", 
@@ -2267,6 +2412,9 @@
         const appId = 'seah-cm-pdm-appid';
         let db = null; let auth = null; let unsubscribeSync = null;
 
+        // ★ 파이어베이스 메서드들을 다른 함수에서도 쓰기 위해 창 밖으로 빼놓기 (비밀번호 변경용)
+        window._db = null; window._doc = null; window._setDoc = null; window._appId = appId;
+
         async function initFirebase() {
             const statusEl = document.getElementById('cloud-status');
             try {
@@ -2277,6 +2425,8 @@
                 const app = initializeApp(firebaseConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app, "seahft1");
+                
+                window._db = db; window._doc = doc; window._setDoc = setDoc;
                 
                 if(statusEl) statusEl.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">클라우드 인증 대기중...</span>';
                 
@@ -2295,6 +2445,13 @@
                         if(statusEl) statusEl.innerHTML = `<span class="text-emerald-400 font-extrabold animate-pulse">● 실시간 클라우드 동기화 모드</span>`;
                         
                         try {
+                            // 마스터 비밀번호 구독 추가 (settings/adminSettings)
+                            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'adminSettings'), (docSnap) => {
+                                if(docSnap.exists()) {
+                                    window.adminPassword = docSnap.data().password || '0000';
+                                }
+                            });
+
                             // 기존 데이터 구독 해제
                             if (unsubscribeSync) unsubscribeSync();
                             
