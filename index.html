@@ -400,10 +400,10 @@
                             </div>
                         </div>
 
-                        <!-- 관련 자료 링크 -->
+                        <!-- ★ 수정: 비용 문제 방지를 위해 파일 업로드(Storage) 대신 URL 입력 방식으로 최적화 -->
                         <div class="space-y-2 md:space-y-3 mb-6 w-full">
-                            <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">관련 자료 링크 (URL - 선택사항)</label>
-                            <input type="text" id="regFileUrlFault" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition placeholder-red-300" placeholder="문서/드라이브 링크 붙여넣기">
+                            <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">관련 자료 첨부 (드라이브 문서 URL 링크 입력)</label>
+                            <input type="text" id="regFileUrlFault" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition placeholder-red-300" placeholder="클라우드 비용 절감을 위해 구글/사내 드라이브 링크를 복사하여 붙여넣으세요.">
                         </div>
 
                         <div class="space-y-2 md:space-y-3 mb-8 md:mb-10 w-full">
@@ -498,7 +498,7 @@
         </div>
     </main>
 
-    <!-- ★ 수정 모달 (반응형 최적화) ★ -->
+    <!-- ★ 수정 모달 (반응형 최적화 및 구분(점검/고장) 필터 적용) ★ -->
     <div id="editDataModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[200] flex items-center justify-center hidden p-2 sm:p-4">
         <div class="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 max-w-[90rem] w-full max-h-[95vh] flex flex-col shadow-2xl border border-slate-200">
             <div class="flex justify-between items-center mb-4 md:mb-6 border-b pb-3 md:pb-4 shrink-0">
@@ -509,10 +509,18 @@
                 <table class="w-full text-left border-collapse text-xs md:text-sm min-w-[800px]">
                     <thead class="sticky top-0 bg-white shadow-sm z-10">
                         <tr class="border-b-2 border-slate-100 text-slate-500">
-                            <th class="py-2.5 px-2 font-bold w-16 text-center cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('recordType')">구분 <span id="sort-icon-recordType" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
+                            <!-- ★ 신규: 점검/고장 분류 드롭다운 필터 추가 -->
+                            <th class="py-2.5 px-2 font-bold w-20 select-none">
+                                <select id="modalRecordTypeFilter" onchange="window.filterModalByRecordType(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm">
+                                    <option value="all">구분 (전체) ▼</option>
+                                    <option value="inspection">점검내역</option>
+                                    <option value="fault">고장발생</option>
+                                </select>
+                            </th>
+                            
                             <th class="py-2.5 px-2 font-bold w-24 select-none">
                                 <select id="modalLineFilter" onchange="window.filterModalByLine(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm">
-                                    <option value="all">설비라인 (전체)</option>
+                                    <option value="all">설비라인 (전체) ▼</option>
                                     <option value="CPL">CPL</option>
                                     <option value="CRM">CRM</option>
                                     <option value="CGL">CGL</option>
@@ -525,7 +533,7 @@
                             </th>
                             <th class="py-2.5 px-2 font-bold w-32 select-none">
                                 <select id="modalCategoryFilter" onchange="window.filterModalByCategory(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm truncate">
-                                    <option value="all">설비/분류 (전체)</option>
+                                    <option value="all">설비/분류 (전체) ▼</option>
                                 </select>
                             </th>
                             <th class="py-2.5 px-2 font-bold min-w-[150px] cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('subItem')">상세/내용 <span id="sort-icon-subItem" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
@@ -598,6 +606,7 @@
         
         // 모달 전용 상태 변수
         window.currentModalPage = 0; 
+        window.currentModalRecordTypeFilter = 'all'; // ★ 신규: 점검/고장 필터
         window.currentModalLineFilter = 'all';
         window.currentModalCategoryFilter = 'all';
 
@@ -694,7 +703,7 @@
                 category: r.category || '기타',
                 subItem: r.subItem || '항목없음',
                 type: r.type || '기타',
-                partType: r.partType || '기계', // ★ 신규: 기계/전기 명시적 필드
+                partType: r.partType || '기계', 
                 cycle: r.cycle || 'none',
                 date: r.date || window.currentTargetDate,
                 status: r.status || 'uninspected',
@@ -1769,6 +1778,8 @@
                 const line = document.getElementById('regLineFault').value;
                 const category = document.getElementById('regCategoryFault').value;
                 const regDescText = document.getElementById('regDescFault').value.trim() || `${window.selectedSubItemFault} 고장 발생 및 조치 내역`;
+                
+                // ★ 직접 업로드 제거 및 URL 입력으로 원복
                 const fileUrl = document.getElementById('regFileUrlFault').value.trim();
 
                 const partType = ['xray', 'plc', 'electric', 'relay'].includes(category) ? '전기' : '기계';
@@ -1800,8 +1811,12 @@
         window.openEditModal = function() {
             window.tempRecords = JSON.parse(JSON.stringify(window.systemRecords));
             window.currentModalPage = 0; 
+            window.currentModalRecordTypeFilter = 'all'; 
             window.currentModalLineFilter = 'all'; 
             window.currentModalCategoryFilter = 'all'; 
+            
+            const recFilterSelect = document.getElementById('modalRecordTypeFilter');
+            if (recFilterSelect) recFilterSelect.value = 'all';
             const lineFilterSelect = document.getElementById('modalLineFilter');
             if (lineFilterSelect) lineFilterSelect.value = 'all';
             const catFilterSelect = document.getElementById('modalCategoryFilter');
@@ -1839,13 +1854,20 @@
             window.closeDescEditModal();
         }
 
+        // ★ 직접 업로드 제거 및 URL 입력으로 원복
         window.editFileUrl = function(idx) {
             const row = window.tempRecords[idx];
-            const url = prompt("해당 항목과 관련된 문서/PPT 링크(URL)를 입력하세요.\n(구글 드라이브, 원드라이브, 사내공유망 링크 등)", row.fileUrl || '');
+            const url = prompt("해당 항목과 관련된 문서/PPT 링크(URL)를 입력하세요.\n(사내 클라우드, 구글 드라이브 등 비용 발생이 없는 링크를 사용해 주세요)", row.fileUrl || '');
             if (url !== null) {
                 window.updateTempRecord(idx, 'fileUrl', url.trim());
                 window.renderModalRows();
             }
+        }
+
+        window.filterModalByRecordType = function(type) {
+            window.currentModalRecordTypeFilter = type;
+            window.currentModalPage = 0; 
+            window.renderModalRows();
         }
 
         window.filterModalByLine = function(line) {
@@ -1900,7 +1922,12 @@
                 }
             });
 
-            let lineFilteredRecords = window.tempRecords;
+            let typeFilteredRecords = window.tempRecords;
+            if (window.currentModalRecordTypeFilter !== 'all') {
+                typeFilteredRecords = typeFilteredRecords.filter(r => r.recordType === window.currentModalRecordTypeFilter);
+            }
+
+            let lineFilteredRecords = typeFilteredRecords;
             if (window.currentModalLineFilter !== 'all') {
                 lineFilteredRecords = lineFilteredRecords.filter(r => r.line === window.currentModalLineFilter);
             }
@@ -1949,7 +1976,7 @@
                 const absIdx = window.tempRecords.findIndex(r => r.id === row.id);
                 
                 const isFault = row.recordType === 'fault';
-                const badge = isFault ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black">고장</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black">점검내역</span>';
+                const badge = isFault ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black">고장발생</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black">점검내역</span>';
                 
                 let lineOptions = lines.map(line => `<option value="${line}" ${row.line === line ? 'selected' : ''}>${line}</option>`).join('');
                 let cycleOptions = cycles.map(c => `<option value="${c}" ${row.cycle === c ? 'selected' : ''}>${cycleNameMap[c]}</option>`).join('');
@@ -1980,6 +2007,10 @@
                     subOptions = currentMap[row.category].map(sub => `<option value="${sub}" ${row.subItem === sub ? 'selected' : ''}>${sub}</option>`).join('');
                 }
                 
+                const hasFile = row.fileUrl && row.fileUrl.trim() !== '';
+                const linkBtnClass = hasFile ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200' : 'bg-indigo-50 text-indigo-500 hover:bg-indigo-100';
+                const linkBtnTitle = hasFile ? '첨부파일 변경 (현재 파일 존재)' : '관련 파일 첨부 (PPT/PDF 등)';
+
                 // ★ 기계/전기 선택 드롭다운 UI 스타일 개선 (이모지 제거, 깔끔한 텍스트 디자인)
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
@@ -2002,7 +2033,7 @@
                             ${isFault ? `<option value="fault">고장발생</option>` : `<option value="completed" ${row.status === 'completed' ? 'selected' : ''}>점검완료</option><option value="uninspected" ${row.status === 'uninspected' ? 'selected' : ''}>미점검</option>`}
                         </select></td>
                         <td class="py-2.5 md:py-3 text-center w-20 whitespace-nowrap">
-                            <button onclick="window.editFileUrl(${absIdx})" class="text-indigo-500 font-bold text-[10px] md:text-xs bg-indigo-50 px-2 py-1.5 md:py-2 rounded-lg hover:bg-indigo-100 transition mr-1" title="관련 파일 링크 추가/수정">🔗</button>
+                            <button onclick="window.editFileUrl(${absIdx})" class="font-bold text-[10px] md:text-xs px-2 py-1.5 md:py-2 rounded-lg transition mr-1 ${linkBtnClass}" title="${linkBtnTitle}">첨부</button>
                             <button onclick="window.deleteRowInModal(${absIdx})" class="text-red-500 font-bold text-[10px] md:text-xs bg-red-50 px-2 py-1.5 md:py-2 rounded-lg hover:bg-red-100 transition">삭제</button>
                         </td>
                     </tr>
@@ -2021,414 +2052,4 @@
             }
             document.getElementById('modalPagination').innerHTML = paginationHtml;
         }
-
-        window.handleModalCategoryChange = function(idx, newCat, isFault) {
-            if (window.tempRecords[idx]) {
-                const row = window.tempRecords[idx];
-                if (isFault) {
-                    row.category = newCat;
-                    row.subItem = subItemMapFault[newCat][0];
-                } else {
-                    let targetMap = subItemMapInsp[row.line] || subItemMapInsp['CRM'];
-                    if(!targetMap[newCat]) targetMap[newCat] = ['기타'];
-                    row.category = newCat;
-                    row.subItem = targetMap[newCat][0];
-                }
-                window.renderModalRows();
-            }
-        }
-
-        window.updateTempRecord = function(idx, field, value) { if (window.tempRecords[idx]) window.tempRecords[idx][field] = value; }
-        
-        window.deleteRowInModal = function(idx) { 
-            window.tempRecords.splice(idx, 1); 
-            const ITEMS_PER_PAGE = 15;
-            const totalPages = Math.ceil(window.tempRecords.length / ITEMS_PER_PAGE);
-            if (window.currentModalPage >= totalPages && window.currentModalPage > 0) {
-                window.currentModalPage--;
-            }
-            window.renderModalRows(); 
-        }
-
-        window.saveEditedData = async function() {
-            for (let i = 0; i < window.tempRecords.length; i++) {
-                if (!window.tempRecords[i].date) return window.showCustomAlert("모든 항목의 날짜를 지정해 주세요.", "danger");
-            }
-            
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-            document.getElementById('loadingText').innerText = "데이터베이스 저장 중...";
-
-            try {
-                if (window.isFirebaseActive && window.firebaseHandler) {
-                    const deleted = window.systemRecords.filter(orig => !window.tempRecords.some(temp => temp.id === orig.id));
-                    
-                    const deletePromises = deleted.map(d => window.firebaseHandler.delete(d.id));
-                    await Promise.all(deletePromises);
-
-                    const sanitizedTempRecords = window.tempRecords.map(r => sanitizeRecord(r));
-                    
-                    if(window.firebaseHandler.addBatch) {
-                        await window.firebaseHandler.addBatch(sanitizedTempRecords);
-                    } else {
-                        const savePromises = sanitizedTempRecords.map(temp => window.firebaseHandler.set(temp.id, temp));
-                        await Promise.all(savePromises);
-                    }
-                } else {
-                    window.systemRecords = window.tempRecords;
-                    window.updateAllLineScores();
-                    window.renderSummaryGrid();
-                    if (document.getElementById('panel-detail').classList.contains('active')) {
-                        window.renderDetailTable(); window.renderInspReport();
-                    }
-                    if (document.getElementById('panel-analysis').classList.contains('active')) {
-                        window.renderFaultAnalysis();
-                        window.renderAnalysisDetailList();
-                    }
-                }
-                window.closeEditModal();
-                window.showCustomAlert("전사 데이터가 정상 연동되었습니다.", "success");
-            } catch(e) {
-                console.error(e);
-                window.showCustomAlert("데이터 수정 중 오류가 발생했습니다: " + e.message, "danger");
-            } finally {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-            }
-        }
-
-        window.handleExcelUpload = function(event, type) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const workbook = XLSX.read(e.target.result, {type: 'binary'});
-                window.parsedExcelData = [];
-                
-                if (type === 'inspection') {
-                    workbook.SheetNames.forEach(sheetName => {
-                        const validLines = ['CPL', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'ARP', 'SSCL'];
-                        let matchedLine = validLines.find(l => sheetName.includes(l)) || sheetName;
-                        const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
-                        
-                        for(let i=1; i<json.length; i++) {
-                            let cat = String(json[i][1] || '').trim();
-                            let sub = String(json[i][2] || '').trim();
-                            let cycleStr = String(json[i][3] || '').trim();
-                            let partTypeStr = String(json[i][4] || '').trim(); 
-                            
-                            if (matchedLine === 'CPL' && String(json[i][2] || '').match(/^K\d+/)) {
-                                sub = String(json[i][5] || '').trim(); 
-                                cycleStr = String(json[i][6] || '').trim();
-                            }
-                            
-                            if(cat && sub && cat !== 'undefined' && sub !== 'undefined') {
-                                let cycleVal = 'daily';
-                                if (cycleStr.includes('주')) cycleVal = 'weekly';
-                                else if (cycleStr.includes('월')) cycleVal = 'monthly';
-                                else if (cycleStr.includes('분기')) cycleVal = 'quarterly';
-                                
-                                const typeStr = typeMap[cat] || '기타';
-                                const partTypeVal = partTypeStr === '전기' ? '전기' : '기계'; 
-                                
-                                window.parsedExcelData.push(sanitizeRecord({ 
-                                    id: generateUUID(), recordType: 'inspection', line: matchedLine, category: cat, 
-                                    type: typeStr, partType: partTypeVal, cycle: cycleVal, subItem: sub, date: window.currentTargetDate, status: 'uninspected', desc: sub, remark: ''
-                                }));
-                            }
-                        }
-                    });
-                } else {
-                    workbook.SheetNames.forEach(sheetName => {
-                        const validLines = ['CPL', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'ARP', 'SSCL'];
-                        let matchedLine = validLines.find(l => sheetName.includes(l)) || sheetName;
-                        const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
-                        
-                        for(let i=1; i<json.length; i++) {
-                            if(json[i][0] && json[i][1] && json[i][2]) {
-                                let dateStr = json[i][3];
-                                if(typeof dateStr === 'number') dateStr = new Date(Math.round((dateStr - 25569)*86400*1000)).toISOString().split('T')[0];
-                                const meta = window.resolveRecordMetadata(json[i][1]);
-                                const partTypeVal = ['xray', 'plc', 'electric', 'relay'].includes(meta.category) ? '전기' : '기계';
-                                
-                                window.parsedExcelData.push(sanitizeRecord({ 
-                                    id: generateUUID(), recordType: 'fault', line: String(json[i][0]).trim(), category: meta.category, 
-                                    subItem: String(json[i][2]).trim(), type: meta.type, partType: partTypeVal, cycle: 'none', date: String(dateStr).trim(), status: 'fault', desc: String(json[i][4] || "엑셀 고장 마이그레이션").trim(),
-                                    fileUrl: String(json[i][5] || '').trim() 
-                                }));
-                            }
-                        }
-                    });
-                }
-                const tbody = document.querySelector('#excelTableBody'); tbody.innerHTML = '';
-                document.getElementById('dataCountLabel').innerText = window.parsedExcelData.length + '건';
-                
-                window.parsedExcelData.slice(0, 10).forEach(r => {
-                    const badge = r.recordType === 'fault' ? '<span class="text-red-500 font-bold">고장</span>' : '<span class="text-emerald-500 font-bold">점검내역</span>';
-                    tbody.innerHTML += `<tr><td>${r.line}</td><td>${r.category} (${r.partType || '기계'})</td><td>${r.subItem}</td><td>${r.date || '-'}</td><td>${badge}</td></tr>`;
-                });
-                document.getElementById('previewSection').classList.remove('hidden');
-                event.target.value = '';
-            };
-            reader.readAsBinaryString(file);
-        }
-
-        window.applyExcelDataToSystem = async function() {
-            if(window.parsedExcelData.length === 0) return;
-            
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-            document.getElementById('loadingText').innerText = `총 ${window.parsedExcelData.length}건 데이터 클라우드 전송 중... (0%)`;
-
-            try {
-                window.parsedExcelData.forEach(r => { if(!r.id) r.id = generateUUID(); });
-
-                if (window.isFirebaseActive && window.firebaseHandler && window.firebaseHandler.addBatch) {
-                    await window.firebaseHandler.addBatch(window.parsedExcelData, (percent) => {
-                        document.getElementById('loadingText').innerText = `총 ${window.parsedExcelData.length}건 데이터 클라우드 전송 중... (${percent}%)`;
-                    });
-                    window.showCustomAlert(`총 ${window.parsedExcelData.length}건의 데이터가 클라우드에 성공적으로 저장되었습니다.`, 'success');
-                } else {
-                    window.systemRecords = window.systemRecords.concat(window.parsedExcelData);
-                    window.updateAllLineScores();
-                    window.renderSummaryGrid();
-                    if (document.getElementById('panel-analysis').classList.contains('active')) {
-                        window.renderFaultAnalysis();
-                        window.renderAnalysisDetailList();
-                    }
-                    if (document.getElementById('panel-detail').classList.contains('active')) { window.renderDetailTable(); window.renderInspReport(); }
-                    
-                    window.showCustomAlert(`클라우드 통신 지연으로 총 ${window.parsedExcelData.length}건이 '임시 메모리'에 저장되었습니다.\n(새로고침 시 사라집니다. 네트워크/방화벽 상태를 확인해주세요)`, 'danger');
-                }
-                document.getElementById('previewSection').classList.add('hidden');
-            } catch (err) {
-                console.error("데이터 병합 에러:", err);
-                window.showCustomAlert("엑셀 업로드 중 서버 통신 에러가 발생했습니다.\n사내 보안망(방화벽)에서 접속을 차단했을 수 있습니다.\n\n상세에러: " + err.message, "danger");
-            } finally {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-            }
-        }
-        
-        window.downloadSampleExcel = function(type) { 
-            if(type === 'inspection') window.showCustomAlert('점검 양식: A열(라인명), B열(설비명), C열(작업 세부사항), D열(점검주기), E열:구분(기계 또는 전기)', 'info'); 
-            else window.showCustomAlert('고장 양식: A열(라인명), B열(고장부류), C열(상세항목), D열(발생일자), E열(조치내용), F열:관련문서URL(선택)', 'info'); 
-        }
-
-        // 초기 구동 세팅
-        document.addEventListener('DOMContentLoaded', () => {
-            window.updateCategoryOptionsInsp(); // 초기 옵션 세팅
-            window.systemRecords = window.generateInitialDummyData(window.currentTargetDate); 
-            document.getElementById('datePicker').value = window.currentTargetDate;
-            window.updateAllLineScores();
-            window.renderSummaryGrid();
-        });
-    </script>
-
-    <!-- ★ 파이어베이스 연동 및 디버깅 스크립트 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = { 
-            apiKey: "AIzaSyD25Sgz50I6bJ27ac3Cbt2bASuaNVuVJg0", 
-            authDomain: "equip-analytics1-common.firebaseapp.com", 
-            projectId: "equip-analytics1-common", 
-            storageBucket: "equip-analytics1-common.firebasestorage.app", 
-            messagingSenderId: "382586806512", 
-            appId: "1:382586806512:web:6e606d2ce266d62e4b2235" 
-        };
-        
-        const appId = 'seah-cm-pdm-appid';
-        let db = null; let auth = null; let unsubscribeSync = null;
-
-        async function initFirebase() {
-            const statusEl = document.getElementById('cloud-status');
-            try {
-                if (window.location.protocol === 'file:') {
-                    window.showCustomAlert("⚠️ 파이어베이스는 내 컴퓨터(file://)에서 직접 열면 작동하지 않습니다!\n\nVS Code 우측 하단의 'Go Live' 버튼(Live Server)을 눌러서 실행해 주세요.", "danger");
-                }
-
-                const app = initializeApp(firebaseConfig); 
-                auth = getAuth(app); 
-                db = getFirestore(app, "seahft1");
-                
-                if(statusEl) statusEl.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">클라우드 인증 대기중...</span>';
-                
-                // ★ 사용자 인증 상태 감지 리스너 (가장 핵심 보안 로직)
-                onAuthStateChanged(auth, (currentUser) => {
-                    const loginOverlay = document.getElementById('loginOverlay');
-                    const userEmailDisplay = document.getElementById('loginUserEmailDisplay');
-                    
-                    if (currentUser) {
-                        // 로그인 성공: 로그인 창 숨기고 시스템 활성화
-                        loginOverlay.style.opacity = '0';
-                        setTimeout(() => loginOverlay.classList.add('hidden'), 300);
-                        
-                        window.isFirebaseActive = true; 
-                        userEmailDisplay.innerText = currentUser.email || 'Google 사용자';
-                        if(statusEl) statusEl.innerHTML = `<span class="text-emerald-400 font-extrabold animate-pulse">● 실시간 클라우드 동기화 모드</span>`;
-                        
-                        try {
-                            // 기존 데이터 구독 해제
-                            if (unsubscribeSync) unsubscribeSync();
-                            
-                            // 로그인된 상태에서만 데이터베이스 구독
-                            unsubscribeSync = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords'), { includeMetadataChanges: true }, (snapshot) => {
-                                if (snapshot.metadata.fromCache && snapshot.empty === false) {
-                                    window.isFirebaseActive = false;
-                                    if(statusEl) statusEl.innerHTML = `<span class="text-amber-500 font-extrabold animate-pulse">● 오프라인 (서버 연결 대기중...)</span>`;
-                                } else {
-                                    window.isFirebaseActive = true; 
-                                    if(statusEl) statusEl.innerHTML = `<span class="text-emerald-400 font-extrabold animate-pulse">● 실시간 클라우드 동기화 모드</span>`;
-                                }
-
-                                const records = []; snapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
-                                window.systemRecords = records;
-                                if (typeof window.updateAllLineScores === 'function') {
-                                    window.updateAllLineScores(); window.renderSummaryGrid();
-                                    if (document.getElementById('panel-detail').classList.contains('active')) { window.renderDetailTable(); window.renderInspReport(); }
-                                    if (document.getElementById('panel-analysis').classList.contains('active')) { 
-                                        window.renderFaultAnalysis(); 
-                                        window.renderAnalysisDetailList();
-                                    }
-                                }
-                            }, (dbError) => {
-                                console.error("Firestore 에러:", dbError);
-                                window.isFirebaseActive = false;
-                                if(statusEl) statusEl.innerHTML = `<span class="text-red-400 font-bold">DB 읽기 권한 없음</span>`;
-                                window.showCustomAlert("데이터베이스 읽기 권한이 없습니다. Firebase 콘솔의 [규칙] 탭 확인 바랍니다.", "danger");
-                            });
-                        } catch (e) {
-                            window.showCustomAlert("DB 구독 설정 중 에러: " + e.message, "danger");
-                        }
-                    } else {
-                        // 로그인 안됨: 시스템을 정지하고 로그인 창 띄우기
-                        window.isFirebaseActive = false;
-                        if (unsubscribeSync) unsubscribeSync();
-                        userEmailDisplay.innerText = '로그인 필요';
-                        if(statusEl) statusEl.innerHTML = '<span class="text-slate-500 font-bold">시스템 대기중...</span>';
-                        
-                        loginOverlay.classList.remove('hidden');
-                        setTimeout(() => loginOverlay.style.opacity = '1', 50);
-                    }
-                });
-
-                // 글로벌 로그인 함수들 (버튼 클릭 시 작동)
-                window.handleEmailLogin = async function() {
-                    const email = document.getElementById('loginEmail').value.trim();
-                    const password = document.getElementById('loginPassword').value.trim();
-                    if (!email || !password) return window.showCustomAlert("이메일과 비밀번호를 모두 입력해주세요.", "danger");
-                    
-                    try {
-                        document.getElementById('loadingOverlay').classList.remove('hidden');
-                        document.getElementById('loadingText').innerText = "로그인 중...";
-                        await signInWithEmailAndPassword(auth, email, password);
-                        document.getElementById('loadingOverlay').classList.add('hidden');
-                    } catch (error) {
-                        document.getElementById('loadingOverlay').classList.add('hidden');
-                        let msg = "로그인 실패: " + error.message;
-                        if (error.code === 'auth/invalid-credential') msg = "이메일 또는 비밀번호가 올바르지 않습니다.";
-                        if (error.code === 'auth/user-not-found') msg = "가입되지 않은 이메일입니다.";
-                        window.showCustomAlert(msg, "danger");
-                    }
-                }
-
-                window.handleEmailSignUp = async function() {
-                    const email = document.getElementById('loginEmail').value.trim();
-                    const password = document.getElementById('loginPassword').value.trim();
-                    if (!email || !password) return window.showCustomAlert("가입할 이메일과 비밀번호를 입력해주세요.", "danger");
-                    if (password.length < 6) return window.showCustomAlert("비밀번호는 최소 6자리 이상이어야 합니다.", "danger");
-                    
-                    try {
-                        document.getElementById('loadingOverlay').classList.remove('hidden');
-                        document.getElementById('loadingText').innerText = "새 계정 생성 중...";
-                        await createUserWithEmailAndPassword(auth, email, password);
-                        document.getElementById('loadingOverlay').classList.add('hidden');
-                        window.showCustomAlert("계정 생성이 완료되었습니다. 환영합니다!", "success");
-                    } catch (error) {
-                        document.getElementById('loadingOverlay').classList.add('hidden');
-                        let msg = "가입 실패: " + error.message;
-                        if (error.code === 'auth/email-already-in-use') msg = "이미 가입된 이메일 주소입니다. 로그인해주세요.";
-                        window.showCustomAlert(msg, "danger");
-                    }
-                }
-
-                window.handleGoogleLogin = async function() {
-                    const provider = new GoogleAuthProvider();
-                    try {
-                        document.getElementById('loadingOverlay').classList.remove('hidden');
-                        document.getElementById('loadingText').innerText = "Google 로그인 중...";
-                        await signInWithPopup(auth, provider);
-                        document.getElementById('loadingOverlay').classList.add('hidden');
-                    } catch (error) {
-                        document.getElementById('loadingOverlay').classList.add('hidden');
-                        window.showCustomAlert("Google 로그인 실패: " + error.message, "danger");
-                    }
-                }
-
-                window.handleLogout = async function() {
-                    try {
-                        await signOut(auth);
-                        // 데이터 초기화
-                        window.systemRecords = [];
-                        window.updateAllLineScores();
-                        window.renderSummaryGrid();
-                    } catch (error) {
-                        console.error("로그아웃 에러", error);
-                    }
-                }
-
-                // 묶음 전송 모듈 유지
-                window.firebaseHandler = {
-                    add: async (record) => {
-                        const safeRecord = sanitizeRecord(record);
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', safeRecord.id);
-                        await Promise.race([
-                            setDoc(docRef, safeRecord),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("서버 응답 지연 (방화벽 차단 의심)")), 10000))
-                        ]);
-                    },
-                    set: async (id, record) => {
-                        const safeRecord = sanitizeRecord(record);
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', id);
-                        await Promise.race([
-                            setDoc(docRef, safeRecord),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("서버 응답 지연 (방화벽 차단 의심)")), 10000))
-                        ]);
-                    },
-                    delete: async (id) => {
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', id);
-                        await Promise.race([
-                            deleteDoc(docRef),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("서버 응답 지연 (방화벽 차단 의심)")), 10000))
-                        ]);
-                    },
-                    addBatch: async (records, progressCallback) => {
-                        const CHUNK_SIZE = 50; 
-                        let processed = 0;
-                        const safeRecords = records.map(r => sanitizeRecord(JSON.parse(JSON.stringify(r))));
-
-                        for (let i = 0; i < safeRecords.length; i += CHUNK_SIZE) {
-                            const chunk = safeRecords.slice(i, i + CHUNK_SIZE);
-                            const batch = writeBatch(db);
-                            chunk.forEach(r => {
-                                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', r.id);
-                                batch.set(docRef, r);
-                            });
-                            
-                            await Promise.race([
-                                batch.commit(),
-                                new Promise((_, reject) => setTimeout(() => reject(new Error("서버 통신 지연 (사내 방화벽이 차단했을 수 있습니다)")), 15000))
-                            ]);
-                            processed += chunk.length;
-                            if(progressCallback) progressCallback(Math.round((processed / safeRecords.length) * 100));
-                        }
-                    }
-                };
-            } catch (e) { 
-                console.error("Firebase init error", e); 
-                window.showCustomAlert("Firebase 초기화 에러: " + e.message, "danger");
-            }
-        }
-        initFirebase();
-    </script>
-</body>
-</html>
+<!-- ... existing code ... -->
