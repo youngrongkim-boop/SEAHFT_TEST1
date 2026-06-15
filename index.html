@@ -158,10 +158,10 @@
             <div id="panel-summary" class="content-panel active">
                 <div class="bg-white rounded-xl border border-slate-100 p-2 md:p-2.5 shadow-sm mb-6 flex flex-wrap items-center gap-1 md:gap-2 w-fit no-print">
                     <span class="text-xs md:text-sm font-bold text-slate-800 px-2 md:px-4 hidden sm:block">조회 기간 설정:</span>
-                    <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg shadow-sm">일간</button>
-                    <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">주간</button>
-                    <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">월간</button>
-                    <button id="sum-btn-yearly" onclick="window.setSummaryPeriod('yearly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">연간</button>
+                    <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg shadow-sm">일간 점검</button>
+                    <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">주간 점검</button>
+                    <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">월간 점검</button>
+                    <button id="sum-btn-quarterly" onclick="window.setSummaryPeriod('quarterly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">분기별 점검</button>
                 </div>
                 <div id="statusGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-10"></div>
             </div>
@@ -715,7 +715,7 @@
 
         window.setSummaryPeriod = function(period) {
             window.currentSummaryPeriod = period;
-            const btns = ['daily', 'weekly', 'monthly', 'yearly'];
+            const btns = ['daily', 'weekly', 'monthly', 'quarterly'];
             btns.forEach(p => {
                 const el = document.getElementById('sum-btn-' + p);
                 if(el) {
@@ -727,6 +727,7 @@
             window.renderSummaryGrid();
         }
 
+        // ★ 메인화면 "점검 주기별 미점검 대비 실적" 산출 로직 완벽 적용
         window.updateAllLineScores = function() {
             const targetDateObj = new Date(window.currentTargetDate);
             const targetYear = targetDateObj.getFullYear();
@@ -738,29 +739,41 @@
                 window.systemRecords.forEach(r => {
                     if (r.recordType !== 'inspection' || r.line !== line) return;
                     
+                    // ★ 1. 점검 주기(cycle)가 현재 선택된 탭과 정확히 일치하는 항목만 추출! (핵심 해결 부분)
+                    if (r.cycle !== window.currentSummaryPeriod) return;
+                    
                     const rDate = new Date(r.date);
                     let isIncluded = false;
 
-                    if (window.currentSummaryPeriod === 'daily') {
-                        if (r.date === window.currentTargetDate) isIncluded = true;
-                    } else if (window.currentSummaryPeriod === 'weekly') {
-                        const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
-                        if (diffDays >= 0 && diffDays <= 6) isIncluded = true;
-                    }
-                    else if (window.currentSummaryPeriod === 'monthly') {
-                        if (rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) isIncluded = true;
-                    }
-                    else if (window.currentSummaryPeriod === 'yearly') {
-                        if (rDate.getFullYear() === targetYear) isIncluded = true;
+                    // ★ 2. 상태(완료/미점검)에 따른 날짜 매칭 로직
+                    if (r.status === 'completed') {
+                        // 완료된 실적은 정확히 해당 '조회 기간' 내에 속한 것만 가져옴
+                        if (window.currentSummaryPeriod === 'daily' && r.date === window.currentTargetDate) {
+                            isIncluded = true;
+                        } else if (window.currentSummaryPeriod === 'weekly') {
+                            const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
+                            if (diffDays >= 0 && diffDays <= 6) isIncluded = true;
+                        } else if (window.currentSummaryPeriod === 'monthly' && rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) {
+                            isIncluded = true;
+                        } else if (window.currentSummaryPeriod === 'quarterly') {
+                            const rQuarter = Math.floor(rDate.getMonth() / 3);
+                            const targetQuarter = Math.floor(targetMonth / 3);
+                            if (rDate.getFullYear() === targetYear && rQuarter === targetQuarter) isIncluded = true;
+                        }
+                    } else {
+                        // 미점검인 경우: 오늘까지 해야 했으나 못한 모든 잔여 업무(과거 지연 포함)
+                        if (r.date <= window.currentTargetDate) isIncluded = true;
                     }
 
                     if (isIncluded) {
+                        // ★ 정확한 기계/전기 구분 
                         let isElec = false;
                         if (r.partType === '전기') {
                             isElec = true;
                         } else if (r.partType === '기계') {
                             isElec = false;
                         } else {
+                            // 구버전 데이터 호환용
                             isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || 
                                            r.category.includes('전장') || r.category.toUpperCase().includes('PLC') || 
                                            r.category.toUpperCase().includes('X-RAY') || r.category.toUpperCase().includes('PANEL');
