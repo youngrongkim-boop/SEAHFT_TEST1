@@ -29,6 +29,7 @@
         .logo-t1 { color: #1e3a8a; font-weight: 800; font-size: 16px; line-height: 1; margin-top: 4px; }
         .logo-t2 { color: #64748b; font-weight: 700; font-size: 8px; margin-top: 2px; }
 
+        /* 반응형 사이드바 제어를 위한 스타일 개선 */
         #sidebar { transition: transform 0.3s ease-in-out; z-index: 50; }
         .nav-group { color: #64748b; font-size: 11px; font-weight: 700; padding: 24px 24px 8px; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #1e293b; margin-top: 10px; }
         .nav-item { display: flex; align-items: center; padding: 14px 24px; color: #94a3b8; font-size: 14px; cursor: pointer; transition: 0.2s; }
@@ -196,7 +197,6 @@
                 </button>
             </div>
             <div class="flex items-center space-x-2 shrink-0 pl-2">
-                <!-- ★ 수정: 버튼 클릭 시 비밀번호 검증 모달 띄움 -->
                 <button onclick="window.checkAndOpenEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl transition shadow-sm border border-slate-200 whitespace-nowrap">
                     <span class="mr-1">🔒</span>수정<span class="hidden sm:inline">/관리</span>
                 </button>
@@ -278,6 +278,7 @@
                         </div>
                         <div id="reportPagination"></div>
                     </div>
+
                 </div>
             </div>
 
@@ -308,6 +309,7 @@
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">설비명</label>
                                 <select id="regCategoryInsp" onchange="window.loadSubItemsInsp()" class="w-full bg-slate-50 border border-slate-200 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm transition">
+                                    <!-- JS에서 동적 주입 -->
                                 </select>
                             </div>
                             <div class="space-y-2 md:space-y-3">
@@ -325,6 +327,7 @@
                                 </select>
                             </div>
                         </div>
+                        
                         <div class="space-y-2 md:space-y-3 mb-6 md:mb-10 w-full">
                             <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">작업 세부사항 선택 <span class="hidden sm:inline">(선택 시 바로 저장 내용에 적용됩니다)</span></label>
                             <div class="bg-white p-4 md:p-8 rounded-2xl border border-slate-200 shadow-sm w-full min-h-[120px] md:min-h-[140px] flex flex-col justify-between">
@@ -332,10 +335,12 @@
                                 <div id="subItemPaginationInsp" class="flex justify-center mt-4 md:mt-6 gap-2"></div>
                             </div>
                         </div>
+
                         <div class="flex flex-col sm:flex-row gap-3 md:gap-4 mb-10 md:mb-12 w-full">
                             <button onclick="window.showPanel('summary')" class="w-full sm:w-1/3 bg-slate-100 text-slate-500 font-bold py-3 md:py-4 rounded-xl hover:bg-slate-200 transition text-sm md:text-base">취소</button>
                             <button onclick="window.submitInspection()" class="w-full sm:flex-1 bg-blue-800 text-white font-black py-3 md:py-4 rounded-xl text-sm md:text-lg hover:bg-blue-900 transition-all shadow-lg">선택한 예방 점검 항목 등록</button>
                         </div>
+
                         <hr class="border-dashed border-slate-200 border-[1.5px] mb-6 md:mb-8">
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4 md:mb-6">
                             <div>
@@ -343,10 +348,12 @@
                             </div>
                             <a href="#" onclick="window.downloadSampleExcel('inspection')" class="text-[10px] md:text-[11px] font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-1.5 rounded-md text-center">양식 다운로드</a>
                         </div>
+                        
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadInsp').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 작업 세부사항, D열: 점검주기, E열: 기계/전기 구분</p>
+                            <!-- ★ 추가: E열 기계/전기 구분 안내 수정 -->
+                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 기계/전기 구분, D열: 작업 세부사항, E열: 점검주기</p>
                             <input type="file" id="excelUploadInsp" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'inspection')">
                         </div>
                     </section>
@@ -382,7 +389,6 @@
                             </div>
                         </div>
                         
-                        <!-- ★ 직접 파일 업로드 필드 탑재 -->
                         <div class="space-y-2 md:space-y-3 mb-6 w-full">
                             <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">관련 자료 첨부 (PPT, PDF, 사진 등 - 선택사항)</label>
                             <input type="file" id="regFileFault" class="w-full bg-red-50/50 border border-red-100 p-2 md:p-3 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer" accept=".ppt,.pptx,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
@@ -408,7 +414,7 @@
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadFault').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">A열: 설비라인, B열: 고장부류, C열: 상세부품, D열: 발생일자, E열: 조치내용</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">A열: 설비라인, B열: 고장부류, C열: 상세부품, D열: 발생일자(YYYY-MM-DD), E열: 조치내용</p>
                             <input type="file" id="excelUploadFault" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'fault')">
                         </div>
                     </section>
@@ -526,7 +532,6 @@
             <div id="modalPagination" class="shrink-0 mb-3 md:mb-4 border-b border-slate-100 pb-2 mt-2"></div>
             
             <div class="flex flex-col sm:flex-row justify-between items-center pt-2 shrink-0 gap-3 sm:gap-0">
-                <!-- ★ 일괄 삭제 버튼 -->
                 <button onclick="window.openConfirmDeleteModal()" class="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 font-bold px-4 py-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl transition text-xs md:text-sm border border-red-200 flex items-center justify-center">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     현재 목록 모두 삭제
@@ -2070,7 +2075,6 @@
                 return tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-bold">수정할 이력이 존재하지 않습니다.</td></tr>`;
             }
             
-            // ★ 수정: 페이지 표시 개수를 30개로 대폭 확대
             const ITEMS_PER_PAGE = 30; 
             const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
             if (window.currentModalPage >= totalPages && totalPages > 0) window.currentModalPage = totalPages - 1;
@@ -2242,11 +2246,11 @@
                         
                         for(let i=1; i<json.length; i++) {
                             let cat = String(json[i][1] || '').trim();
-                            let sub = String(json[i][2] || '').trim();
-                            let cycleStr = String(json[i][3] || '').trim();
-                            let partTypeStr = String(json[i][4] || '').trim(); 
+                            let partTypeStr = String(json[i][2] || '').trim(); // ★ C열: 기계/전기 구분
+                            let sub = String(json[i][3] || '').trim(); // ★ D열: 작업 세부사항
+                            let cycleStr = String(json[i][4] || '').trim(); // ★ E열: 점검주기
                             
-                            if (matchedLine === 'CPL' && String(json[i][2] || '').match(/^K\d+/)) {
+                            if (matchedLine === 'CPL' && String(json[i][3] || '').match(/^K\d+/)) {
                                 sub = String(json[i][5] || '').trim(); 
                                 cycleStr = String(json[i][6] || '').trim();
                             }
@@ -2338,7 +2342,7 @@
         }
         
         window.downloadSampleExcel = function(type) { 
-            if(type === 'inspection') window.showCustomAlert('점검 양식: A열(라인명), B열(설비명), C열(작업 세부사항), D열(점검주기), E열:구분(기계 또는 전기)', 'info'); 
+            if(type === 'inspection') window.showCustomAlert('점검 양식: A열(라인명), B열(설비명), C열(기계/전기 구분), D열(작업 세부사항), E열(점검주기)', 'info'); 
             else window.showCustomAlert('고장 양식: A열(라인명), B열(고장부류), C열(상세항목), D열(발생일자), E열(조치내용), F열:관련문서URL(선택)', 'info'); 
         }
 
