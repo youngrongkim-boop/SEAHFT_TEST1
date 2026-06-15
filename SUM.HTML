@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세아씨엠 차세대 AI 예지보전 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- ★ 엑셀 파싱을 위한 SheetJS 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;700;800;900&display=swap');
+        
+        :root { 
+            --seah-blue: #1e40af; 
+            --bg-main: #f8fafc; 
+            --sidebar-bg: #0f172a; 
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-main); color: #1e293b; margin: 0; }
+
+        .seah-logo-box { width: 60px; height: 60px; background: white; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); position: relative; flex-shrink: 0; }
+        .logo-v { position: absolute; top: 14px; color: #f97316; font-weight: 900; font-size: 14px; }
+        .logo-t1 { color: #1e3a8a; font-weight: 800; font-size: 16px; line-height: 1; margin-top: 4px; }
+        .logo-t2 { color: #64748b; font-weight: 700; font-size: 8px; margin-top: 2px; }
+
+        #sidebar { width: 280px; background-color: var(--sidebar-bg); flex-shrink: 0; overflow-y: auto; transition: all 0.3s; z-index: 50; }
+        .nav-group { color: #64748b; font-size: 11px; font-weight: 700; padding: 24px 24px 8px; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #1e293b; margin-top: 10px; }
+        .nav-item { display: flex; align-items: center; padding: 14px 24px; color: #94a3b8; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .nav-item:hover { background: #1e293b; color: white; }
+        .nav-item.active { background: #2563eb; color: white; border-radius: 12px; margin: 0 12px; font-weight: 600; }
+
+        .type-tab { padding: 8px 16px; font-size: 13px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; cursor: pointer; font-weight: 700; transition: all 0.2s; }
+        .type-tab:hover { background: #e2e8f0; }
+        .type-tab.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+
+        .cycle-filter-tab { font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; transition: all 0.2s; color: #475569; cursor: pointer; }
+        .cycle-filter-tab:hover { background: #e2e8f0; }
+        .cycle-filter-tab.active { background: #2563eb; color: white; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
+
+        .content-panel { display: none; height: 100%; width: 100%; }
+        .content-panel.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .dropzone { border: 2px dashed #94a3b8; border-radius: 20px; padding: 40px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.3s; }
+        .dropzone:hover { background: #f1f5f9; border-color: #3b82f6; }
+        .data-table-container { max-height: 250px; overflow-y: auto; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 20px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        .data-table th { background: #f1f5f9; padding: 12px; font-weight: 700; color: #475569; position: sticky; top: 0; }
+        .data-table td { padding: 12px; border-top: 1px solid #e2e8f0; color: #64748b; }
+
+        /* 인쇄용 CSS 레이아웃 최적화 */
+        @media print {
+            @page { size: auto; margin: 10mm; }
+            body { background-color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: visible !important; }
+            #sidebar, header, .no-print, #previewSection, #editDataModal, #descEditModal, #remarkModal, #customAlert, #loadingOverlay { display: none !important; }
+            main { width: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; flex: none !important; }
+            .content-panel { display: none !important; }
+            .content-panel.active { display: block !important; }
+            .bg-slate-50\/50, .custom-scroll { background-color: white !important; overflow: visible !important; padding: 0 !important; height: auto !important; }
+            .shadow-sm, .shadow-xl, .shadow-2xl { box-shadow: none !important; }
+            .rounded-3xl, .rounded-2xl { border-radius: 0 !important; border: 1px solid #cbd5e1 !important; }
+            #analysis-detail-list > div { page-break-inside: avoid; border-bottom: 1px solid #e2e8f0 !important; box-shadow: none !important; margin-bottom: 10px; }
+            #analysis-table-container { overflow: visible !important; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- ★ 전체 화면 로딩 오버레이 -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center hidden">
+        <svg class="animate-spin h-16 w-16 text-blue-500 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <h3 class="text-2xl font-black text-white tracking-tight" id="loadingText">데이터베이스 통신 중...</h3>
+        <p class="text-slate-300 mt-2 text-sm font-medium">대용량 데이터를 안전하게 처리하고 있습니다. 잠시만 기다려주세요.</p>
+    </div>
+
+    <aside id="sidebar" class="flex flex-col h-full shadow-2xl custom-scroll no-print">
+        <div class="p-8 flex items-center space-x-4 shrink-0">
+            <div class="seah-logo-box">
+                <span class="logo-v">ˇ</span><span class="logo-t1">SeAH</span><span class="logo-t2">세아씨엠</span>
+            </div>
+            <div>
+                <h1 class="text-white font-bold text-lg leading-tight">설비 점검 시스템</h1>
+                <p class="text-blue-400 text-[9px] font-black uppercase tracking-widest mt-1">예지보전 통합 플랫폼</p>
+            </div>
+        </div>
+        
+        <nav class="flex-1 mt-4">
+            <div onclick="window.showPanel('summary')" id="nav-summary" class="nav-item active">설비 점검 종합 현황</div>
+            
+            <div class="nav-group">냉연</div>
+            <div onclick="window.showDetail('CPL')" class="nav-item line-nav">CPL</div>
+            <div onclick="window.showDetail('CRM')" class="nav-item line-nav">CRM</div>
+            <div onclick="window.showDetail('CGL')" class="nav-item line-nav">CGL</div>
+            
+            <div class="nav-group">컬러</div>
+            <div onclick="window.showDetail('1CCL')" class="nav-item line-nav">1CCL</div>
+            <div onclick="window.showDetail('2CCL')" class="nav-item line-nav">2CCL</div>
+            <div onclick="window.showDetail('3CCL')" class="nav-item line-nav">3CCL</div>
+
+            <div class="nav-group">기타</div>
+            <div onclick="window.showDetail('ARP')" class="nav-item line-nav">ARP</div>
+            <div onclick="window.showDetail('SSCL')" class="nav-item line-nav">SSCL</div>
+            
+            <div class="mx-6 my-4 border-t border-slate-700/50"></div>
+            
+            <div onclick="window.showPanel('analysis')" id="nav-analysis" class="nav-item">고장 분석 리포트</div>
+            <div onclick="window.showPanel('input')" id="nav-input" class="nav-item">데이터 통합 관리 등록</div>
+        </nav>
+        
+        <div class="p-6 border-t border-slate-800 text-[10px] text-emerald-400 font-bold flex items-center shrink-0" id="cloud-status">
+            <span class="text-slate-500">DB 연결 대기 중...</span>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <header class="h-20 bg-white border-b flex items-center justify-between px-10 shrink-0 z-10 shadow-sm no-print">
+            <div class="flex items-center space-x-4">
+                <h2 id="headerTitle" class="text-2xl font-black text-slate-800 tracking-tight">설비 점검 종합 현황</h2>
+                <div class="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm" id="headerDatePickerContainer">
+                    <input type="date" id="datePicker" onchange="window.syncDateData(this.value)" class="bg-transparent border-none text-sm font-bold text-slate-700 outline-none focus:ring-0 cursor-pointer">
+                </div>
+                <button id="backToSummaryBtn" onclick="window.showPanel('summary')" class="hidden flex items-center text-slate-500 font-bold hover:text-blue-600 transition-colors bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-sm text-xs">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg> 종합 현황 복귀
+                </button>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="window.openEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs px-4 py-2 rounded-xl transition shadow-sm border border-slate-200">데이터 수정/관리</button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-10 custom-scroll bg-slate-50/50">
+            
+            <!-- ★ 1. 메인: 설비 점검 종합 현황 -->
+            <div id="panel-summary" class="content-panel active">
+                
+                <div class="bg-white rounded-xl border border-slate-100 p-2.5 shadow-sm mb-6 flex items-center w-fit no-print">
+                    <span class="text-sm font-bold text-slate-800 px-4">조회 기간 설정:</span>
+                    <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-sm font-bold px-5 py-2 rounded-lg ml-2 shadow-sm">일간</button>
+                    <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-sm font-bold px-5 py-2 rounded-lg transition ml-1">주간</button>
+                    <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-sm font-bold px-5 py-2 rounded-lg transition ml-1">월간</button>
+                    <button id="sum-btn-yearly" onclick="window.setSummaryPeriod('yearly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-sm font-bold px-5 py-2 rounded-lg transition ml-1">연간</button>
+                </div>
+
+                <div id="statusGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10"></div>
+            </div>
+
+            <!-- ★ 2. Deep Dive Analysis (상세 정밀 분석) 패널 -->
+            <div id="panel-detail" class="content-panel">
+                <div class="flex flex-col gap-8">
+                    
+                    <!-- 상단: 상세 점검 리스트 (자동 스케줄링 연동) -->
+                    <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl flex flex-col min-h-[550px]">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 no-print">
+                            <div>
+                                <h3 class="text-xl font-black text-slate-800 tracking-tighter" id="detailLineTitle">라인 상세 점검 항목</h3>
+                                <p class="text-[11px] text-slate-500 font-bold mt-1" id="detailLineProgress">진척도 계산 중...</p>
+                            </div>
+                            
+                            <!-- ★ 설비명(카테고리) 및 주기 필터 -->
+                            <div class="flex items-center gap-3">
+                                <select id="detailCategoryFilter" onchange="window.filterDetailByCategory(this.value)" class="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg outline-none cursor-pointer shadow-sm">
+                                    <option value="all">설비명 (전체) ▼</option>
+                                </select>
+                                <div class="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit shrink-0">
+                                    <button onclick="window.filterDetailByCycle('all')" class="cycle-filter-tab active bg-blue-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200">전체</button>
+                                    <button onclick="window.filterDetailByCycle('daily')" class="cycle-filter-tab text-slate-600 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200">일별</button>
+                                    <button onclick="window.filterDetailByCycle('weekly')" class="cycle-filter-tab text-slate-600 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200">주별</button>
+                                    <button onclick="window.filterDetailByCycle('monthly')" class="cycle-filter-tab text-slate-600 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200">월별</button>
+                                    <button onclick="window.filterDetailByCycle('quarterly')" class="cycle-filter-tab text-slate-600 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200">분기별</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-grow overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead class="bg-slate-50 border-y border-slate-200 text-slate-500 font-bold">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">번호</th>
+                                        <th class="py-3 px-4 w-32">설비명</th>
+                                        <th class="py-3 px-4 w-16 text-center">주차</th>
+                                        <th class="py-3 px-4 w-1/3">작업 세부사항 (내용)</th>
+                                        <th class="py-3 px-4 w-20 text-center">상태</th>
+                                        <th class="py-3 px-4 w-24 text-center">특이사항</th>
+                                        <th class="py-3 px-4 w-28 text-center no-print">실적 처리</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailTableBody" class="divide-y divide-slate-100 font-semibold text-slate-600">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="detailPagination"></div>
+                    </div>
+
+                    <!-- 하단: 점검 실시 현황 리포트 -->
+                    <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col min-h-[500px]">
+                        <div class="flex justify-between items-center mb-6 border-b pb-4 shrink-0">
+                            <div>
+                                <h3 class="text-xl font-black text-slate-800 tracking-tighter" id="inspReportTitle">점검 실시 현황 리포트</h3>
+                                <p class="text-[11px] text-slate-500 font-bold mt-1">일별/월별/연별 실제 완료된 점검 수행 및 특이사항 내역</p>
+                            </div>
+                            <div class="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-xl shadow-sm no-print">
+                                <button onclick="window.setInspReportPeriod('daily')" id="insp-btn-daily" class="px-4 py-1.5 rounded-lg text-xs font-black transition-all bg-blue-600 text-white shadow-sm">일별</button>
+                                <button onclick="window.setInspReportPeriod('monthly')" id="insp-btn-monthly" class="px-4 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">월별</button>
+                                <button onclick="window.setInspReportPeriod('yearly')" id="insp-btn-yearly" class="px-4 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">연별</button>
+                            </div>
+                        </div>
+                        <div id="inspectionReportContainer" class="flex-grow overflow-x-auto">
+                            <!-- JS Dynamic Render -->
+                        </div>
+                        <div id="reportPagination"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ★ 3. 데이터 통합 관리 패널 -->
+            <div id="panel-input" class="content-panel">
+                <div class="w-full bg-white border border-slate-200 rounded-3xl border-t-[12px] border-t-blue-800 p-10 lg:p-14 shadow-xl mb-12">
+                    
+                    <div class="mb-10 border-b border-slate-100 pb-6 flex flex-col md:flex-row justify-between md:items-end gap-4">
+                        <div>
+                            <h3 id="input-main-title" class="text-3xl font-black text-slate-800 tracking-tighter">점검 항목 등록</h3>
+                        </div>
+                        <div class="flex space-x-2 bg-slate-100 p-1.5 rounded-2xl shrink-0">
+                            <button id="tab-btn-inspection" onclick="window.switchInputTab('inspection')" class="px-6 py-2.5 rounded-xl font-black text-sm transition-all bg-white text-blue-700 shadow-sm">예방 점검 항목 등록</button>
+                            <button id="tab-btn-fault" onclick="window.switchInputTab('fault')" class="px-6 py-2.5 rounded-xl font-black text-sm transition-all text-slate-500 hover:text-slate-800">설비 고장 이력 등록</button>
+                        </div>
+                    </div>
+
+                    <!-- 1. 예방 점검 항목 등록 섹션 -->
+                    <section id="section-inspection-input">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 w-full">
+                            <div class="space-y-3">
+                                <label class="font-black text-slate-400 text-[11px] uppercase tracking-wide">대상 설비 라인</label>
+                                <select id="regLineInsp" onchange="window.updateCategoryOptionsInsp()" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+                                    <option value="CPL">CPL</option><option value="CRM" selected>CRM</option><option value="CGL">CGL</option>
+                                    <option value="1CCL">1CCL</option><option value="2CCL">2CCL</option><option value="3CCL">3CCL</option>
+                                    <option value="ARP">ARP</option><option value="SSCL">SSCL</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-black text-slate-400 text-[11px] uppercase tracking-wide">설비명</label>
+                                <select id="regCategoryInsp" onchange="window.loadSubItemsInsp()" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+                                    <!-- JS에서 동적 주입 -->
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-black text-slate-400 text-[11px] uppercase tracking-wide">점검 주차</label>
+                                <select id="regCycleInsp" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+                                    <option value="daily" selected>일별 점검</option><option value="weekly">주별 점검</option>
+                                    <option value="monthly">월별 점검</option><option value="quarterly">분기별 점검</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3 mb-10 w-full">
+                            <label class="font-black text-slate-400 text-[11px] uppercase tracking-wide">작업 세부사항 선택 (선택 시 바로 저장 내용에 적용됩니다)</label>
+                            <div class="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm w-full min-h-[140px] flex flex-col justify-between">
+                                <div id="subItemContainerInsp" class="flex flex-wrap gap-3 items-center"></div>
+                                <div id="subItemPaginationInsp" class="flex justify-center mt-6 gap-2"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 mb-12 w-full">
+                            <button onclick="window.showPanel('summary')" class="flex-1 bg-slate-100 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-200 transition">취소</button>
+                            <button onclick="window.submitInspection()" class="flex-[3] bg-blue-800 text-white font-black py-4 rounded-xl text-lg hover:bg-blue-900 transition-all shadow-lg">선택한 예방 점검 항목 등록</button>
+                        </div>
+
+                        <hr class="border-dashed border-slate-200 border-[1.5px] mb-8">
+                        <div class="flex justify-between items-end mb-6">
+                            <div>
+                                <h3 class="text-xl font-black text-slate-800 tracking-tighter uppercase">점검 항목 엑셀 업로드</h3>
+                            </div>
+                            <a href="#" onclick="window.downloadSampleExcel('inspection')" class="text-[11px] font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-1 rounded-md">점검 양식 다운로드</a>
+                        </div>
+                        
+                        <div class="dropzone p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadInsp').click()">
+                            <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            <p class="text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드 (점검용 마스터 항목)</p>
+                            <p class="text-xs text-slate-500 mt-2">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 작업 세부사항, D열: 점검주기</p>
+                            <input type="file" id="excelUploadInsp" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'inspection')">
+                        </div>
+                    </section>
+
+                    <!-- 2. 설비 고장 이력 등록 섹션 (파일 URL 첨부 추가) -->
+                    <section id="section-fault-input" class="hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6 w-full">
+                            <div class="space-y-3">
+                                <label class="font-black text-red-400 text-[11px] uppercase tracking-wide">고장 발생 라인</label>
+                                <select id="regLineFault" class="w-full bg-red-50/50 border border-red-100 p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-sm transition">
+                                    <option value="CPL">CPL</option><option value="CRM" selected>CRM</option><option value="CGL">CGL</option>
+                                    <option value="1CCL">1CCL</option><option value="2CCL">2CCL</option><option value="3CCL">3CCL</option>
+                                    <option value="ARP">ARP</option><option value="SSCL">SSCL</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-black text-red-400 text-[11px] uppercase tracking-wide">고장 부류</label>
+                                <select id="regCategoryFault" onchange="window.loadSubItemsFault(this.value)" class="w-full bg-red-50/50 border border-red-100 p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-sm transition">
+                                    <option value="drive" selected>구동부</option><option value="xray">X-RAY</option><option value="plc">PLC</option>
+                                    <option value="electric">전장품</option><option value="relay">보호계전기</option><option value="human">HUMAN ERROR</option><option value="etc">미분류</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-black text-red-400 text-[10px] uppercase">발생일자</label>
+                                <input type="date" id="regDateFault" class="w-full bg-red-50/50 border border-red-100 p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-sm transition">
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3 mb-6 w-full">
+                            <label class="font-black text-red-400 text-[11px] uppercase tracking-wide">상세 고장 부위 선택</label>
+                            <div class="bg-white p-6 md:p-8 rounded-2xl border border-red-100 shadow-sm w-full min-h-[140px] flex flex-col justify-between">
+                                <div id="subItemContainerFault" class="flex flex-wrap gap-3 items-center"></div>
+                                <div id="subItemPaginationFault" class="flex justify-center mt-6 gap-2"></div>
+                            </div>
+                        </div>
+
+                        <!-- ★ 신규: 관련 자료 링크 입력칸 -->
+                        <div class="space-y-3 mb-6 w-full">
+                            <label class="font-black text-red-400 text-[11px] uppercase tracking-wide">관련 자료 링크 (URL - 선택사항)</label>
+                            <input type="text" id="regFileUrlFault" class="w-full bg-red-50/50 border border-red-100 p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-sm transition" placeholder="구글 드라이브, 사내 클라우드 등의 문서 링크를 복사하여 붙여넣으세요.">
+                        </div>
+
+                        <div class="space-y-3 mb-10 w-full">
+                            <label class="font-black text-red-400 text-[11px] uppercase tracking-wide">고장 현상 및 정비 내용</label>
+                            <textarea id="regDescFault" rows="5" class="w-full bg-red-50/50 border border-red-100 p-5 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-sm transition leading-relaxed font-medium text-slate-700">원인 : 
+조치 : 
+대책 : </textarea>
+                        </div>
+
+                        <div class="flex gap-4 mb-12 w-full">
+                            <button onclick="window.showPanel('summary')" class="flex-1 bg-slate-100 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-200 transition">취소</button>
+                            <button onclick="window.submitFault()" class="flex-[3] bg-red-600 text-white font-black py-4 rounded-xl text-lg hover:bg-red-700 transition-all shadow-lg">고장 이력 데이터베이스 전송</button>
+                        </div>
+
+                        <hr class="border-dashed border-slate-200 border-[1.5px] mb-8">
+                        <div class="flex justify-between items-end mb-6">
+                            <div>
+                                <h3 class="text-xl font-black text-slate-800 tracking-tighter uppercase">고장 이력 엑셀 업로드</h3>
+                            </div>
+                            <a href="#" onclick="window.downloadSampleExcel('fault')" class="text-[11px] font-bold text-red-600 hover:underline bg-red-50 px-3 py-1 rounded-md">고장 양식 다운로드</a>
+                        </div>
+                        
+                        <div class="dropzone p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadFault').click()">
+                            <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            <p class="text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드 (고장용)</p>
+                            <p class="text-xs text-slate-500 mt-2">A열: 설비라인, B열: 고장부류, C열: 상세부품, D열: 발생일자(YYYY-MM-DD), E열: 조치내용, F열: 관련문서URL(선택)</p>
+                            <input type="file" id="excelUploadFault" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'fault')">
+                        </div>
+                    </section>
+
+                    <div id="previewSection" class="hidden mt-6 border-t pt-8">
+                        <h4 class="font-bold text-slate-700 text-sm mb-2 flex items-center justify-between">
+                            <span>데이터 로드 미리보기</span>
+                            <span id="dataCountLabel" class="text-[10px] bg-blue-100 text-blue-700 py-1 px-2 rounded-full">0건</span>
+                        </h4>
+                        <div class="data-table-container custom-scroll border-slate-200">
+                            <table class="data-table" id="excelTable">
+                                <thead class="text-[10px]"><tr><th>설비라인</th><th>분류</th><th>항목</th><th>일자</th><th>구분</th></tr></thead>
+                                <tbody id="excelTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="mt-6 flex gap-3">
+                            <button onclick="document.getElementById('previewSection').classList.add('hidden')" class="w-1/3 bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 transition text-sm">취소</button>
+                            <button onclick="window.applyExcelDataToSystem()" class="flex-1 bg-blue-600 text-white font-black py-3 rounded-xl text-sm shadow-md hover:bg-blue-700 transition">데이터베이스 병합 시작</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ★ 4. 고장 분석 리포트 패널 -->
+            <div id="panel-analysis" class="content-panel">
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm mb-8 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-400 to-red-500 no-print"></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-black text-slate-800 tracking-tighter" id="analysis-main-title">설비팀 고장 자료 (연간 누적 현황)</h3>
+                        <div class="flex items-center">
+                            <div class="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-xl shadow-sm no-print">
+                                <button id="ana-btn-daily" onclick="window.setAnalysisPeriod('daily')" class="px-5 py-2 rounded-lg text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">일간</button>
+                                <button id="ana-btn-monthly" onclick="window.setAnalysisPeriod('monthly')" class="px-5 py-2 rounded-lg text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">월간</button>
+                                <button id="ana-btn-yearly" onclick="window.setAnalysisPeriod('yearly')" class="px-5 py-2 rounded-lg text-sm font-black transition-all bg-blue-600 text-white shadow-sm">연간</button>
+                            </div>
+                            <button onclick="window.print()" class="ml-3 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl shadow-md transition-all flex items-center no-print">
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                리포트 인쇄
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="analysis-table-container" class="overflow-x-auto custom-scroll pb-2">
+                        <!-- JS Dynamic Render (Matrix) -->
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm min-h-[400px]">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                        <h3 class="text-xl font-black text-slate-800 flex items-center border-l-4 border-slate-800 pl-3" id="analysis-detail-title-text">
+                            세부 고장 및 조치 내역 리스트
+                        </h3>
+                        <div class="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-xl shadow-sm no-print">
+                            <button id="ana-detail-btn-all" onclick="window.setAnalysisDetailPeriod('all')" class="px-4 py-1.5 rounded-lg text-xs font-black transition-all bg-blue-600 text-white shadow-sm">전체</button>
+                            <button id="ana-detail-btn-daily" onclick="window.setAnalysisDetailPeriod('daily')" class="px-4 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">일간</button>
+                            <button id="ana-detail-btn-monthly" onclick="window.setAnalysisDetailPeriod('monthly')" class="px-4 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">월간</button>
+                            <button id="ana-detail-btn-yearly" onclick="window.setAnalysisDetailPeriod('yearly')" class="px-4 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">연간</button>
+                        </div>
+                    </div>
+                    <div id="analysis-detail-list" class="space-y-4">
+                        <!-- JS Dynamic Render (List) -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ★ 수정 모달 (과부하 방지를 위한 페이지네이션 탑재) ★ -->
+    <div id="editDataModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[50] flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl p-8 max-w-[90rem] w-full mx-4 max-h-[85vh] flex flex-col shadow-2xl border border-slate-200">
+            <div class="flex justify-between items-center mb-6 border-b pb-4 shrink-0">
+                <h3 class="text-2xl font-black text-slate-800 tracking-tight">데이터 수정 및 관리</h3>
+                <button onclick="window.closeEditModal()" class="text-slate-400 hover:text-slate-600 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="flex-grow overflow-y-auto custom-scroll pr-2" id="modalTableContainer">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b-2 border-slate-100 text-slate-500">
+                            <th class="pb-3 font-bold w-16 text-center cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('recordType')">구분 <span id="sort-icon-recordType" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
+                            
+                            <!-- ★ 설비라인 명확한 필터 드롭다운 디자인 -->
+                            <th class="pb-3 font-bold w-24 pl-2 select-none">
+                                <select id="modalLineFilter" onchange="window.filterModalByLine(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-xs hover:bg-slate-200 transition shadow-sm">
+                                    <option value="all">설비라인 (전체) ▼</option>
+                                    <option value="CPL">CPL</option>
+                                    <option value="CRM">CRM</option>
+                                    <option value="CGL">CGL</option>
+                                    <option value="1CCL">1CCL</option>
+                                    <option value="2CCL">2CCL</option>
+                                    <option value="3CCL">3CCL</option>
+                                    <option value="ARP">ARP</option>
+                                    <option value="SSCL">SSCL</option>
+                                </select>
+                            </th>
+                            
+                            <!-- ★ 설비/분류 명확한 필터 드롭다운 디자인 -->
+                            <th class="pb-3 font-bold w-32 pl-2 select-none">
+                                <select id="modalCategoryFilter" onchange="window.filterModalByCategory(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-xs hover:bg-slate-200 transition shadow-sm truncate">
+                                    <option value="all">설비/분류 (전체) ▼</option>
+                                </select>
+                            </th>
+                            
+                            <th class="pb-3 font-bold w-36 pl-2 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('subItem')">상세/내용 <span id="sort-icon-subItem" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
+                            <th class="pb-3 font-bold w-24 pl-2 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('cycle')">주기 <span id="sort-icon-cycle" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
+                            <th class="pb-3 font-bold w-28 pl-2 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('date')">일자 <span id="sort-icon-date" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
+                            <th class="pb-3 font-bold w-24 text-center cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('status')">상태 <span id="sort-icon-status" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
+                            <th class="pb-3 font-bold w-20 text-center">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            
+            <!-- 페이지네이션 컨트롤이 들어갈 영역 -->
+            <div id="modalPagination" class="shrink-0 mb-4 border-b border-slate-100 pb-2"></div>
+            
+            <div class="flex justify-end items-center pt-2 shrink-0 space-x-3">
+                <button onclick="window.closeEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold px-5 py-2.5 rounded-xl transition text-sm">취소</button>
+                <button onclick="window.saveEditedData()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2.5 rounded-xl transition text-sm shadow-md shadow-blue-700/20">변경사항 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 특이사항 팝업 모달 -->
+    <div id="remarkModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[70] flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl border border-slate-200">
+            <h3 class="text-xl font-black text-slate-800 mb-2 border-l-4 border-blue-600 pl-3">점검 특이사항</h3>
+            <p id="remarkModalSubItem" class="text-sm text-slate-500 font-bold mb-4"></p>
+            <textarea id="remarkArea" rows="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700" placeholder="점검 중 발견된 특이사항이나 조치 내역을 입력해주세요."></textarea>
+            <div class="flex justify-end mt-6 space-x-3">
+                <button onclick="window.closeRemarkModal()" class="px-5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-sm font-bold transition">취소</button>
+                <button onclick="window.saveRemark()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md transition">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림창 -->
+    <div id="customAlert" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center hidden no-print" style="z-index: 9999;">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-slate-100 flex flex-col items-center text-center">
+            <div id="alertIconContainer"></div>
+            <h4 id="alertTitle" class="text-lg font-black text-slate-800 mb-2">알림</h4>
+            <p id="alertMessage" class="text-sm text-slate-600 font-medium mb-6 leading-relaxed whitespace-pre-wrap">메시지 내용</p>
+            <button onclick="window.closeCustomAlert()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl transition text-sm shadow-md shadow-blue-700/20">확인</button>
+        </div>
+    </div>
+
+    <!-- ★ 동기식 코어 엔진 -->
+    <script>
+        // ============================================================================
+        // [1] 전역 변수 및 맵핑 데이터 세팅
+        // ============================================================================
+        window.systemRecords = []; 
+        window.activeLine = 'CRM';
+        window.activeCycleFilter = 'all';
+        window.activeDetailCategoryFilter = 'all'; 
+        window.selectedSubItemInsp = '';
+        window.selectedSubItemFault = '';
+        window.tempRecords = [];
+        window.currentSummaryPeriod = 'daily'; 
+        window.currentAnalysisPeriod = 'yearly';
+        window.currentAnalysisDetailPeriod = 'all'; 
+        window.currentInspReportPeriod = 'daily';
+        window.activeAnalysisLine = 'all';
+        window.isFirebaseActive = false;
+        window.firebaseHandler = null; 
+        
+        window.currentSubItemPageInsp = 0;
+        window.currentSubItemPageFault = 0;
+        window.currentDetailTablePage = 0;
+        window.currentReportTablePage = 0;
+        
+        // 모달 전용 상태 변수
+        window.currentModalPage = 0; 
+        window.currentModalLineFilter = 'all';
+        window.currentModalCategoryFilter = 'all';
+
+        const todayDate = new Date();
+        window.currentTargetDate = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+
+        window.parsedExcelData = [];
+        window.currentSortCol = 'date';
+        window.currentSortAsc = false;
+        window.currentRemarkId = null;
+
+        // ★ [데이터 다이어트/압축] 용량 초과로 인한 코드 잘림 현상을 막기 위해 공백 압축 적용
+        const subItemMapInsp={"CPL":{"PAY OFF REEL":["POR MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","GEAR LUB' MOTOR 전류 및 소음 상태 점검","CPC HYD' MOTOR 전류 측정","CPC HYD' COOLING FAN MOTOR 전류 측정","CPC MOTOR 소음/ 온도 측정","CPC MOTOR 진동측정","CPC TANK OIL LEVEL SENSOR 상태 점검"],"FLATTENER":["MOTOR 전류 측정","ENTRY TOP MOTOR 전류 측정","EXIT TOP MOTOR 전류 측정","GEAR LUB MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정"],"SHEAR":["POSITION SENSOR 고정 상태 점검","TABLE POSITION SENSOR 고정 상태 점검"],"WELDER":["WELDER POSITION SENSOR 고정 및 케이블 상태 점검","TRIMMER POSITION SENSOR 고정 및 케이블 상태 점검","NOTCHER & PANCHER POSITION SENSOR 고정 및 케이블 상태 점검","싸이리스터 판넬 및 PLC 전원부 점검","칠러 MOTOR 전류 및 소음 상태 점검","칠러 PUMP 누수 상태 점검","칠러 TANK LEVEL 상태 점검","칠러 냉각수 온도 지시치 점검","칠러 냉각수 FLOW 상태 점검","HYD PUMP(#1) MOTOR 전류 측정","HYD PUMP(#1~#3) MOTOR 소음/온도 측정","HYD PUMP(#1 ~ #3) MOTOR 진동측정"],"TENSION BRIDLE ROLL":["NO.1-1 MOTOR 전류 측정","NO.1-1 MOTOR 소음 / 온도 측정","NO.1-1 MOTOR 진동측정","NO.1-2 MOTOR 전류 측정","NO.1-2 MOTOR 소음 / 온도 측정","NO.1-2 MOTOR 진동측정","NO.2-1 MOTOR 전류 측정","NO.2-1 MOTOR 소음 / 온도 측정","NO.2-1 MOTOR 진동측정","NO.2-2 MOTOR 전류 측정","NO.2-2 MOTOR 소음 / 온도 측정","NO.2-2 MOTOR 진동측정","NO.3-1 MOTOR 전류 측정","NO.3-1 MOTOR 소음 / 온도 측정","NO.3-1 MOTOR 진동측정","NO.3-2 MOTOR 전류 측정","NO.3-2 MOTOR 소음 / 온도 측정","NO.3-2 MOTOR 진동측정","NO.4-1 MOTOR 전류 측정","NO.4-1 MOTOR 소음 / 온도 측정","NO.4-1 MOTOR 진동측정","NO.4-2 MOTOR 전류 측정","NO.4-2 MOTOR 소음 / 온도 측정","NO.4-2 MOTOR 진동측정"],"D/PINCH ROLL":["NO.1 MOTOR 전류 측정","NO.1 MOTOR 소음 / 온도 측정","NO.1 MOTOR 진동측정","NO.2 MOTOR 전류 측정","NO.2 MOTOR 소음 / 온도 측정","NO.2 MOTOR 진동측정"],"Steering Unit":["No1 Steering Hyd Pump Motor 전류 측정","No1 Steering Position Sensor 고정상태 점검","No2 Steering Hyd Pump Motor 전류 측정","No2 Steering Position Sensor 고정상태 점검","No4 Steering Hyd Pump Motor 전류 측정","No4 Steering Position Sensor 고정상태 점검","No5 Steering Hyd Pump Motor 전류 측정","No5 Steering Position Sensor 고정상태 점검","No6 Steering Hyd Pump Motor 전류 측정","No6 Steering Position Sensor 고정상태 점검"],"ENTRY HYD":["PUMP MOTOR 전류 측정","PUMP MOTOR 소음 / 온도 측정","PUMP MOTOR 진동측정"],"ENTRY LOOPER":["WINCH DRUM MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","O-STOP, E-STOP LIMIT S.W 고정상태 점검","CALIBRATION PX SENSOR 고정상태 점검"],"SPENT ACID TRANSF TANK":["SPENT SPRAY PUMP MOTOR(1-1,1-2) 전류 측정","LEVEL SENSOR 동작 상태 확인"],"NO.1 ACID TANK":["#1 ACID TANK SPRAY PUMP MOTOR(1-1, 1-2) 전류 측정","온도 센서 동작 상태 확인","LEVEL SENSOR 동작 상태 확인"],"NO.2 ACID TANK":["#2 ACID TANK SPRAY PUMP MOTOR(2-1,2-2) 전류 측정","온도 센서 동작 상태 확인","LEVEL SENSOR 동작 상태 확인"],"NO.3 ACID TANK":["#3 ACID TANK SPRAY PUMP MOTOR(3-1, 3-2) 전류 측정","온도 센서 동작 상태 확인","LEVEL SENSOR 동작 상태 확인"],"NO.1 RINSE TANK":["SPRAY PUMP MOTOR 전류 측정","LEVEL SENSOR 동작 상태 확인"],"NO.2 RINSE TANK":["SPRAY PUMP MOTOR 전류 측정","LEVEL SENSOR 동작 상태 확인"],"NO.3 RINSE TANK":["SPRAY PUMP MOTOR 전류 측정","LEVEL SENSOR 동작 상태 확인","SUPPLY STEAM 온도센서 작동 상태 확인"],"HOT AIR DRYER":["MOTOR 모터 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정"],"FUME EXHAUST SYSTEM":["FUME EXHAUST FAN MOTOR 전류측정","FUME EXHAUST CIR PUMP MOTOR 전류측정","RINSE EXHAUST FAN MOTOR 전류측정","RINSE EXHAUST CIR PUMP MOTOR 전류측정"],"EXIT LOOPER":["MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","O-STOP, E-STOP LIMIT S.W 고정상태 점검","CALIBRATION PX SENSOR 교정 점검"],"TENSION REEL":["MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","GEAR LUB' MOTOR 전류및 소음 상태 점검"],"EXIT PINCH ROLL":["MOTOR 전류 측정"],"EXIT  DEF' PINCH ROLL":["MOTOR 전류 측정"],"SCRAP CHOPPER ":["SCRAP CHOPPER WIDTH ADJUST MOTOR 전류 측정","SCRAP CHOPPER KNIFE MOTOR  전류 측정","SCRAP CHOPPER LUB' PUMP MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정"],"EXIT HYD":["PUMP MOTOR 전류 측정","PUMP MOTOR 소음 / 온도 측정","PUMP MOTOR 진동측정"],"EXIT COIL CAR":["MOTOR 전류 측정"],"고압반 HV PANEL":["PANEL 부스바 이물질 및 절연 상태 점검(육안)","ACB 차단기 소음 상태 확인"],"고압반 LV PANEL":["PANEL 부스바 이물질 및 절연 상태 점검(육안)","ACB 차단기 소음 상태 확인"],"MCC Group":["단자대 케이블 고정상태 점검"],"Main PLC Panel":["단자대 케이블 고정상태 점검","PLC BACK UP BATTERY 점검"],"Vector Panel":["DRIVE COOLING FAN 동작상태 점검","단자대 케이블 고정상태 점검"]},"CRM":{"POR COIL CAR":["주행용 ENCODER COUPLING 점검","LIFTING 압력 센서 편차 압력 점검","LH COIL CAR ENCODER COUPLING 점검","LH COIL CAR LIFTING 압력 센서 편차 압력 점검"],"POR MOTOR":["MOTOR 전류 및 소음 점검","MOTOR COOLING FAN 전류 및 소음 점검","MOTOR ENCODER 고정및 진동상태 점검","GEAR LUB' MOTOR 전류및 소음 상태 점검"],"POR PINCH ROLL":["MOTOR 전류 및 소음 점검","MOTOR ENCODER 고정및 진동상태 점검"],"POR DEFLECTOR ROLL ":["DEF' MOTOR 전류및 소음 상태점검","SPEED ENCODER 고정 상태및 CABLE 상태점검"],"LEVELLER ":["MOTOR 전류및 소음 상태 점검","POSITION ENCODER#1 CABLE 상태점검","POSITION ENCODER#2 CABLE 상태점검"],"LH TENSION REEL MOTOR":["MOTOR COOLING FAN 전류 및 소음 점검","MOTOR COOLING FAN 이물질 청소","브러쉬 분진 청소 및 마모 점검","MOTOR ENCODER 고정및 진동 상태 점검","MOTOR 베어링 온도 센서 점검"],"LH PINCH ROLL":["PINCH ROLL MOTOR 전류 및 소음 점검","PINCH ROLL LOCK SENSOR 위치 점검","PINCH ROLL POSITION SENSOR 상태 점검"],"LH SHAPE METER ROLL":["MOTOR 전류 및 소음 점검","SHAPE METER AIR 공급 상태 점검"],"THICKNESS GAUGE":["내부 Purge Air 압력 점검","Cooling water FLOW 상태 점검"],"MILL STAND":["IMR SHIFTING ENCODER CABLE 점검","PASS LINE ENCODER CABLE 점검","HGC POSITION SENSOR CABLE 점검","HGC 압력 센서 상태 점검"],"MILL MAIN MOTOR":["MOTOR COOLING FAN#1 전류 및 소음 점검","MOTOR COOLING FAN #2 전류 및 소음 점검","브러쉬 분진 청소 및 마모 점검","MOTOR ENCO 고정및 진동 상태 점검","MOTOR 베어링 온도 센서 점검"],"GRIP PANEL":["POWER MODULE 냉각팬 상태 점검","OUTPUT CARD FUSE 단선 점검","단자대 CABLE 결선 점검","POWER RELAY 동작상태 점검"],"ROLL CHANGE CAR":["TRAVERSING MOTOR 전류 및 소음 점검","TRAVERSING MOTOR ENCODER CABLE 점검","SHIFTING MOTOR 전류 및 소음 점검","SHIFTING MOTOR ENCODER CABLE 점검"],"RH SHAPE METER ROLL":["MOTOR 전류 및 소음 점검","SHAPE METER AIR 공급 상태 점검"],"RH TENSION REEL MOTOR":["MOTOR COOLING FAN 전류 및 소음 점검","MOTOR COOLING FAN 이물질 청소","브러쉬 분진 청소 및 마모 점검","MOTOR 베어링 온도 센서 점검"],"FUME EXHAUST":["#1 MOTOR 전류 및 소음 점검","#2 MOTOR 전류 및 소음 점검"],"AIR BLOWERING":["MOTOR 전류 및 소음 점검"],"X-RAY":["#1 MOTOR 전류 및 소음 점검","PUMP 압력 지시치 점검","TANK LEVEL 점검","냉각수 온도 지시치 점검"],"HYD SYSTEM":["HP#1 MOTOR 전류 및 소음 점검","HP#2 MOTOR 전류 및 소음 점검","LP#1 MOTOR 전류 및 소음 점검","LP#2 MOTOR 전류 및 소음 점검","LP#3 MOTOR 전류 및 소음 점검","CIR MOTOR 전류및 소음 상태 점검"],"GEAR LUB SYSTEM":["#1 MOTOR 전류및 소음 상태 점검","#2 MOTOR 전류및 소음 상태 점검","CIR MOTOR 전류및 소음 상태 점검"],"BUR BEARING LUB SYSTEM":["#1 MOTOR 전류및 소음 상태 점검","#2 MOTOR 전류및 소음 상태 점검","CIR MOTOR 전류및 소음 상태 점검"],"MAIN DRIVE BEAR LUB SYSTEM":["HP MOTOR 전류및소음 상태 점검","LP MOTOR 전류및소음 상태 점검"],"FOS PANEL":["I/O CARD 상태 표시 점검","AO/AI CARD 상태 표시 점검","차단기 트립 유무 점검","HMI PC 동작 상태 점검"],"SYSTEM PUMP":["#1 MOTOR 전류및소음 상태 점검","#2 MOTOR 전류및소음 상태 점검","#3 MOTOR 전류및소음 상태 점검"],"EMULSION TANK#1,2":["LEVEL SENSOR 오염 및 동작상태 점검","HEATER CIR MOTOR 전류및 소음 상태 점검","교반기 1 MOTOR 전류및 소음 상태 점검","교반기 2 MOTOR 전류및 소음 상태 점검"],"EMULSION 원액 TANK#1,2":["LEVEL SENSOR 오염 및 동작상태 점검","교반기 MOTOR 전류및 소음 상태 점검"],"HOFMAN FILTER":["FILTER PUMP#1 MOTOR 전류및소음 상태 점검","FILTER PUMP#2 MOTOR 전류및소음 상태 점검","FILTER PUMP#3 MOTOR 전류및소음 상태 점검"],"HV PANEL":["VCB 차단기 소음 상태 점검","부스바 충전부위 발열 상태 점검 (육안)"],"LV PANEL":["ACB 차단기 소음 상태 점검","GOCR 세팅값 상태 점검"],"SBA GROUP MAIN DRIVE COGING":["TANK LEVEL 상태 점검","COOLING FAN 소음 점검"],"SBA GROUP UPS":["COOLING FAN 소음 점검","배전 전압 점검"],"SBB GROUP AUX PANEL":["TR 발열 유무 점검","POWER RELAY 동작상태 점검","단자기 열화 점검"],"SBF GROUP VECTOR":["DRIVE COOLING FAN 소음 점검"],"SBG GROUP A&D PLC":["전자접촉기 접점 마모 점검","CPU 상태 표시 점검","CPU 배터리 상태 점검"],"SBH GROUP AGC PLC":["CPU 상태 표시 점검","CPU 배터리 상태 점검"]},"CGL":{"Entry Section ( ~ Entry Accumulator )":["COIL CAR #1~#2 Calibration PX Sensor 고정상태 및 작동상태 점검","COIL CAR #1~#2 Lift Encoder 상태 점검","COIL CAR #1~#2 Traverse Encoder 상태점검","COIL CAR #1~#2 SKID SENSOR 접점 및 고정상태 점검","PAY OFF REEL #1~#2 Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Welder Position Sensor 고정상태 점검","Welder Strip Photo Sensor 수입작업","Welder Drive 작동상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검","Entry Accumulator LOAD CELL 장착상태 점검"],"Process Section ( ~ Furnace )":["RECTIFIER PANEL FAN 점검","RECTIFIER PANEL FILTER 점검","BRUSH MOTOR POSITION SENSOR 커플링 점검","SEAL ROLL CYLINDER POSITION SENSOR 고정상태 점검","PYRO METER PX 센서 상태 점검","PYRO METER 오염 점검","Furnace TEMP SENSOR CABLE 점검","BOU UV SENSOR 수입작업","BOU SOL VALVE 접점 점검","NO1 GUIDE ROLL CYILNDER POSITION SENSOR 고정상태 점검","NO2 GUIDE ROLL CYILNDER POSITION SENSOR 고정상태 점검","STRIP HEATER PANEL 쿨링팬 동작 점검"],"Process Section ( ~ SPM )":["NO5 TENSION METER TENSION METER 커플링 점검","NO6 TENSION METER TENSION METER DISPLAY 값 점검","SNOUT DAMPER POSITION 연결부 점검","SNOUT HEATER 단선 점검","SNOUT PANEL FAN 점검","환원 BURNER UV 센서 수입작업","환원 BURNER PRESSURE S/W & GAS SOL 접점 상태 점검","AIR KNIFE ENCODER 커플링 점검","AIR KNIFE CONNECTOR 접속상태 점검","SPM HGC CYLINDER ENCODER 커플링 점검","SPM SCREW DOWN ENCODER 커플링 점검","SPM SEREW DOWN POSITION SENSOR 커플링 점검","SPM SERVO VALVE STAND 누유 점검"],"Process Section ( ~ CHROMATE )":["LEVELLER ENCODER 커플링 점검","LEVELLER PS SENSOR 위치 점검","CHROMATE MOTOR ENCODER 고정상태 점검","CHROMATE LOAD CAL 상태 점검","CHROMATE DRIER Blower Rotating 방향 점검","CHROMATE DRYER'S Valve (Vent, Purge, Pilot) 동작 상태 점검","CHROMATE MOTOR 전류 지시치 점검","CHROMATE DRYER Panel Filter 점검","NO8 TENSION METER CABLE 상태 점검","NO9 TENSION METER DISPLAY 값 점검"],"Exit Section ( ~ Tension Reel )":["EXIT LOOPER MOTOR ENCODER CABLE 상태 점검","EXIT LOOPER CALIBRATION SENSOR 검출상태 점검","EXIT LOOPER LOAD CELL 검출상태 점검","WPO LASER SENSOR 오염 및 동작 상태점검","OILER TANK LEVEL SENSOR 검출상태 점검","OILER PANEL FAN 점검","EPC FRAME LIMIT S/W 상태점검","EPC CONTROL PANEL 필터점검","TENSION REEL #1~#2 MOTOR Encoder 점검","TENSION REEL MOTOR Position Sensor 커플링 점검","Out Band feeding Position Sensor 고정 상태 및 CABLE상태 점검","BEAT WATTER POSITION SENSOR 고정상태 점검","COIL CAR #1~#2 Lift Encoder 상태 점검","COIL CAR #1~#2 Traverse Encoder 상태점검","COIL CAR Limit S/W 상태 점검","COIL CAR Calibration PX Sensor 고정상태 및 작동상태 점검"],"PREMELT GI/GL 인터락":["GI PANEL 램프 상태 점검","GI POT LIMIT S/W 점검","GI PANEL ROOM 냉방기 점검","GL PANEL 램프 상태 점검","GL POT LIMIT S/W 점검","GL PANEL ROOM 냉방기 점검","PRE MELT PANEL 램프 상태 점검","PRE MELT POT LIMIT S/W 점검","PRE MELT PANEL ROOM 냉방기 점검"],"전기 & DRIVE ROOM":["Drive Room 항온 항습기 온도확인 및 청결 점검","Vector Drive Panel Cooling Fan 점검","Inverter Panel M.C & Inverter drive Cooling Fan 점검","Main PLC Panel PLC Alarm 점검","MCC PANEL 배기홴 동작 점검"],"Motor":["Coil Car Motor(31A)","Coil Car Motor(11.5A)","Pay Off Reel Motor(A)(230A)","Pay Off Reel Motor(B)(230A)","No1-1 Tension Bridle Motor (32A)","No1-2 Tension Bridle Motor (32A)","No1-3 Tension Bridle Motor (60A)","ENTRY HYD MOTOR (129.1A)","ENTRY LOOPER MOTOR (200A)","No2 Tension Bridle Motor (35A)","No3-1 Tension Bridle Motor (75A)","No3-2 Tension Bridle Motor (75A)","No4-1 Tension Bridle Motor (55A)","No4-2 Tension Bridle Motor (55A)","No4-3 Tension Bridle Motor (55A)","NO1 AFTER POT COOLING FAN MOTOR (310A)","NO2 AFTER POT COOLING FAN MOTOR (310A)","NO.1 JET COOLING FAN MOTOR (250A)","NO.2 JET COOLING FAN MOTOR (250A)","NO.3 JET COOLING FAN MOTOR (250A)","MTK (98A)","No5-2 Tension Bridle Motor (96A)","No5-3 Tension Bridle Motor (96A)","No6-1 Tension Bridle Motor (196A)","No6-2 Tension Bridle Motor (196A)","No7-1 Tension Bridle Motor (235A)","No7-2 Tension Bridle Motor (235A)","No7-3 Tension Bridle Motor (235A)","No8-4 Tension Bridle Motor (158A)","No8-5 Tension Bridle Motor (158A)","No9-Tension Bridle Motor (122A)","EXIT LOOPER MOTOR (200A)","No10-Tension Bridle Motor (80A)","No11-Tension Bridle Motor (96A)","TENSION REEL MOTOR (A)(230A)","TENSION REEL MOTOR (B)(230A)"],"Motor 진동":["Coil Car Motor 진동 측정","Pay Off Reel Motor 진동 측정","No1-1 Tension Bridle Motor 진동 측정","No1-2 Tension Bridle Motor 진동 측정","No1-3 Tension Bridle Motor 진동 측정","ENTRY HYD MOTOR 진동 측정","ENTRY LOOPER MOTOR 진동 측정","No2 Tension Bridle Motor 진동 측정","No3-1 Tension Bridle Motor 진동 측정","No3-2 Tension Bridle Motor 진동 측정","No4-1 Tension Bridle Motor 진동 측정","No4-2 Tension Bridle Motor 진동 측정","No4-3 Tension Bridle Motor 진동 측정","NO1 AFTER POT COOILNG FAN MOTOR 진동 측정","NO2 AFTER POT COOILNG FAN MOTOR 진동 측정","NO.1 JET COOLING FAN MOTOR 진동 측정","NO.2 JET COOLING FAN MOTOR 진동 측정","NO.3 JET COOLING FAN MOTOR 진동 측정","No5-1 Tension Bridle Motor 진동 측정","No5-2 Tension Bridle Motor 진동 측정","No5-3 Tension Bridle Motor 진동 측정","No6-1 Tension Bridle Motor 진동 측정","No6-2 Tension Bridle Motor 진동 측정","No7-1 Tension Bridle Motor 진동 측정","No7-2 Tension Bridle Motor 진동 측정","No7-3 Tension Bridle Motor 진동 측정","No8-4 Tension Bridle Motor 진동 측정","No8-5 Tension Bridle Motor 진동 측정","No9-Tension Bridle Motor 진동 측정","EXIT LOOPER MOTOR 진동 측정","No10-Tension Bridle Motor 진동 측정","No11-Tension Bridle Motor 진동 측정","TENSION REEL MOTOR (A)진동 측정","TENSION REEL MOTOR (B)진동 측정"]},"1CCL":{"Entry Section ( ~ Entry Accumulator )":["PAY OFF REEL Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Strip Joiner Limit & Safty Sensor 상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검"],"Process Section ( ~ Primer Quench )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","OVEN Transmitter 동작 상태 점검"],"Process Section ( ~ Tension Leveller )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","Tension Leveller Encoder Lamp 점등 상태 점검","Prime/Finish Black Light Lamp 점등 상태 점검"],"Exit Section ( ~ Rewind Reel )":["Exit Accumulator PX Sensor & Limit & Encoder상태 점검","Rewind Reel Section & Robot PX.PH 센서 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Film EPC & Rewind EPC 유니트 점검 및 동작 상태 점검","Rewind Reel Section Encoder Lamp 점등 상태 점검"],"RTO":["MAIN #A.B.C 온도측정 상태 점검","MAIN #A.B.C INNET/OUTNET DAMPER 동작 상태 점검","Damper 배관 누설 상태 점검","MAIN 배관 온도 센서 상태 점검","INVERTER COOLING FAN 동작 상태 점검"],"전기 & DRIVE ROOM":["Drive Room 항온 항습기 온도확인 및 청결 점검","Vector Drive Panel Cooling Fan 점검","Inverter Panel M.C & Inverter drive Cooling Fan 점검","Main PLC & RTO Backup 배터리 & Lamp 상태점검"],"Motor":["POR#1","POR#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","ENTRY ACCUMULATOR","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","EXIT ACCUMULATOR","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","REWIDE REEL","CHEMICAL COATER TOP APP' ROLL","CHEMICAL COATER TOP PICKUP ROLL","CHEMICAL COATER BOTTOM APP' ROLL","CHEMICAL COATER BOTTOM PICKUP ROLL","PRIME COATER TOP APP' ROLL","PRIME COATER TOP PICKUP ROLL","PRIME COATER BOTTOM APP' ROLL","PRIME COATER BOTTOM PICKUP ROLL","1FINISH COATER 1B APP' ROLL","1FINISH COATER 1B PICKUP ROLL","2FINISH COATER TOP APP' ROLL","2FINISH COATER TOP PICKUP ROLL","2FINISH COATER BOTTOM APP' ROLL","2FINISH COATER BOTTOM PICKUP ROLL","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","PRIMER OVEN RC FAN #4","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","RTO MAIN FAN","RTO HEATING EXHAUST PROCESS FAN#1","RTO HEATING EXHAUST PROCESS FAN#2","RTO PRIME FAN","RTO FINISH FAN","RTO PREHEAT BURNER FAN"],"Motor 진동 측정":["POR#1","POR#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","ENTRY ACCUMULATOR","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","EXIT ACCUMULATOR","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","REWIDE REEL","CHEMICAL COATER TOP APP' ROLL","CHEMICAL COATER TOP PICKUP ROLL","CHEMICAL COATER BOTTOM APP' ROLL","CHEMICAL COATER BOTTOM PICKUP ROLL","PRIME COATER TOP APP' ROLL","PRIME COATER TOP PICKUP ROLL","PRIME COATER BOTTOM APP' ROLL","PRIME COATER BOTTOM PICKUP ROLL","1FINISH COATER 1B APP' ROLL","1FINISH COATER 1B PICKUP ROLL","2FINISH COATER TOP APP' ROLL","2FINISH COATER TOP PICKUP ROLL","2FINISH COATER BOTTOM APP' ROLL","2FINISH COATER BOTTOM PICKUP ROLL","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","PRIMER OVEN RC FAN #4","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","RTO MAIN FAN","RTO HEATING EXHAUST PROCESS FAN#1","RTO HEATING EXHAUST PROCESS FAN#2","RTO PRIME FAN","RTO FINISH FAN","RTO PREHEAT BURNER FAN"]},"2CCL":{"Entry Section ( ~ Entry Accumulator )":["PAY OFF REEL Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Strip Joiner Limit & Safty Sensor 상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검"],"Process Section ( ~Primer Quench )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater px sensor 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","OVEN Transmitter 동작 상태 점검"],"Process Section ( ~ Tension Leveller )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","Tension Leveller Encoder Lamp 점등 상태 점검","Prime/Finish Black Light Lamp 점등 상태 점검"],"Exit Section ( ~ Rewind Reel )":["Exit Accumulator PX Sensor & Limit & Encoder상태 점검","Rewind Reel Section & Robot PX.PH 센서 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Film EPC & Rewind EPC 유니트 점검 및 동작 상태 점검","Rewind Reel Section Encoder Lamp 점등 상태 점검"],"RTO":["MAIN #A.B.C 온도측정 상태 점검","MAIN #A.B.C INNET/OUTNET DAMPER 동작 상태 점검","Damper 배관 누설 상태 점검","MAIN 배관 온도 센서 상태 점검","RTO 배전반 점검"],"DRIVE & 전기실":["냉방기 필터 청소 및 상태 점검","DRIVE & INVERTER COOLING FAN 동작 상태 점검","고압.저압. MCC반 동작 및 LAMP 상태 점검"],"MOTOR 전류 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 3","NO.7 BRIDLE ROLL 4","NO.7 BRIDLE ROLL 5","NO.7 BRIDLE ROLL 6","NO.7 BRIDLE ROLL 7","NO.7 BRIDLE ROLL 8","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","TENSION REEL","ENTRY HYDRAULIC MAIN MOTOR","ENTRY HYDRAULIC STANDBY MOTOR","EXIT HYD MAIN PUMP MOTOR","EXIT HYD STANDBY PUMP MOTOR","RTO MAIN FAN","RTO OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"],"MOTOR 진동 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 3","NO.7 BRIDLE ROLL 4","NO.7 BRIDLE ROLL 5","NO.7 BRIDLE ROLL 6","NO.7 BRIDLE ROLL 7","NO.7 BRIDLE ROLL 8","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","TENSION REEL","ENTRY HYDRAULIC MAIN MOTOR","ENTRY HYDRAULIC STANDBY MOTOR","EXIT HYD MAIN PUMP MOTOR","EXIT HYD STANDBY PUMP MOTOR","RTO MAIN FAN","RTO OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"]},"3CCL":{"Entry Section ( ~ Entry Accumulator )":["PAY OFF REEL Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Welder Position sensor 상태 & Chiller 작동상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검"],"Process Section ( ~Primer Quench )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater px sensor 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","OVEN Transmitter 동작 상태 점검"],"Process Section ( ~ Tension Leveller )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","Tension Leveller Encoder Lamp 점등 상태 점검","Prime/Finish Black Light Lamp 점등 상태 점검"],"Exit Section ( ~ Rewind Reel )":["Exit Accumulator PX Sensor & Limit & Encoder상태 점검","Rewind Reel Section Robot PX.PH 센서 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Film EPC & Rewind EPC 유니트 점검 및 동작 상태 점검","Rewind Reel Section Encoder Lamp 점등 상태 점검"],"RTO":["MAIN A.B.C 온도측정 상태 점검","MAIN A.B.C INNET/OUTNET DAMPER 동작 상태 점검","Damper 배관 누설 상태 점검","MAIN 배관 온도 센서 상태 점검","RTO 배전반 점검"],"DRIVE & 전기실":["냉방기 필터 청소 및 상태 점검","DRIVE & INVERTER COOLING FAN 동작 상태 점검","고압.저압. MCC반 동작 및 LAMP 상태 점검"],"MOTOR 전류 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1-1 TENSION BRIDLE ROLL","NO.1-2 TENSION BRIDLE ROLL","NO.1-3 TENSION BRIDLE ROLL","NO.2-1 TENSION BRIDLE ROLL","NO.2-2 TENSION BRIDLE ROLL","NO.3-1 TENSION BRIDLE ROLL","NO.3-2 TENSION BRIDLE ROLL","NO.4-1 TENSION BRIDLE ROLL","NO.4-2 TENSION BRIDLE ROLL","NO.5-1 TENSION BRIDLE ROLL","NO.5-2 TENSION BRIDLE ROLL","NO.6-1 TENSION BRIDLE ROLL","NO.6-2 TENSION BRIDLE ROLL","NO.7-1 TENSION BRIDLE ROLL","NO.7-2 TENSION BRIDLE ROLL","NO.8-1 TENSION BRIDLE ROLL","NO.8-2 TENSION BRIDLE ROLL","NO.8-3 TENSION BRIDLE ROLL","NO.8-4 TENSION BRIDLE ROLL","NO.8-5 TENSION BRIDLE ROLL","NO.8-6 TENSION BRIDLE ROLL","NO.8-7 TENSION BRIDLE ROLL","NO.8-8 TENSION BRIDLE ROLL","NO.9-1 TENSION BRIDLE ROLL","NO.9-2 TENSION BRIDLE ROLL","NO.9-3 TENSION BRIDLE ROLL","TENSION REEL","RTO MAIN FAN","PRIME OVEN EXHAUST FAN","FINSH OVEN EXHAUST FAN","CLEAR OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"],"MOTOR 진동 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1-1 TENSION BRIDLE ROLL","NO.1-2 TENSION BRIDLE ROLL","NO.1-3 TENSION BRIDLE ROLL","NO.2-1 TENSION BRIDLE ROLL","NO.2-2 TENSION BRIDLE ROLL","NO.3-1 TENSION BRIDLE ROLL","NO.3-2 TENSION BRIDLE ROLL","NO.4-1 TENSION BRIDLE ROLL","NO.4-2 TENSION BRIDLE ROLL","NO.5-1 TENSION BRIDLE ROLL","NO.5-2 TENSION BRIDLE ROLL","NO.6-1 TENSION BRIDLE ROLL","NO.6-2 TENSION BRIDLE ROLL","NO.7-1 TENSION BRIDLE ROLL","NO.7-2 TENSION BRIDLE ROLL","NO.8-1 TENSION BRIDLE ROLL","NO.8-2 TENSION BRIDLE ROLL","NO.8-3 TENSION BRIDLE ROLL","NO.8-4 TENSION BRIDLE ROLL","NO.8-5 TENSION BRIDLE ROLL","NO.8-6 TENSION BRIDLE ROLL","NO.8-7 TENSION BRIDLE ROLL","NO.8-8 TENSION BRIDLE ROLL","NO.9-1 TENSION BRIDLE ROLL","NO.9-2 TENSION BRIDLE ROLL","NO.9-3 TENSION BRIDLE ROLL","TENSION REEL","RTO MAIN FAN","PRIME OVEN EXHAUST FAN","FINSH OVEN EXHAUST FAN","CLEAR OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"]},"ARP":{"ROASTER 상부열전대 3EA":["고정상태 및 절연상태 점검"],"ROASTER 상부유량계(FIT-03, FIT-01, FIT-05) ":["유량계 유량 수치 정상 상태 점검작업"],"BUNNERUV SENSOR 3EA":["SENSOR 수입 및 상태 점검 작업"],"BUNNERIGNITION 3EA":["IGNITION 상태 점검"],"ROASTER 하부LUMP BREAKER MOTOR (LB01) 1EA":["MOTOR 전류 측정"],"ROASTER 하부ROTARY MOTOR (F01) 1EA":["MOTOR 전류 측정"],"ROASTER 하부HOT CONVEYOR MOTOR (HOC01) 1EA":["MOTOR 전류 측정"],"SCREEN SCREEN MOTOR (RV02) 1EA":["MOTOR 전류 측정"],"SCREEN SCREEN MOTOR (VS01) 1EA":["MOTOR 전류 측정"],"SCREEN ROTARY MOTOR (F02) 1EA":["MOTOR 전류 측정"],"SCRUBBER LEVEL SENSOR 2EA":["LEVEL SENSOR 수입 작업 및 고정 부분 점검","유량계 유량 수치 정상 상태 점검작업"],"OXIDE BIN 상부 OXIDE FAN 토출압력계 정상상태 확인":["MOTOR 전류 측정"],"OXIDE BIN 상부 OXIDE LEVEL SENSOR 3EA":["LEVEL SENSOR 수입 작업 및 고정 부분 점검"]," ROTARY MOTOR (F03) 1EA":["MOTOR 전류 측정"]," OXIDE 하부 LEVEL 표시기":["LEVEL 상태 확인"],"BAGGING MACHINE BAGGING CONVAYOR MOTOR 1EA":["MOTOR 전류 측정"],"COMBUSTION COMBUSTION FAN MOTOR 1EA":["MOTOR 전류 측정"]," ID EXHAUST FAN (F1) MOTOR 1EA":["MOTOR 전류 측정"]," 열전대 (TE-26,27,28)":["열전대 고정 상태 및 절연 상태 점검"],"PUMP실 신산(FA) PUMP MOTOR (P8) 2EA":["MOTOR 전류 측정"],"PUMP실 폐산(WPL) PUMP MOTOR (P1) 2EA":["MOTOR 전류 측정"],"PUMP실 재염산(RA) PUMP MOTOR (P13) 2EA":["MOTOR 전류 측정"],"PUMP실 린스(RW) PUMP MOTOR (P12) 2EA":["MOTOR 전류 측정"],"PUMP실 SCRUBBER PUMP MOTOR (P10) 3EA":["MOTOR 전류 측정"],"PUMP실 VENTURI PUMP MOTOR (P02) 2EA":["MOTOR 전류 측정"],"PUMP실 CPL PUMP MOTOR (P03) 2EA":["MOTOR 전류 측정"],"PUMP실 SUMP PUMP (P17) 1EA":["MOTOR 전류 측정"],"PUMP실 SEAL PUMP 2EA":["MOTOR 전류 측정"],"MOTOR 절연저항 측정":["MOTOR 절연저항 측정"],"PUMP실 유량계 (FIT-09, FIT-13, FIT-05)":["유량계 유량 수치 정상 상태 및 방수 상태 점검"],"PUMP실 압력계 PSL 7EA":["압력계 정상 압력 상태 점검"],"전기실 INVERTER PANEL":["COOLING FAN 점검"],"전기실 PLC":["PLC BACK UP BATTERY 점검 및 교체"]},"SSCL":{"MAIN DRIVE":["MAIN DRIVE MOTOR 진동 및 온도 점검"],"TANK":["TANK LEVEL SENSOR 및 알람 로직 테스트"],"기타":["기타 점검 항목"]}};
+        const subItemMapFault={"drive":["모터(베어링)","엔코더","BRAKE","밸브","드라이브(모터모듈)","컨버터","냉각팬"],"xray":["TUBE","SHUTTER"],"plc":["CPU","통신"],"electric":["센서","스위치","단락/지락","히터"],"relay":["보호계전기 동작/오류"],"human":["작업자 조작 실수"],"etc":["기타 미분류 항목"]};
+        
+        const typeMap = {
+            'drive': '구동 모터 결함', 'xray': '계측 센서 오류', 'plc': 'PLC/통신 장애',
+            'electric': '정전/전압 이상', 'relay': '정전/전압 이상', 'human': '기타', 'etc': '기타'
+        };
+
+        const cycleNameMap = { 'daily': '일별', 'weekly': '주별', 'monthly': '월별', 'quarterly': '분기별', 'none': '-' };
+
+        const lineStore = {
+            'CPL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
+            'CRM': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
+            'CGL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
+            '1CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
+            '2CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
+            '3CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
+            'ARP': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
+            'SSCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }
+        };
+
+        const chartColors = {
+            '정전/전압 이상': '#93c5fd', '구동 모터 결함': '#fcd34d', 
+            '계측 센서 오류': '#d8b4fe', 'PLC/통신 장애': '#6ee7b7', '기타': '#cbd5e1'
+        };
+
+        // ★ 구조 변경: 단일 inspection 레코드로 관리
+        window.generateInitialDummyData = function(targetDateStr) {
+            let records = [];
+            return records; // 더미 데이터 비활성화 (실제 데이터베이스만 연동되도록 함)
+        }
+
+        function generateUUID() {
+            return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9);
+        }
+
+        window.showCustomAlert = function(message, type = "success") {
+            const modal = document.getElementById('customAlert');
+            const messageEl = document.getElementById('alertMessage');
+            const iconContainer = document.getElementById('alertIconContainer');
+            const titleEl = document.getElementById('alertTitle');
+            
+            messageEl.innerText = message;
+            
+            if (type === "success") {
+                titleEl.innerText = "완료되었습니다";
+                titleEl.className = "text-lg font-black text-emerald-600 mb-2";
+                iconContainer.className = "w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4";
+                iconContainer.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            } else if (type === "danger") {
+                titleEl.innerText = "알림 (오류/경고)";
+                titleEl.className = "text-lg font-black text-red-600 mb-2";
+                iconContainer.className = "w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4";
+                iconContainer.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+            } else {
+                titleEl.innerText = "안내 메시지";
+                titleEl.className = "text-lg font-black text-blue-600 mb-2";
+                iconContainer.className = "w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-4";
+                iconContainer.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            }
+            modal.classList.remove('hidden');
+        }
+
+        window.closeCustomAlert = function() {
+            document.getElementById('customAlert').classList.add('hidden');
+        }
+
+        // ★ 신규: Firebase 전송 전 빈값(undefined) 에러를 방어하는 정화 엔진
+        // 첨부파일 URL 데이터(fileUrl)도 안전하게 저장되도록 추가했습니다.
+        function sanitizeRecord(r) {
+            return {
+                id: r.id || generateUUID(),
+                recordType: r.recordType || 'inspection',
+                line: r.line || 'CRM',
+                category: r.category || '기타',
+                subItem: r.subItem || '항목없음',
+                type: r.type || '기타',
+                cycle: r.cycle || 'none',
+                date: r.date || window.currentTargetDate,
+                status: r.status || 'uninspected',
+                desc: r.desc || '',
+                remark: r.remark || '',
+                fileUrl: r.fileUrl || ''
+            };
+        }
+
+        window.resolveRecordMetadata = function(rawType) {
+            const type = String(rawType).trim();
+            if (type.includes('구동') || type.includes('모터')) return { category: 'drive', subItem: subItemMapFault['drive'][0], type: '구동 모터 결함' };
+            if (type.includes('X-RAY') || type.includes('xray') || type.includes('센서')) return { category: 'xray', subItem: subItemMapFault['xray'][0], type: '계측 센서 오류' };
+            if (type.includes('PLC') || type.includes('통신')) return { category: 'plc', subItem: subItemMapFault['plc'][0], type: 'PLC/통신 장애' };
+            if (type.includes('전장') || type.includes('전기') || type.includes('히터')) return { category: 'electric', subItem: subItemMapFault['electric'][0], type: '정전/전압 이상' };
+            if (type.includes('계전기')) return { category: 'relay', subItem: subItemMapFault['relay'][0], type: '정전/전압 이상' };
+            return { category: 'etc', subItem: subItemMapFault['etc'][0], type: '기타' };
+        }
+
+        function calculateRisk(line) {
+            const targetDateObj = new Date(window.currentTargetDate);
+            const records = window.systemRecords.filter(r => r.recordType === 'fault' && r.line === line && new Date(r.date) <= targetDateObj).sort((a,b) => new Date(a.date) - new Date(b.date));
+            if(records.length === 0) return 0;
+            const firstDate = new Date(records[0].date);
+            const lastDate = new Date(records[records.length-1].date);
+            let safeAvgCycle = 30; 
+            if(records.length > 1) {
+                const averageCycleDays = ((lastDate - firstDate) / 86400000) / (records.length - 1);
+                safeAvgCycle = Math.max(averageCycleDays, 10);
+            }
+            const daysSinceLastFault = (targetDateObj - lastDate) / 86400000;
+            if(daysSinceLastFault < 0) return 0;
+            let risk = (daysSinceLastFault / safeAvgCycle) * 100;
+            return Math.floor(Math.max(10, Math.min(risk, 95)));
+        }
+
+        window.setSummaryPeriod = function(period) {
+            window.currentSummaryPeriod = period;
+            const btns = ['daily', 'weekly', 'monthly', 'yearly'];
+            btns.forEach(p => {
+                const el = document.getElementById('sum-btn-' + p);
+                if(el) {
+                    if(p === period) el.className = 'summary-period-btn active bg-blue-600 text-white text-sm font-bold px-5 py-2 rounded-lg ml-2 shadow-sm';
+                    else el.className = 'summary-period-btn text-slate-500 hover:bg-slate-100 text-sm font-bold px-5 py-2 rounded-lg transition ml-1';
+                }
+            });
+            window.updateAllLineScores();
+            window.renderSummaryGrid();
+        }
+
+        window.updateAllLineScores = function() {
+            const targetDateObj = new Date(window.currentTargetDate);
+            Object.keys(lineStore).forEach(line => {
+                const periodRecords = window.systemRecords.filter(r => {
+                    if (r.recordType !== 'inspection' || r.line !== line) return false;
+                    const rDate = new Date(r.date);
+                    if (window.currentSummaryPeriod === 'daily') return r.date === window.currentTargetDate;
+                    else if (window.currentSummaryPeriod === 'weekly') {
+                        const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
+                        return diffDays >= 0 && diffDays < 7;
+                    } else if (window.currentSummaryPeriod === 'monthly') {
+                        return rDate.getFullYear() === targetDateObj.getFullYear() && rDate.getMonth() === targetDateObj.getMonth();
+                    } else if (window.currentSummaryPeriod === 'yearly') {
+                        return rDate.getFullYear() === targetDateObj.getFullYear();
+                    }
+                    return false;
+                });
+                
+                let mechTotal = 0, mechComp = 0, elecTotal = 0, elecComp = 0;
+                periodRecords.forEach(r => {
+                    const isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || r.category.includes('전장') || r.category.includes('PLC') || r.category.includes('X-RAY');
+                    if(isElec) { elecTotal++; if(r.status === 'completed') elecComp++; } 
+                    else { mechTotal++; if(r.status === 'completed') mechComp++; }
+                });
+
+                lineStore[line].total = periodRecords.length;
+                lineStore[line].completed = mechComp + elecComp;
+                lineStore[line].mechTotal = mechTotal;
+                lineStore[line].mechComp = mechComp;
+                lineStore[line].elecTotal = elecTotal;
+                lineStore[line].elecComp = elecComp;
+                lineStore[line].score = calculateRisk(line); 
+            });
+        }
+
+        window.renderRecentAnomalies = function() {
+            const tbody = document.getElementById('recentAnomaliesBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            const faults = window.systemRecords.filter(r => r.recordType === 'fault').sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+            if(faults.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 font-bold">발견된 이상 내역이 없습니다.</td></tr>`;
+                return;
+            }
+            faults.forEach(f => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="window.showDetail('${f.line}')">
+                        <td class="p-4 text-center text-slate-500 font-medium">${f.date}</td>
+                        <td class="p-4 font-bold text-slate-700">${f.line}</td>
+                        <td class="p-4 text-blue-600 font-bold">${f.subItem}</td>
+                        <td class="p-4 text-slate-600 text-sm truncate max-w-xs">${f.desc}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.setAnalysisPeriod = function(period) {
+            window.currentAnalysisPeriod = period;
+            window.activeAnalysisLine = 'all'; 
+            window.renderFaultAnalysis();
+        }
+
+        window.setAnalysisLine = function(line) {
+            window.activeAnalysisLine = line;
+            window.renderFaultAnalysis();
+            window.renderAnalysisDetailList();
+        }
+
+        window.renderFaultAnalysis = function() {
+            const targetDate = new Date(window.currentTargetDate);
+            const tYear = targetDate.getFullYear();
+            const tMonth = targetDate.getMonth() + 1;
+
+            const titleEl = document.getElementById('analysis-main-title');
+            let periodFaults = [];
+            let dateStr = '';
+            
+            const allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+
+            if (window.currentAnalysisPeriod === 'daily') {
+                titleEl.innerText = '설비팀 고장 자료 (일간 현황)';
+                dateStr = window.currentTargetDate;
+                periodFaults = allFaults.filter(r => r.date === window.currentTargetDate);
+            } else if (window.currentAnalysisPeriod === 'monthly') {
+                titleEl.innerText = '설비팀 고장 자료 (월간 누적 현황)';
+                dateStr = `${tYear}년 ${tMonth}월`;
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear && new Date(r.date).getMonth() + 1 === tMonth);
+            } else {
+                titleEl.innerText = '설비팀 고장 자료 (연간 누적 현황)';
+                dateStr = `${tYear}년`;
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear);
+            }
+
+            ['daily', 'monthly', 'yearly'].forEach(p => {
+                const btn = document.getElementById('ana-btn-' + p);
+                if(btn) {
+                    if(p === window.currentAnalysisPeriod) btn.className = 'px-5 py-2 rounded-lg text-sm font-black transition-all bg-blue-600 text-white shadow-sm';
+                    else btn.className = 'px-5 py-2 rounded-lg text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm';
+                }
+            });
+
+            const lines = ['CPL', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'ARP', 'SSCL'];
+            let thead = '';
+            let tbody = '';
+            
+            if (window.currentAnalysisPeriod === 'yearly') {
+                thead = `<tr class="bg-orange-100/40 border-y-2 border-slate-300 text-slate-700 font-black">
+                            <th class="py-3 px-4 border-x border-slate-200 w-24">구분</th>
+                            <th class="py-3 px-4 border-x border-slate-200 bg-orange-100/70 w-20">소계</th>`;
+                for(let i=1; i<=12; i++) {
+                    const isCur = (i === tMonth);
+                    thead += `<th class="py-3 px-2 border-x border-slate-200 ${isCur ? 'bg-blue-100 text-blue-800' : ''}">${i}월</th>`;
+                }
+                thead += `</tr>`;
+
+                let totalCounts = new Array(12).fill(0);
+                let totalSum = 0;
+
+                lines.forEach(line => {
+                    let lineFaults = periodFaults.filter(r => r.line === line);
+                    let rowSum = lineFaults.length;
+                    totalSum += rowSum;
+                    
+                    const isSelected = window.activeAnalysisLine === line;
+                    const trClass = isSelected ? 'bg-blue-50 border-y-2 border-blue-400 shadow-inner' : 'border-b border-slate-200 hover:bg-slate-50 cursor-pointer';
+
+                    tbody += `<tr class="${trClass}" onclick="window.setAnalysisLine('${line}')">
+                                <td class="py-2.5 font-bold border-x border-slate-300 ${isSelected ? 'text-blue-700' : 'text-slate-700 bg-slate-50'}">${line}</td>
+                                <td class="py-2.5 font-black border-x border-slate-300 text-orange-600 ${isSelected ? 'bg-orange-100' : 'bg-orange-50/50'}">${rowSum}</td>`;
+                    
+                    for(let i=1; i<=12; i++) {
+                        let mCount = lineFaults.filter(r => (new Date(r.date).getMonth() + 1) === i).length;
+                        totalCounts[i-1] += mCount;
+                        const isCur = (i === tMonth);
+                        tbody += `<td class="py-2.5 border-x border-slate-200 ${isCur ? 'bg-blue-50/50 font-bold text-blue-700' : ''}">${mCount > 0 ? mCount : ''}</td>`;
+                    }
+                    tbody += `</tr>`;
+                });
+
+                tbody += `<tr class="border-y-2 border-slate-300 bg-slate-100 font-black text-slate-800 cursor-pointer hover:bg-slate-200" onclick="window.setAnalysisLine('all')">
+                            <td class="py-3 border-x border-slate-300">합계 (전체)</td>
+                            <td class="py-3 border-x border-slate-300 text-orange-600">${totalSum}</td>`;
+                for(let i=0; i<12; i++) {
+                    const isCur = (i === tMonth - 1);
+                    tbody += `<td class="py-3 border-x border-slate-300 ${isCur ? 'bg-blue-100/50 text-blue-800' : ''}">${totalCounts[i] > 0 ? totalCounts[i] : ''}</td>`;
+                }
+                tbody += `</tr>`;
+
+            } else {
+                const catKeys = ['drive', 'xray', 'plc', 'electric', 'human', 'etc'];
+                const catNames = ['구동부', 'X-RAY/센서', 'PLC/통신', '전장품', 'HUMAN ERROR', '미분류'];
+                
+                thead = `<tr class="bg-orange-100/40 border-y-2 border-slate-300 text-slate-700 font-black">
+                            <th class="py-3 px-4 border-x border-slate-200 w-24">구분</th>
+                            <th class="py-3 px-4 border-x border-slate-200 bg-orange-100/70 w-20">소계</th>`;
+                catNames.forEach(c => {
+                    thead += `<th class="py-3 px-2 border-x border-slate-200">${c}</th>`;
+                });
+                thead += `</tr>`;
+
+                let totalCounts = new Array(catKeys.length).fill(0);
+                let totalSum = 0;
+
+                lines.forEach(line => {
+                    let lineFaults = periodFaults.filter(r => r.line === line);
+                    let rowSum = lineFaults.length;
+                    totalSum += rowSum;
+                    
+                    const isSelected = window.activeAnalysisLine === line;
+                    const trClass = isSelected ? 'bg-blue-50 border-y-2 border-blue-400 shadow-inner' : 'border-b border-slate-200 hover:bg-slate-50 cursor-pointer';
+
+                    tbody += `<tr class="${trClass}" onclick="window.setAnalysisLine('${line}')">
+                                <td class="py-2.5 font-bold border-x border-slate-300 ${isSelected ? 'text-blue-700' : 'text-slate-700 bg-slate-50'}">${line}</td>
+                                <td class="py-2.5 font-black border-x border-slate-300 text-orange-600 ${isSelected ? 'bg-orange-100' : 'bg-orange-50/50'}">${rowSum}</td>`;
+                    
+                    catKeys.forEach((cat, idx) => {
+                        let cCount = lineFaults.filter(r => r.category === cat).length;
+                        totalCounts[idx] += cCount;
+                        tbody += `<td class="py-2.5 border-x border-slate-200">${cCount > 0 ? cCount : ''}</td>`;
+                    });
+                    tbody += `</tr>`;
+                });
+
+                tbody += `<tr class="border-y-2 border-slate-300 bg-slate-100 font-black text-slate-800 cursor-pointer hover:bg-slate-200" onclick="window.setAnalysisLine('all')">
+                            <td class="py-3 border-x border-slate-300">합계 (전체)</td>
+                            <td class="py-3 border-x border-slate-300 text-orange-600">${totalSum}</td>`;
+                catKeys.forEach((cat, idx) => {
+                    tbody += `<td class="py-3 border-x border-slate-300">${totalCounts[idx] > 0 ? totalCounts[idx] : ''}</td>`;
+                });
+                tbody += `</tr>`;
+            }
+
+            document.getElementById('analysis-table-container').innerHTML = `
+                <table class="w-full text-center border-collapse text-sm">
+                    <thead>${thead}</thead>
+                    <tbody class="text-slate-600 font-semibold">${tbody}</tbody>
+                </table>
+            `;
+        }
+
+        window.setAnalysisDetailPeriod = function(period) {
+            window.currentAnalysisDetailPeriod = period;
+            ['all', 'daily', 'monthly', 'yearly'].forEach(p => {
+                const btn = document.getElementById('ana-detail-btn-' + p);
+                if(btn) {
+                    if(p === period) btn.className = 'px-4 py-1.5 rounded-lg text-xs font-black transition-all bg-blue-600 text-white shadow-sm';
+                    else btn.className = 'px-4 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm';
+                }
+            });
+            window.renderAnalysisDetailList();
+        }
+
+        window.renderAnalysisDetailList = function() {
+            const targetDate = new Date(window.currentTargetDate);
+            const tYear = targetDate.getFullYear();
+            const tMonth = targetDate.getMonth() + 1;
+            const tDateStr = window.currentTargetDate;
+
+            const allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+            let periodFaults = [];
+            let dateStr = '';
+
+            if (window.currentAnalysisDetailPeriod === 'all') {
+                periodFaults = allFaults;
+                dateStr = '전체 누적 기간';
+            } else if (window.currentAnalysisDetailPeriod === 'daily') {
+                periodFaults = allFaults.filter(r => r.date === tDateStr);
+                dateStr = tDateStr;
+            } else if (window.currentAnalysisDetailPeriod === 'monthly') {
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear && new Date(r.date).getMonth() + 1 === tMonth);
+                dateStr = `${tYear}년 ${tMonth}월`;
+            } else if (window.currentAnalysisDetailPeriod === 'yearly') {
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear);
+                dateStr = `${tYear}년`;
+            }
+
+            let detailTitle = `${window.activeAnalysisLine === 'all' ? '전체 라인' : window.activeAnalysisLine + ' 라인'} 세부 고장 내역 (${dateStr})`;
+            const titleEl = document.getElementById('analysis-detail-title-text');
+            if (titleEl) titleEl.innerText = detailTitle;
+
+            let filteredFaults = periodFaults;
+            if(window.activeAnalysisLine !== 'all') {
+                filteredFaults = filteredFaults.filter(r => r.line === window.activeAnalysisLine);
+            }
+            filteredFaults.sort((a,b) => (a.date < b.date ? 1 : (a.date > b.date ? -1 : 0)));
+
+            let listHtml = '';
+            if(filteredFaults.length === 0) {
+                listHtml = `<div class="text-slate-500 text-center py-12 font-bold bg-slate-50 rounded-xl border border-dashed border-slate-300">해당 조건에 부합하는 고장 내역이 없습니다.</div>`;
+            } else {
+                filteredFaults.forEach(f => {
+                    // ★ 파일 링크가 있을 경우 렌더링
+                    let fileBtnHtml = '';
+                    if (f.fileUrl) {
+                        let finalUrl = f.fileUrl;
+                        if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                            finalUrl = 'http://' + finalUrl;
+                        }
+                        fileBtnHtml = `
+                            <div class="mt-4 border-t border-slate-100 pt-3">
+                                <a href="${finalUrl}" target="_blank" class="px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold hover:bg-blue-100 transition inline-flex items-center">
+                                    <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                    관련 문서/PPT 열기
+                                </a>
+                            </div>
+                        `;
+                    }
+
+                    listHtml += `
+                        <div class="text-sm text-slate-800 leading-relaxed border border-slate-200 shadow-sm pb-5 hover:border-blue-300 hover:shadow-md p-4 rounded-xl transition bg-white">
+                            <div class="font-black mb-3 text-base flex justify-between items-center border-b border-slate-100 pb-2">
+                                <div class="flex items-center">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    <span class="text-blue-700 mr-2">[${f.line}]</span> ${f.subItem} 
+                                    <span class="text-slate-400 font-semibold text-xs ml-3 bg-slate-100 px-2 py-0.5 rounded-full">발생일 : ${f.date}</span>
+                                </div>
+                                <span class="text-xs font-bold px-2.5 py-1 rounded bg-red-50 text-red-600 border border-red-100">${f.type}</span>
+                            </div>
+                            <div class="pl-2 whitespace-pre-wrap text-slate-600 font-medium text-sm leading-7">${f.desc}</div>
+                            ${fileBtnHtml}
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('analysis-detail-list').innerHTML = listHtml;
+        }
+
+        window.showPanel = function(id) {
+            document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            const backBtn = document.getElementById('backToSummaryBtn');
+            const dateContainer = document.getElementById('headerDatePickerContainer');
+
+            if(backBtn) {
+                if(id === 'detail') backBtn.classList.remove('hidden');
+                else backBtn.classList.add('hidden');
+            }
+
+            if(id === 'summary') {
+                document.getElementById('nav-summary').classList.add('active');
+                document.getElementById('headerTitle').innerText = '설비 점검 종합 현황';
+                dateContainer.classList.remove('hidden');
+            } else if(id === 'input') {
+                document.getElementById('nav-input').classList.add('active');
+                document.getElementById('headerTitle').innerText = '데이터 통합 관리 등록';
+                window.switchInputTab('inspection'); 
+                document.getElementById('regDateFault').value = window.currentTargetDate;
+                dateContainer.classList.add('hidden');
+            } else if(id === 'analysis') {
+                document.getElementById('nav-analysis').classList.add('active');
+                document.getElementById('headerTitle').innerText = '고장 분석 리포트';
+                dateContainer.classList.remove('hidden'); 
+                window.renderFaultAnalysis();
+                window.renderAnalysisDetailList();
+            } else if(id === 'detail') {
+                dateContainer.classList.add('hidden');
+            }
+        }
+
+        window.showDetail = function(name) {
+            window.activeLine = name;
+            window.activeCycleFilter = 'all'; 
+            window.activeDetailCategoryFilter = 'all'; // ★ 상세화면 설비명 필터 초기화
+            
+            document.querySelectorAll('.cycle-filter-tab').forEach(t => t.className = t.innerText === '전체' ? 'cycle-filter-tab active bg-blue-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200' : 'cycle-filter-tab text-slate-600 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200');
+
+            window.showPanel('detail');
+            document.getElementById('headerTitle').innerText = name + ' 상세 정밀 분석';
+            
+            // ★ 오타 수정 완료
+            document.getElementById('detailLineTitle').innerText = name + ' 상세 점검 항목';
+            
+            // ★ 상세화면 설비명 드롭다운 세팅
+            const catSelect = document.getElementById('detailCategoryFilter');
+            if (catSelect) {
+                let cats = [];
+                if(subItemMapInsp[name]) cats = Object.keys(subItemMapInsp[name]);
+                else cats = Object.keys(subItemMapInsp['CRM']); // Fallback
+                
+                let html = '<option value="all">설비명 (전체) ▼</option>';
+                cats.forEach(c => { html += `<option value="${c}">${c}</option>`; });
+                catSelect.innerHTML = html;
+                catSelect.value = 'all';
+            }
+            
+            document.querySelectorAll('.line-nav').forEach(item => {
+                if(item.innerText.includes(name)) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+
+            setTimeout(() => {
+                window.renderDetailTable();
+                window.renderInspReport();
+            }, 50); 
+        }
+
+        window.syncDateData = function(val) { 
+            window.currentTargetDate = val; 
+            window.updateAllLineScores(); 
+            window.renderSummaryGrid(); 
+            if (document.getElementById('panel-detail').classList.contains('active')) {
+                window.renderDetailTable();
+                window.renderInspReport();
+            }
+            if (document.getElementById('panel-analysis').classList.contains('active')) {
+                window.renderFaultAnalysis();
+                window.renderAnalysisDetailList();
+            }
+        }
+
+        window.renderSummaryGrid = function() {
+            const grid = document.getElementById('statusGrid');
+            if(!grid) return;
+            grid.innerHTML = '';
+
+            Object.keys(lineStore).forEach(key => {
+                const data = lineStore[key];
+                const mechPercent = data.mechTotal === 0 ? 0 : Math.round((data.mechComp / data.mechTotal) * 100);
+                const elecPercent = data.elecTotal === 0 ? 0 : Math.round((data.elecComp / data.elecTotal) * 100);
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer";
+                card.onclick = () => window.showDetail(key);
+                
+                card.innerHTML = `
+                    <h4 class="text-xl font-black text-slate-800 tracking-tight mb-6">${key}</h4>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-slate-500">기계</span>
+                            <span class="text-sm font-black text-blue-600">${mechPercent}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5">
+                            <div class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: ${mechPercent}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-slate-500">전기</span>
+                            <span class="text-sm font-black text-emerald-500">${elecPercent}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5">
+                            <div class="bg-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: ${elecPercent}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 font-semibold mt-6 pt-4 border-t border-slate-50">
+                        기계: ${data.mechComp}/${data.mechTotal} | 전기: ${data.elecComp}/${data.elecTotal}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // ★ 신규: 상세점검화면에서 카테고리(설비명) 필터를 변경했을 때
+        window.filterDetailByCategory = function(cat) {
+            window.activeDetailCategoryFilter = cat;
+            window.currentDetailTablePage = 0; // 페이지 1로 리셋
+            window.renderDetailTable();
+        }
+
+        window.renderDetailTable = function() {
+            const tbody = document.getElementById('detailTableBody');
+            tbody.innerHTML = '';
+            
+            let filteredRecords = window.systemRecords.filter(r => r.recordType === 'inspection' && r.line === window.activeLine);
+            
+            // 미점검 상태인 것은 과거부터 오늘까지 모두 표시(Overdue), 점검완료는 오늘 것만 표시
+            filteredRecords = filteredRecords.filter(r => {
+                if (r.status === 'uninspected') {
+                    return r.date <= window.currentTargetDate;
+                } else {
+                    return r.date === window.currentTargetDate;
+                }
+            });
+
+            // 주기 필터 적용
+            if (window.activeCycleFilter !== 'all') {
+                filteredRecords = filteredRecords.filter(r => r.cycle === window.activeCycleFilter);
+            }
+            
+            // ★ 설비명(카테고리) 필터 적용
+            if (window.activeDetailCategoryFilter !== 'all') {
+                filteredRecords = filteredRecords.filter(r => r.category === window.activeDetailCategoryFilter);
+            }
+
+            let compCount = 0;
+
+            if (filteredRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-12 text-center text-slate-400 font-bold">등록된 점검 항목 내역이 없습니다.</td></tr>`;
+                document.getElementById('detailLineProgress').innerText = `해당 조회조건 점검 완료율: 0/0`;
+                document.getElementById('detailPagination').innerHTML = '';
+                return;
+            }
+
+            // 날짜 순 정렬 (지연된 항목이 위로 오도록)
+            filteredRecords.sort((a,b) => (a.date > b.date ? 1 : (a.date < b.date ? -1 : 0)));
+
+            const itemsPerPage = 10;
+            const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+            if(window.currentDetailTablePage >= totalPages) window.currentDetailTablePage = 0;
+            
+            const startIdx = window.currentDetailTablePage * itemsPerPage;
+            const currentItems = filteredRecords.slice(startIdx, startIdx + itemsPerPage);
+
+            currentItems.forEach((r, i) => {
+                const idx = startIdx + i;
+                const status = r.status;
+                const remark = r.remark;
+                
+                if (status === 'completed') compCount++;
+
+                const statusClass = status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700';
+                const statusText = status === 'completed' ? '점검완료' : '미점검';
+                const buttonClass = status === 'completed' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-400 hover:bg-slate-500';
+                const cycleKo = cycleNameMap[r.cycle] || '일반';
+                
+                const remarkBtnText = remark ? '수정' : '작성';
+                const remarkBtnClass = remark ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
+                
+                let dateBadge = '';
+                if (status === 'uninspected') {
+                    // ★ 신규 로직: 점검 주기에 맞춘 유예 기간(Grace Period)을 적용하여 진짜 지연일 때만 경고 표시
+                    let deadline = new Date(r.date);
+                    if (r.cycle === 'monthly') deadline.setMonth(deadline.getMonth() + 1);
+                    else if (r.cycle === 'weekly') deadline.setDate(deadline.getDate() + 7);
+                    else if (r.cycle === 'quarterly') deadline.setMonth(deadline.getMonth() + 3);
+                    else deadline.setDate(deadline.getDate() + 1); // 일별(daily) 또는 기타
+                    
+                    const currentD = new Date(window.currentTargetDate);
+                    
+                    // 지정된 주기(deadline)가 현재 날짜보다 과거일 때만 지연 처리
+                    if (deadline <= currentD) {
+                        dateBadge = `<br><span class="text-[10px] text-red-500 font-bold">(${r.date} 기준 지연)</span>`;
+                    }
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-4 px-4 text-center text-slate-400">${idx + 1}</td>
+                        <td class="py-4 px-4 text-slate-800 font-bold">${r.category}</td>
+                        <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded bg-slate-100 text-[10px] text-slate-500 font-black">${cycleKo}</span></td>
+                        <td class="py-4 px-4 text-slate-500 text-xs">${r.subItem}${dateBadge}</td>
+                        <td class="py-4 px-4 text-center"><span class="px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider ${statusClass}">${statusText}</span></td>
+                        <td class="py-4 px-4 text-center">
+                            <button onclick="window.openRemarkModal('${r.id}')" class="text-[10px] font-black px-3 py-1 rounded-lg transition ${remarkBtnClass}">${remarkBtnText}</button>
+                        </td>
+                        <td class="py-4 px-4 text-center no-print">
+                            <button onclick="window.toggleInspectionStatus('${r.id}')" class="text-white text-xs font-black px-4 py-1.5 rounded-xl transition ${buttonClass}">${status === 'completed' ? '실적 취소' : '실적 조치'}</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            let totalCompCount = filteredRecords.filter(r => r.status === 'completed').length;
+            document.getElementById('detailLineProgress').innerText = `해당 조회조건 점검 완료율: ${totalCompCount}/${filteredRecords.length}`;
+
+            let paginationHtml = '';
+            if (totalPages > 1) {
+                paginationHtml = `
+                    <div class="flex justify-center mt-4 gap-2 no-print">
+                        <button type="button" onclick="window.changeDetailTablePage(-1)" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentDetailTablePage === 0 ? 'disabled' : ''}>◀ 이전</button>
+                        <span class="text-xs font-bold text-slate-500 mx-2 flex items-center">${window.currentDetailTablePage + 1} / ${totalPages} 페이지</span>
+                        <button type="button" onclick="window.changeDetailTablePage(1)" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentDetailTablePage >= totalPages - 1 ? 'disabled' : ''}>다음 ▶</button>
+                    </div>
+                `;
+            }
+            document.getElementById('detailPagination').innerHTML = paginationHtml;
+        }
+
+        window.changeDetailTablePage = function(dir) {
+            window.currentDetailTablePage += dir;
+            window.renderDetailTable();
+        }
+
+        window.filterDetailByCycle = function(cycle) {
+            window.activeCycleFilter = cycle;
+            window.currentDetailTablePage = 0; // 페이지 초기화
+            document.querySelectorAll('.cycle-filter-tab').forEach(t => {
+                const tabTexts = { 'all': '전체', 'daily': '일별', 'weekly': '주별', 'monthly': '월별', 'quarterly': '분기별' };
+                if(t.innerText === tabTexts[cycle]) {
+                    t.className = 'cycle-filter-tab active bg-blue-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200';
+                } else {
+                    t.className = 'cycle-filter-tab text-slate-600 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-all duration-200';
+                }
+            });
+            window.renderDetailTable();
+        }
+
+        window.toggleInspectionStatus = async function(id) {
+            const record = window.systemRecords.find(r => r.id === id);
+            if (!record) return;
+
+            // 로딩 오버레이 켜기 (간단한 클릭이므로 바로 꺼지게 함)
+            try {
+                let nextStatus = record.status === 'completed' ? 'uninspected' : 'completed';
+                let nextRecord = null;
+                
+                // ★ 신규 로직: 현재 날짜(실적일)로 기록일자 업데이트
+                let newDateStr = record.date;
+                if (nextStatus === 'completed') {
+                    newDateStr = window.currentTargetDate;
+                }
+                
+                // ★ 신규 로직: 완료 처리 시 점검주기에 맞춰 다음 날짜 항목 자동 생성 (릴레이 방식)
+                if (nextStatus === 'completed' && record.cycle !== 'none') {
+                    const nextDate = new Date(newDateStr); // 실적일 기준으로 다음 주기 계산
+                    if (record.cycle === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+                    else if (record.cycle === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+                    else if (record.cycle === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+                    else if (record.cycle === 'quarterly') nextDate.setMonth(nextDate.getMonth() + 3);
+                    
+                    const nextDateStr = nextDate.getFullYear() + '-' + String(nextDate.getMonth() + 1).padStart(2, '0') + '-' + String(nextDate.getDate()).padStart(2, '0');
+                    
+                    // 중복 생성 방지 체크
+                    const isExist = window.systemRecords.some(r => 
+                        r.recordType === 'inspection' && r.line === record.line && r.subItem === record.subItem && r.date === nextDateStr
+                    );
+                    
+                    if (!isExist) {
+                        nextRecord = {
+                            id: generateUUID(),
+                            recordType: 'inspection',
+                            line: record.line,
+                            category: record.category,
+                            subItem: record.subItem,
+                            type: record.type,
+                            cycle: record.cycle,
+                            date: nextDateStr,
+                            status: 'uninspected',
+                            desc: record.desc,
+                            remark: ''
+                        };
+                    }
+                }
+
+                // ★ 완벽 정화 처리: 데이터베이스에 빈값 전송 거부 방지
+                if (window.isFirebaseActive && window.firebaseHandler) {
+                    await window.firebaseHandler.set(id, sanitizeRecord({ ...record, status: nextStatus, date: newDateStr }));
+                    if (nextRecord) await window.firebaseHandler.add(sanitizeRecord(nextRecord));
+                } else {
+                    record.status = nextStatus;
+                    record.date = newDateStr;
+                    if (nextRecord) window.systemRecords.push(nextRecord);
+                }
+
+                if(nextStatus === 'completed') {
+                    setTimeout(() => window.showCustomAlert(`[점검 실적 등록 완료]\n해당 일자의 점검 실적이 기록되었으며, 주기 설정에 따라 다음 점검 예정일(${nextRecord ? nextRecord.date : '기존유지'}) 데이터가 자동 생성되었습니다.`, 'success'), 200);
+                }
+
+                window.updateAllLineScores();
+                window.renderSummaryGrid();
+                window.renderDetailTable();
+                window.renderInspReport(); 
+            } catch(e) {
+                console.error(e);
+                window.showCustomAlert("오류가 발생했습니다: " + e.message, "danger");
+            }
+        }
+
+        // 특이사항 모달 로직
+        window.openRemarkModal = function(id) {
+            const record = window.systemRecords.find(r => r.id === id);
+            if(!record) return;
+            
+            window.currentRemarkId = id;
+            document.getElementById('remarkModalSubItem').innerText = `[${record.line}] ${record.subItem}`;
+            document.getElementById('remarkArea').value = record.remark || '';
+            document.getElementById('remarkModal').classList.remove('hidden');
+        }
+
+        window.closeRemarkModal = function() {
+            document.getElementById('remarkModal').classList.add('hidden');
+            window.currentRemarkId = null;
+        }
+
+        window.saveRemark = async function() {
+            if(!window.currentRemarkId) return;
+            const remarkText = document.getElementById('remarkArea').value.trim();
+            const record = window.systemRecords.find(r => r.id === window.currentRemarkId);
+            
+            try {
+                if(record) {
+                    if (window.isFirebaseActive && window.firebaseHandler) {
+                        await window.firebaseHandler.set(record.id, sanitizeRecord({ ...record, remark: remarkText }));
+                    } else {
+                        record.remark = remarkText;
+                    }
+                }
+                
+                window.renderDetailTable();
+                window.renderInspReport();
+                window.closeRemarkModal();
+                window.showCustomAlert("특이사항이 저장되었습니다.", "success");
+            } catch(e) {
+                console.error(e);
+                window.showCustomAlert("저장 중 오류: " + e.message, "danger");
+            }
+        }
+
+        // ★ 신규: 점검 실시 현황 리포트 렌더러 (Completed 항목만 표시)
+        window.setInspReportPeriod = function(period) {
+            window.currentInspReportPeriod = period;
+            window.currentReportTablePage = 0; // 페이지 초기화
+            ['daily', 'monthly', 'yearly'].forEach(p => {
+                const btn = document.getElementById('insp-btn-' + p);
+                if(btn) {
+                    if(p === period) btn.className = 'px-4 py-1.5 rounded-lg text-xs font-black transition-all bg-blue-600 text-white shadow-sm';
+                    else btn.className = 'px-4 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm';
+                }
+            });
+            window.renderInspReport();
+        }
+
+        window.renderInspReport = function() {
+            const container = document.getElementById('inspectionReportContainer');
+            const targetDate = new Date(window.currentTargetDate);
+            const tYear = targetDate.getFullYear();
+            const tMonth = targetDate.getMonth() + 1;
+            const tDateStr = window.currentTargetDate;
+            
+            // 완료(Completed)된 점검 항목만 리포트에 노출
+            let periodLogs = window.systemRecords.filter(r => r.recordType === 'inspection' && r.status === 'completed' && r.line === window.activeLine);
+            
+            let dateStr = '';
+            
+            if (window.currentInspReportPeriod === 'daily') {
+                periodLogs = periodLogs.filter(r => r.date === tDateStr);
+                dateStr = tDateStr;
+            } else if (window.currentInspReportPeriod === 'monthly') {
+                periodLogs = periodLogs.filter(r => new Date(r.date).getFullYear() === tYear && new Date(r.date).getMonth() + 1 === tMonth);
+                dateStr = `${tYear}년 ${tMonth}월`;
+            } else {
+                periodLogs = periodLogs.filter(r => new Date(r.date).getFullYear() === tYear);
+                dateStr = `${tYear}년`;
+            }
+            
+            periodLogs.sort((a,b) => (b.date > a.date ? 1 : (b.date < a.date ? -1 : 0))); // 최신순 정렬
+            
+            if(periodLogs.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-300">해당 기간(${dateStr})에 기록된 점검 완료 실적이 없습니다.</div>`;
+                document.getElementById('reportPagination').innerHTML = '';
+                return;
+            }
+
+            const itemsPerPage = 10;
+            const totalPages = Math.ceil(periodLogs.length / itemsPerPage);
+            if(window.currentReportTablePage >= totalPages) window.currentReportTablePage = 0;
+            
+            const startIdx = window.currentReportTablePage * itemsPerPage;
+            const currentItems = periodLogs.slice(startIdx, startIdx + itemsPerPage);
+            
+            let html = `<table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-slate-50 border-y border-slate-200 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="py-3 px-4 w-28 text-center">점검 완료 일자</th>
+                                    <th class="py-3 px-4 w-32">설비명</th>
+                                    <th class="py-3 px-4 w-1/3">작업 세부사항</th>
+                                    <th class="py-3 px-4 w-24 text-center">상태</th>
+                                    <th class="py-3 px-4">특이사항 (메모)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">`;
+                            
+            currentItems.forEach(log => {
+                html += `<tr class="hover:bg-slate-50 transition">
+                            <td class="py-3 px-4 text-center text-slate-500 font-bold">${log.date}</td>
+                            <td class="py-3 px-4 text-blue-700 font-bold">${log.category}</td>
+                            <td class="py-3 px-4 text-slate-700 font-medium">${log.subItem}</td>
+                            <td class="py-3 px-4 text-center"><span class="px-2.5 py-1 rounded-md text-[11px] font-black bg-emerald-100 text-emerald-700">점검완료</span></td>
+                            <td class="py-3 px-4 text-slate-600 text-xs">${log.remark || '<span class="text-slate-300">-</span>'}</td>
+                         </tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+
+            let paginationHtml = '';
+            if (totalPages > 1) {
+                paginationHtml = `
+                    <div class="flex justify-center mt-4 gap-2 no-print">
+                        <button type="button" onclick="window.changeReportTablePage(-1)" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentReportTablePage === 0 ? 'disabled' : ''}>◀ 이전</button>
+                        <span class="text-xs font-bold text-slate-500 mx-2 flex items-center">${window.currentReportTablePage + 1} / ${totalPages} 페이지</span>
+                        <button type="button" onclick="window.changeReportTablePage(1)" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentReportTablePage >= totalPages - 1 ? 'disabled' : ''}>다음 ▶</button>
+                    </div>
+                `;
+            }
+            document.getElementById('reportPagination').innerHTML = paginationHtml;
+        }
+
+        window.changeReportTablePage = function(dir) {
+            window.currentReportTablePage += dir;
+            window.renderInspReport();
+        }
+
+        window.switchInputTab = function(type) {
+            const btnInsp = document.getElementById('tab-btn-inspection');
+            const btnFault = document.getElementById('tab-btn-fault');
+            const secInsp = document.getElementById('section-inspection-input');
+            const secFault = document.getElementById('section-fault-input');
+            const mainTitle = document.getElementById('input-main-title');
+
+            btnInsp.className = 'px-6 py-2.5 rounded-xl font-black text-sm transition-all text-slate-500 hover:text-slate-800';
+            btnFault.className = 'px-6 py-2.5 rounded-xl font-black text-sm transition-all text-slate-500 hover:text-slate-800';
+            
+            secInsp.classList.add('hidden');
+            secFault.classList.add('hidden');
+
+            if (type === 'inspection') {
+                btnInsp.className = 'px-6 py-2.5 rounded-xl font-black text-sm transition-all bg-blue-600 text-white shadow-sm';
+                secInsp.classList.remove('hidden');
+                mainTitle.innerText = '점검 항목 등록';
+                window.updateCategoryOptionsInsp(); // 라인에 맞는 설비명 옵션 갱신
+            } else if (type === 'fault') {
+                btnFault.className = 'px-6 py-2.5 rounded-xl font-black text-sm transition-all bg-red-600 text-white shadow-sm';
+                secFault.classList.remove('hidden');
+                mainTitle.innerText = '고장 이력 등록';
+                window.loadSubItemsFault(document.getElementById('regCategoryFault').value);
+            }
+        }
+        
+        // 라인 변경 시 설비명 옵션 업데이트 및 페이지 초기화
+        window.updateCategoryOptionsInsp = function() {
+            const line = document.getElementById('regLineInsp').value;
+            const categorySelect = document.getElementById('regCategoryInsp');
+            
+            let categories = [];
+            if(subItemMapInsp[line]) {
+                categories = Object.keys(subItemMapInsp[line]);
+            } else {
+                categories = Object.keys(subItemMapInsp['CRM']);
+            }
+            
+            let html = '';
+            categories.forEach(cat => {
+                html += `<option value="${cat}">${cat}</option>`;
+            });
+            categorySelect.innerHTML = html;
+            
+            window.currentSubItemPageInsp = 0; // 페이지 리셋
+            window.loadSubItemsInsp();
+        }
+
+        // 페이지네이션 적용된 점검 버튼 로드
+        window.loadSubItemsInsp = function() {
+            const line = document.getElementById('regLineInsp').value;
+            const categorySelect = document.getElementById('regCategoryInsp');
+            let currentCat = categorySelect.value;
+            
+            let itemsMap = subItemMapInsp[line];
+            if (!itemsMap) itemsMap = subItemMapInsp['CRM']; // Fallback
+            
+            if (!itemsMap[currentCat]) {
+                 currentCat = Object.keys(itemsMap)[0];
+            }
+            
+            let items = itemsMap[currentCat] || ['기타 미분류 항목'];
+            
+            if(!items.includes(window.selectedSubItemInsp)) {
+                window.selectedSubItemInsp = items[0];
+            }
+            
+            // Pagination Logic
+            const itemsPerPage = 12;
+            const totalPages = Math.ceil(items.length / itemsPerPage);
+            if(window.currentSubItemPageInsp >= totalPages) window.currentSubItemPageInsp = 0;
+            
+            const startIdx = window.currentSubItemPageInsp * itemsPerPage;
+            const currentItems = items.slice(startIdx, startIdx + itemsPerPage);
+            
+            let html = currentItems.map((item, idx) => {
+                const activeClass = (item === window.selectedSubItemInsp) ? 'active bg-blue-600 text-white' : '';
+                return `<button type="button" onclick="window.selectInputItemInsp(this, '${item}')" class="type-tab ${activeClass}">${item}</button>`;
+            }).join('');
+            
+            html += `<div class="flex items-center ml-2 border border-slate-300 rounded-lg overflow-hidden h-[34px]">
+                        <input type="text" id="customSubInsp" placeholder="직접입력 (추가)" class="text-xs px-3 py-1 outline-none w-28 bg-slate-50 h-full font-semibold text-slate-600 placeholder-slate-400" onkeydown="if(event.key==='Enter'){window.addCustomItem('inspection', '${line}', '${currentCat}');}">
+                        <button type="button" onclick="window.addCustomItem('inspection', '${line}', '${currentCat}')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-3 h-full text-sm transition border-l border-slate-300">+</button>
+                     </div>`;
+                     
+            document.getElementById('subItemContainerInsp').innerHTML = html;
+            
+            // Render Pagination Buttons
+            let paginationHtml = '';
+            if (totalPages > 1) {
+                paginationHtml = `
+                    <button type="button" onclick="window.changeSubItemPageInsp(-1)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentSubItemPageInsp === 0 ? 'disabled' : ''}>◀ 이전</button>
+                    <span class="text-xs font-bold text-slate-400 mx-2 flex items-center">${window.currentSubItemPageInsp + 1} / ${totalPages} 페이지</span>
+                    <button type="button" onclick="window.changeSubItemPageInsp(1)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentSubItemPageInsp >= totalPages - 1 ? 'disabled' : ''}>다음 ▶</button>
+                `;
+            }
+            document.getElementById('subItemPaginationInsp').innerHTML = paginationHtml;
+        }
+
+        window.changeSubItemPageInsp = function(dir) {
+            window.currentSubItemPageInsp += dir;
+            window.loadSubItemsInsp();
+        }
+
+        window.selectInputItemInsp = function(btn, itemText) {
+            document.querySelectorAll('#subItemContainerInsp button.type-tab').forEach(b => b.className = 'type-tab');
+            btn.className = 'type-tab active bg-blue-600 text-white'; 
+            window.selectedSubItemInsp = itemText;
+        }
+
+        // 페이지네이션 적용된 고장 버튼 로드
+        window.loadSubItemsFault = function(cat) {
+            const items = subItemMapFault[cat] || ['기타 미분류 항목'];
+            
+            if(!items.includes(window.selectedSubItemFault)) {
+                window.selectedSubItemFault = items[0];
+            }
+            
+            // Pagination Logic
+            const itemsPerPage = 12;
+            const totalPages = Math.ceil(items.length / itemsPerPage);
+            if(window.currentSubItemPageFault >= totalPages) window.currentSubItemPageFault = 0;
+            
+            const startIdx = window.currentSubItemPageFault * itemsPerPage;
+            const currentItems = items.slice(startIdx, startIdx + itemsPerPage);
+            
+            let html = currentItems.map((item, idx) => {
+                const activeClass = (item === window.selectedSubItemFault) ? 'active bg-red-500 text-white border-red-500' : 'border-red-100 hover:bg-red-50 text-red-800';
+                return `<button type="button" onclick="window.selectInputItemFault(this, '${item}')" class="type-tab ${activeClass}">${item}</button>`;
+            }).join('');
+            
+            html += `<div class="flex items-center ml-2 border border-red-200 rounded-lg overflow-hidden h-[34px]">
+                        <input type="text" id="customSubFault" placeholder="직접입력 (추가)" class="text-xs px-3 py-1 outline-none w-28 bg-red-50/30 h-full font-semibold text-red-600 placeholder-red-300" onkeydown="if(event.key==='Enter'){window.addCustomItem('fault', null, '${cat}');}">
+                        <button type="button" onclick="window.addCustomItem('fault', null, '${cat}')" class="bg-red-100 hover:bg-red-200 text-red-700 font-black px-3 h-full text-sm transition border-l border-red-200">+</button>
+                     </div>`;
+                     
+            document.getElementById('subItemContainerFault').innerHTML = html;
+            
+            // Render Pagination Buttons
+            let paginationHtml = '';
+            if (totalPages > 1) {
+                paginationHtml = `
+                    <button type="button" onclick="window.changeSubItemPageFault(-1, '${cat}')" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentSubItemPageFault === 0 ? 'disabled' : ''}>◀ 이전</button>
+                    <span class="text-xs font-bold text-red-400 mx-2 flex items-center">${window.currentSubItemPageFault + 1} / ${totalPages} 페이지</span>
+                    <button type="button" onclick="window.changeSubItemPageFault(1, '${cat}')" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentSubItemPageFault >= totalPages - 1 ? 'disabled' : ''}>다음 ▶</button>
+                `;
+            }
+            document.getElementById('subItemPaginationFault').innerHTML = paginationHtml;
+        }
+
+        window.changeSubItemPageFault = function(dir, cat) {
+            window.currentSubItemPageFault += dir;
+            window.loadSubItemsFault(cat);
+        }
+
+        window.selectInputItemFault = function(btn, itemText) {
+            document.querySelectorAll('#subItemContainerFault button.type-tab').forEach(b => b.className = 'type-tab border-red-100 hover:bg-red-50 text-red-800');
+            btn.className = 'type-tab active bg-red-500 text-white border-red-500'; 
+            window.selectedSubItemFault = itemText;
+        }
+
+        // ★ 신규: 사용자 커스텀 부위 추가 로직 (라인 기반)
+        window.addCustomItem = function(type, line, cat) {
+            if (type === 'inspection') {
+                const val = document.getElementById('customSubInsp').value.trim();
+                if(!val) return window.showCustomAlert("추가할 항목명을 입력해주세요.", "danger");
+                
+                if (!subItemMapInsp[line][cat]) subItemMapInsp[line][cat] = [];
+                if (!subItemMapInsp[line][cat].includes(val)) subItemMapInsp[line][cat].push(val);
+                
+                window.selectedSubItemInsp = val;
+                
+                // 새로 추가된 항목이 마지막 페이지로 가도록 조정
+                const totalPages = Math.ceil(subItemMapInsp[line][cat].length / 12);
+                window.currentSubItemPageInsp = totalPages - 1;
+                
+                window.loadSubItemsInsp();
+            } else {
+                const val = document.getElementById('customSubFault').value.trim();
+                if(!val) return window.showCustomAlert("추가할 항목명을 입력해주세요.", "danger");
+                
+                if (!subItemMapFault[cat].includes(val)) subItemMapFault[cat].push(val);
+                
+                window.selectedSubItemFault = val;
+                
+                const totalPages = Math.ceil(subItemMapFault[cat].length / 12);
+                window.currentSubItemPageFault = totalPages - 1;
+                
+                window.loadSubItemsFault(cat);
+            }
+        }
+
+        window.submitInspection = async function() {
+            try {
+                if(!window.selectedSubItemInsp) return window.showCustomAlert("상세 점검 부위를 선택해 주세요.", "danger");
+                
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+                document.getElementById('loadingText').innerText = "점검 항목 등록 중...";
+
+                const line = document.getElementById('regLineInsp').value;
+                const category = document.getElementById('regCategoryInsp').value;
+                const cycle = document.getElementById('regCycleInsp').value; 
+                const inputDate = window.currentTargetDate; 
+                const regDescText = window.selectedSubItemInsp;
+                
+                const newRecord = { id: generateUUID(), recordType: 'inspection', line: line, category: category, subItem: window.selectedSubItemInsp, type: typeMap[category] || '기타', cycle: cycle, date: inputDate, status: 'uninspected', desc: regDescText, remark: '' };
+
+                if (window.isFirebaseActive && window.firebaseHandler) {
+                    await window.firebaseHandler.add(sanitizeRecord(newRecord));
+                } else { 
+                    window.systemRecords.push(newRecord); window.updateAllLineScores(); window.renderSummaryGrid(); 
+                }
+
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                window.showCustomAlert(`[점검 데이터 등록 완료] ${line} 라인 점검 항목이 추가되었습니다.`, "success");
+                window.showDetail(line); 
+            } catch (err) { 
+                console.error(err); 
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                window.showCustomAlert("시스템 에러: " + err.message, "danger"); 
+            }
+        }
+
+        window.submitFault = async function() {
+            try {
+                if(!window.selectedSubItemFault) return window.showCustomAlert("상세 고장 부위를 선택해 주세요.", "danger");
+                
+                const inputDate = document.getElementById('regDateFault').value; 
+                if (!inputDate) return window.showCustomAlert("발생 일자를 지정해 주세요.", "danger");
+
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+                document.getElementById('loadingText').innerText = "고장 이력 등록 중...";
+                
+                const line = document.getElementById('regLineFault').value;
+                const category = document.getElementById('regCategoryFault').value;
+                const regDescText = document.getElementById('regDescFault').value.trim() || `${window.selectedSubItemFault} 고장 발생 및 조치 내역`;
+                
+                // ★ 신규: 첨부파일 링크 수집
+                const fileUrl = document.getElementById('regFileUrlFault').value.trim();
+
+                const newRecord = { 
+                    id: generateUUID(), recordType: 'fault', line: line, category: category, 
+                    subItem: window.selectedSubItemFault, type: typeMap[category] || '기타', cycle: 'none', 
+                    date: inputDate, status: 'fault', desc: regDescText, fileUrl: fileUrl 
+                };
+
+                if (window.isFirebaseActive && window.firebaseHandler) {
+                    await window.firebaseHandler.add(sanitizeRecord(newRecord));
+                } else { 
+                    window.systemRecords.push(newRecord); window.updateAllLineScores(); window.renderSummaryGrid(); 
+                }
+
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                window.showCustomAlert(`[고장 이력 등록] ${line} 라인 ${window.selectedSubItemFault} 고장이 데이터베이스에 저장되었습니다.`, "success");
+                document.getElementById('regDescFault').value = '원인 : \n조치 : \n대책 : ';
+                document.getElementById('regFileUrlFault').value = ''; // 입력칸 초기화
+                window.showDetail(line); 
+            } catch (err) { 
+                console.error(err); 
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                window.showCustomAlert("시스템 에러: " + err.message, "danger"); 
+            }
+        }
+
+        window.openEditModal = function() {
+            window.tempRecords = JSON.parse(JSON.stringify(window.systemRecords));
+            window.currentModalPage = 0; // 모달 열 때 페이지 초기화
+            window.currentModalLineFilter = 'all'; // 모달 열 때 라인 필터 초기화
+            window.currentModalCategoryFilter = 'all'; // ★ 카테고리 필터 초기화
+            const lineFilterSelect = document.getElementById('modalLineFilter');
+            if (lineFilterSelect) lineFilterSelect.value = 'all';
+            const catFilterSelect = document.getElementById('modalCategoryFilter');
+            if (catFilterSelect) catFilterSelect.value = 'all';
+            
+            document.getElementById('editDataModal').classList.remove('hidden');
+            window.currentSortCol = 'date';
+            window.currentSortAsc = false;
+            window.tempRecords.sort((a, b) => {
+                let valA = a.date || ''; let valB = b.date || '';
+                return valA > valB ? -1 : (valA < valB ? 1 : 0);
+            });
+            window.renderModalRows();
+        }
+
+        window.closeEditModal = function() { document.getElementById('editDataModal').classList.add('hidden'); }
+
+        window.openDescEditModal = function(idx, text) {
+            window.currentEditingDescIdx = idx;
+            document.getElementById('descEditArea').value = text;
+            document.getElementById('descEditModal').classList.remove('hidden');
+        }
+
+        window.closeDescEditModal = function() {
+            document.getElementById('descEditModal').classList.add('hidden');
+            window.currentEditingDescIdx = -1;
+        }
+
+        window.saveDescEdit = function() {
+            if(window.currentEditingDescIdx > -1) {
+                const newText = document.getElementById('descEditArea').value;
+                window.updateTempRecord(window.currentEditingDescIdx, 'desc', newText);
+                window.renderModalRows();
+            }
+            window.closeDescEditModal();
+        }
+
+        // ★ 신규: 링크 입력 프롬프트 
+        window.editFileUrl = function(idx) {
+            const row = window.tempRecords[idx];
+            const url = prompt("해당 항목과 관련된 문서/PPT 링크(URL)를 입력하세요.\n(구글 드라이브, 원드라이브, 사내공유망 링크 등)", row.fileUrl || '');
+            if (url !== null) {
+                window.updateTempRecord(idx, 'fileUrl', url.trim());
+                window.renderModalRows();
+            }
+        }
+
+        // ★ 신규: 수정 모달창 라인 필터링 로직
+        window.filterModalByLine = function(line) {
+            window.currentModalLineFilter = line;
+            window.currentModalCategoryFilter = 'all'; // 라인이 바뀌면 설비/분류 필터 초기화
+            window.currentModalPage = 0; // 필터가 변경되면 무조건 1페이지로 이동
+            window.renderModalRows();
+        }
+
+        // ★ 신규: 수정 모달창 설비/분류 필터링 로직
+        window.filterModalByCategory = function(category) {
+            window.currentModalCategoryFilter = category;
+            window.currentModalPage = 0; // 필터가 변경되면 1페이지로 이동
+            window.renderModalRows();
+        }
+
+        window.sortModalData = function(col) {
+            if (window.currentSortCol === col) window.currentSortAsc = !window.currentSortAsc;
+            else { window.currentSortCol = col; window.currentSortAsc = true; }
+            window.currentModalPage = 0; // 정렬 시 1페이지로 리셋
+            
+            window.tempRecords.sort((a, b) => {
+                let valA = a[col] || ''; let valB = b[col] || '';
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return window.currentSortAsc ? -1 : 1;
+                if (valA > valB) return window.currentSortAsc ? 1 : -1;
+                return 0;
+            });
+            window.renderModalRows();
+        }
+
+        window.changeModalPage = function(dir) {
+            window.currentModalPage += dir;
+            window.renderModalRows();
+        }
+
+        // ★ 모달창 렌더링 최적화 및 필터 기능 통합 (DOM 변경 최소화로 포커스 유지)
+        window.renderModalRows = function() {
+            const tbody = document.getElementById('modalTableBody');
+            tbody.innerHTML = '';
+            
+            const cols = ['recordType', 'subItem', 'cycle', 'date', 'status']; // 라인과 카테고리는 필터로 빠졌으므로 정렬 아이콘 업데이트 제외
+            cols.forEach(col => {
+                const iconEl = document.getElementById('sort-icon-' + col);
+                if (iconEl) {
+                    if (window.currentSortCol === col) {
+                        iconEl.innerHTML = window.currentSortAsc ? '↑' : '↓';
+                        iconEl.className = 'text-[11px] text-blue-600 font-black ml-1 inline-block text-center';
+                    } else {
+                        iconEl.innerHTML = '↕';
+                        iconEl.className = 'text-[11px] text-slate-300 ml-1 inline-block text-center transition-colors group-hover:text-blue-400';
+                    }
+                }
+            });
+
+            // 1차 필터 적용 (라인)
+            let lineFilteredRecords = window.tempRecords;
+            if (window.currentModalLineFilter !== 'all') {
+                lineFilteredRecords = lineFilteredRecords.filter(r => r.line === window.currentModalLineFilter);
+            }
+
+            // 동적 설비/분류 드롭다운 옵션 생성 (라인 필터링된 결과 기반)
+            const uniqueCategories = [...new Set(lineFilteredRecords.map(r => r.category))].sort();
+            const categorySelect = document.getElementById('modalCategoryFilter');
+            if (categorySelect) {
+                // 현재 선택된 카테고리가 갱신된 목록에 없으면 'all'로 초기화
+                if (window.currentModalCategoryFilter !== 'all' && !uniqueCategories.includes(window.currentModalCategoryFilter)) {
+                    window.currentModalCategoryFilter = 'all';
+                }
+                
+                let catHtml = `<option value="all">설비/분류 (전체) ▼</option>`;
+                uniqueCategories.forEach(cat => {
+                    catHtml += `<option value="${cat}" ${window.currentModalCategoryFilter === cat ? 'selected' : ''}>${cat}</option>`;
+                });
+                // DOM 조작을 최소화하여 드롭다운이 닫히는 현상을 방지
+                if (categorySelect.innerHTML !== catHtml) {
+                    categorySelect.innerHTML = catHtml;
+                }
+            }
+
+            // 2차 필터 적용 (설비/분류)
+            let filteredRecords = lineFilteredRecords;
+            if (window.currentModalCategoryFilter !== 'all') {
+                filteredRecords = filteredRecords.filter(r => r.category === window.currentModalCategoryFilter);
+            }
+
+            if (filteredRecords.length === 0) {
+                document.getElementById('modalPagination').innerHTML = '';
+                return tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-bold">수정할 이력이 존재하지 않습니다.</td></tr>`;
+            }
+            
+            // 페이지네이션 로직 적용
+            const ITEMS_PER_PAGE = 15; // 모달창에서 보여줄 행 갯수
+            const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
+            if (window.currentModalPage >= totalPages && totalPages > 0) window.currentModalPage = totalPages - 1;
+            
+            const startIdx = window.currentModalPage * ITEMS_PER_PAGE;
+            const currentItems = filteredRecords.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+            const lines = ['CPL', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'ARP', 'SSCL'];
+            const categoriesFault = [
+                { value: 'drive', text: '구동부' }, { value: 'xray', text: 'X-RAY' }, { value: 'plc', text: 'PLC' },
+                { value: 'electric', text: '전장품' }, { value: 'relay', text: '보호계전기' }, { value: 'human', text: 'HUMAN ERROR' }, { value: 'etc', text: '미분류' }
+            ];
+            const cycles = ['daily', 'weekly', 'monthly', 'quarterly', 'none'];
+            
+            currentItems.forEach((row) => {
+                // 필터/정렬된 상태에서도 원본 배열(window.tempRecords)에서의 진짜 인덱스를 찾아 수정/삭제에 사용합니다.
+                const absIdx = window.tempRecords.findIndex(r => r.id === row.id);
+                
+                const isFault = row.recordType === 'fault';
+                const badge = isFault ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black">고장</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black">점검내역</span>';
+                
+                let lineOptions = lines.map(line => `<option value="${line}" ${row.line === line ? 'selected' : ''}>${line}</option>`).join('');
+                let cycleOptions = cycles.map(c => `<option value="${c}" ${row.cycle === c ? 'selected' : ''}>${cycleNameMap[c]}</option>`).join('');
+                
+                let catOptions = '';
+                let subOptions = '';
+                
+                if (isFault) {
+                    catOptions = categoriesFault.map(cat => `<option value="${cat.value}" ${row.category === cat.value ? 'selected' : ''}>${cat.text}</option>`).join('');
+                    let currentSubItemMap = subItemMapFault;
+                    if (!currentSubItemMap[row.category]) currentSubItemMap[row.category] = [];
+                    if (!currentSubItemMap[row.category].includes(row.subItem)) {
+                        currentSubItemMap[row.category].push(row.subItem);
+                    }
+                    subOptions = (currentSubItemMap[row.category] || ['기타 미분류 항목']).map(sub => `<option value="${sub}" ${row.subItem === sub ? 'selected' : ''}>${sub}</option>`).join('');
+                } else {
+                    const currentMap = subItemMapInsp[row.line] || subItemMapInsp['CRM'];
+                    let categories = Object.keys(currentMap);
+                    if (!categories.includes(row.category)) {
+                        categories.push(row.category);
+                        currentMap[row.category] = [row.subItem];
+                    }
+                    catOptions = categories.map(cat => `<option value="${cat}" ${row.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
+                    
+                    if (!currentMap[row.category].includes(row.subItem)) {
+                        currentMap[row.category].push(row.subItem);
+                    }
+                    subOptions = currentMap[row.category].map(sub => `<option value="${sub}" ${row.subItem === sub ? 'selected' : ''}>${sub}</option>`).join('');
+                }
+                
+                // ★ 수정된 부분: 작업 열 넓이 조정 및 🔗 버튼 추가
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 text-center">${badge}</td>
+                        <td class="py-2 pr-2 w-28"><select onchange="window.updateTempRecord(${absIdx}, 'line', this.value); window.renderModalRows();" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-semibold text-slate-700 w-full">${lineOptions}</select></td>
+                        <td class="py-2 pr-2 w-28"><select onchange="window.handleModalCategoryChange(${absIdx}, this.value, ${isFault})" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-semibold text-slate-700 w-full">${catOptions}</select></td>
+                        <td class="py-2 pr-2 w-32"><select id="modal-sub-${absIdx}" onchange="window.updateTempRecord(${absIdx}, 'subItem', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-semibold text-blue-600 w-full">${subOptions}</select></td>
+                        <td class="py-2 pr-2 w-24"><select onchange="window.updateTempRecord(${absIdx}, 'cycle', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-semibold text-slate-700 w-full">${cycleOptions}</select></td>
+                        <td class="py-2 pr-2"><input type="text" value="${row.desc}" readonly onclick="window.openDescEditModal(${absIdx}, this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-semibold text-slate-700 w-full cursor-pointer hover:bg-blue-50 transition-colors" placeholder="상세 편집" title="클릭하여 상세 편집"></td>
+                        <td class="py-2 pr-2 w-28"><input type="date" value="${row.date || ''}" onchange="window.updateTempRecord(${absIdx}, 'date', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-semibold text-slate-700 w-full" ${!isFault ? 'disabled' : ''}></td>
+                        <td class="py-2 pr-2 w-24"><select onchange="window.updateTempRecord(${absIdx}, 'status', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-semibold text-slate-700 w-full">
+                            ${isFault ? `<option value="fault">고장발생</option>` : `<option value="completed" ${row.status === 'completed' ? 'selected' : ''}>점검완료</option><option value="uninspected" ${row.status === 'uninspected' ? 'selected' : ''}>미점검</option>`}
+                        </select></td>
+                        <td class="py-2 text-center w-20 whitespace-nowrap">
+                            <button onclick="window.editFileUrl(${absIdx})" class="text-indigo-500 font-bold text-xs bg-indigo-50 px-2 py-1.5 rounded-lg hover:bg-indigo-100 transition mr-1" title="관련 파일 링크 추가/수정">🔗</button>
+                            <button onclick="window.deleteRowInModal(${absIdx})" class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1.5 rounded-lg hover:bg-red-100 transition">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // 모달 하단 페이지네이션 렌더링
+            let paginationHtml = '';
+            if (totalPages > 1) {
+                paginationHtml = `
+                    <div class="flex justify-center mt-4 gap-2 pb-2">
+                        <button type="button" onclick="window.changeModalPage(-1)" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentModalPage === 0 ? 'disabled' : ''}>◀ 이전</button>
+                        <span class="text-xs font-bold text-slate-500 mx-2 flex items-center">${window.currentModalPage + 1} / ${totalPages} 페이지</span>
+                        <button type="button" onclick="window.changeModalPage(1)" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition disabled:opacity-50" ${window.currentModalPage >= totalPages - 1 ? 'disabled' : ''}>다음 ▶</button>
+                    </div>
+                `;
+            }
+            document.getElementById('modalPagination').innerHTML = paginationHtml;
+        }
+
+        window.handleModalCategoryChange = function(idx, newCat, isFault) {
+            if (window.tempRecords[idx]) {
+                const row = window.tempRecords[idx];
+                if (isFault) {
+                    row.category = newCat;
+                    row.subItem = subItemMapFault[newCat][0];
+                } else {
+                    let targetMap = subItemMapInsp[row.line] || subItemMapInsp['CRM'];
+                    if(!targetMap[newCat]) targetMap[newCat] = ['기타'];
+                    row.category = newCat;
+                    row.subItem = targetMap[newCat][0];
+                }
+                window.renderModalRows();
+            }
+        }
+
+        window.updateTempRecord = function(idx, field, value) { if (window.tempRecords[idx]) window.tempRecords[idx][field] = value; }
+        
+        window.deleteRowInModal = function(idx) { 
+            window.tempRecords.splice(idx, 1); 
+            // 삭제 후 현재 페이지가 비어있게 되면 이전 페이지로 이동
+            const ITEMS_PER_PAGE = 15;
+            const totalPages = Math.ceil(window.tempRecords.length / ITEMS_PER_PAGE);
+            if (window.currentModalPage >= totalPages && window.currentModalPage > 0) {
+                window.currentModalPage--;
+            }
+            window.renderModalRows(); 
+        }
+
+        window.saveEditedData = async function() {
+            for (let i = 0; i < window.tempRecords.length; i++) {
+                if (!window.tempRecords[i].date) return window.showCustomAlert("모든 항목의 날짜를 지정해 주세요.", "danger");
+            }
+            
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingText').innerText = "데이터베이스 저장 중...";
+
+            try {
+                if (window.isFirebaseActive && window.firebaseHandler) {
+                    const deleted = window.systemRecords.filter(orig => !window.tempRecords.some(temp => temp.id === orig.id));
+                    
+                    const deletePromises = deleted.map(d => window.firebaseHandler.delete(d.id));
+                    await Promise.all(deletePromises);
+
+                    // 묶음 전송 사용 (빈값 에러 정화 기능 포함)
+                    const sanitizedTempRecords = window.tempRecords.map(r => sanitizeRecord(r));
+                    
+                    if(window.firebaseHandler.addBatch) {
+                        await window.firebaseHandler.addBatch(sanitizedTempRecords);
+                    } else {
+                        const savePromises = sanitizedTempRecords.map(temp => window.firebaseHandler.set(temp.id, temp));
+                        await Promise.all(savePromises);
+                    }
+                } else {
+                    window.systemRecords = window.tempRecords;
+                    window.updateAllLineScores();
+                    window.renderSummaryGrid();
+                    if (document.getElementById('panel-detail').classList.contains('active')) {
+                        window.renderDetailTable(); window.renderInspReport();
+                    }
+                    if (document.getElementById('panel-analysis').classList.contains('active')) {
+                        window.renderFaultAnalysis();
+                        window.renderAnalysisDetailList();
+                    }
+                }
+                window.closeEditModal();
+                window.showCustomAlert("전사 데이터가 정상 연동되었습니다.", "success");
+            } catch(e) {
+                console.error(e);
+                window.showCustomAlert("데이터 수정 중 오류가 발생했습니다: " + e.message, "danger");
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        window.handleExcelUpload = function(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const workbook = XLSX.read(e.target.result, {type: 'binary'});
+                window.parsedExcelData = [];
+                
+                if (type === 'inspection') {
+                    workbook.SheetNames.forEach(sheetName => {
+                        const validLines = ['CPL', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'ARP', 'SSCL'];
+                        let matchedLine = validLines.find(l => sheetName.includes(l)) || sheetName;
+                        const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
+                        
+                        for(let i=1; i<json.length; i++) {
+                            let cat = String(json[i][1] || '').trim();
+                            let sub = String(json[i][2] || '').trim();
+                            let cycleStr = String(json[i][3] || '').trim();
+                            
+                            if (matchedLine === 'CPL' && String(json[i][2] || '').match(/^K\d+/)) {
+                                sub = String(json[i][5] || '').trim(); 
+                                cycleStr = String(json[i][6] || '').trim();
+                            }
+                            
+                            if(cat && sub && cat !== 'undefined' && sub !== 'undefined') {
+                                let cycleVal = 'daily';
+                                if (cycleStr.includes('주')) cycleVal = 'weekly';
+                                else if (cycleStr.includes('월')) cycleVal = 'monthly';
+                                else if (cycleStr.includes('분기')) cycleVal = 'quarterly';
+                                
+                                const typeStr = typeMap[cat] || '기타';
+                                
+                                window.parsedExcelData.push(sanitizeRecord({ 
+                                    id: generateUUID(), recordType: 'inspection', line: matchedLine, category: cat, 
+                                    type: typeStr, cycle: cycleVal, subItem: sub, date: window.currentTargetDate, status: 'uninspected', desc: sub, remark: ''
+                                }));
+                            }
+                        }
+                    });
+                } else {
+                    workbook.SheetNames.forEach(sheetName => {
+                        const validLines = ['CPL', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'ARP', 'SSCL'];
+                        let matchedLine = validLines.find(l => sheetName.includes(l)) || sheetName;
+                        const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
+                        
+                        for(let i=1; i<json.length; i++) {
+                            if(json[i][0] && json[i][1] && json[i][2]) {
+                                let dateStr = json[i][3];
+                                if(typeof dateStr === 'number') dateStr = new Date(Math.round((dateStr - 25569)*86400*1000)).toISOString().split('T')[0];
+                                const meta = window.resolveRecordMetadata(json[i][1]);
+                                
+                                window.parsedExcelData.push(sanitizeRecord({ 
+                                    id: generateUUID(), recordType: 'fault', line: String(json[i][0]).trim(), category: meta.category, 
+                                    subItem: String(json[i][2]).trim(), type: meta.type, cycle: 'none', date: String(dateStr).trim(), status: 'fault', desc: String(json[i][4] || "엑셀 고장 마이그레이션").trim(),
+                                    fileUrl: String(json[i][5] || '').trim() // ★ 엑셀 F열에서 링크 파싱
+                                }));
+                            }
+                        }
+                    });
+                }
+                const tbody = document.querySelector('#excelTableBody'); tbody.innerHTML = '';
+                document.getElementById('dataCountLabel').innerText = window.parsedExcelData.length + '건';
+                
+                window.parsedExcelData.slice(0, 10).forEach(r => {
+                    const badge = r.recordType === 'fault' ? '<span class="text-red-500 font-bold">고장</span>' : '<span class="text-emerald-500 font-bold">점검내역</span>';
+                    tbody.innerHTML += `<tr><td>${r.line}</td><td>${r.category}</td><td>${r.subItem}</td><td>${r.date || '-'}</td><td>${badge}</td></tr>`;
+                });
+                document.getElementById('previewSection').classList.remove('hidden');
+                event.target.value = '';
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        // ★ 신규: 초고속 병렬 데이터 전송 엔진 탑재
+        window.applyExcelDataToSystem = async function() {
+            if(window.parsedExcelData.length === 0) return;
+            
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingText').innerText = `총 ${window.parsedExcelData.length}건 데이터 클라우드 전송 중... (0%)`;
+
+            try {
+                window.parsedExcelData.forEach(r => { if(!r.id) r.id = generateUUID(); });
+
+                if (window.isFirebaseActive && window.firebaseHandler && window.firebaseHandler.addBatch) {
+                    // ★ 묶음 전송(Batch) 엔진 사용
+                    await window.firebaseHandler.addBatch(window.parsedExcelData, (percent) => {
+                        document.getElementById('loadingText').innerText = `총 ${window.parsedExcelData.length}건 데이터 클라우드 전송 중... (${percent}%)`;
+                    });
+                    window.showCustomAlert(`총 ${window.parsedExcelData.length}건의 데이터가 클라우드에 성공적으로 저장되었습니다.`, 'success');
+                } else {
+                    window.systemRecords = window.systemRecords.concat(window.parsedExcelData);
+                    window.updateAllLineScores();
+                    window.renderSummaryGrid();
+                    if (document.getElementById('panel-analysis').classList.contains('active')) {
+                        window.renderFaultAnalysis();
+                        window.renderAnalysisDetailList();
+                    }
+                    if (document.getElementById('panel-detail').classList.contains('active')) { window.renderDetailTable(); window.renderInspReport(); }
+                    
+                    window.showCustomAlert(`클라우드 통신 지연으로 총 ${window.parsedExcelData.length}건이 '임시 메모리'에 저장되었습니다.\n(새로고침 시 사라집니다. 네트워크/방화벽 상태를 확인해주세요)`, 'danger');
+                }
+                document.getElementById('previewSection').classList.add('hidden');
+            } catch (err) {
+                console.error("데이터 병합 에러:", err);
+                window.showCustomAlert("엑셀 업로드 중 서버 통신 에러가 발생했습니다.\n사내 보안망(방화벽)에서 접속을 차단했을 수 있습니다.\n\n상세에러: " + err.message, "danger");
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+        
+        window.downloadSampleExcel = function(type) { 
+            if(type === 'inspection') window.showCustomAlert('점검 양식: A열(라인명), B열(설비명), C열(작업 세부사항), D열(점검주기)', 'info'); 
+            else window.showCustomAlert('고장 양식: A열(라인명), B열(고장부류), C열(상세항목), D열(발생일자), E열(조치내용), F열:관련문서URL(선택)', 'info'); 
+        }
+
+        // 초기 구동 세팅
+        document.addEventListener('DOMContentLoaded', () => {
+            window.updateCategoryOptionsInsp(); // 초기 옵션 세팅
+            window.systemRecords = window.generateInitialDummyData(window.currentTargetDate); 
+            document.getElementById('datePicker').value = window.currentTargetDate;
+            window.updateAllLineScores();
+            window.renderSummaryGrid();
+        });
+    </script>
+
+    <!-- ★ 파이어베이스 연동 및 디버깅 스크립트 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 고객님의 파이어베이스 설정
+        const firebaseConfig = { 
+            apiKey: "AIzaSyD25Sgz50I6bJ27ac3Cbt2bASuaNVuVJg0", 
+            authDomain: "equip-analytics1-common.firebaseapp.com", 
+            projectId: "equip-analytics1-common", 
+            storageBucket: "equip-analytics1-common.firebasestorage.app", 
+            messagingSenderId: "382586806512", 
+            appId: "1:382586806512:web:6e606d2ce266d62e4b2235" 
+        };
+        
+        const appId = 'seah-cm-pdm-appid';
+        let db = null; let auth = null; let unsubscribeSync = null;
+
+        async function initFirebase() {
+            const statusEl = document.getElementById('cloud-status');
+            try {
+                // 경고창: file:/// 로 실행했는지 감지
+                if (window.location.protocol === 'file:') {
+                    window.showCustomAlert("⚠️ 파이어베이스는 내 컴퓨터(file://)에서 직접 열면 작동하지 않습니다!\n\nVS Code 우측 하단의 'Go Live' 버튼(Live Server)을 눌러서 실행해 주세요.", "danger");
+                }
+
+                // 고객님의 DB로 강제 연결
+                const app = initializeApp(firebaseConfig); 
+                auth = getAuth(app); 
+                
+                // ★ 수정된 부분: (default) 대신 고객님이 만드신 'seahft1' 데이터베이스를 명시적으로 타겟팅합니다!
+                db = getFirestore(app, "seahft1");
+                
+                if(statusEl) statusEl.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">클라우드 인증 중...</span>';
+                
+                // 1. 에러 추적기를 달아 익명 로그인 시도
+                try {
+                    await signInAnonymously(auth);
+                } catch (authErr) {
+                    console.error("인증 에러:", authErr);
+                    let errorMsg = "인증 실패: " + authErr.message;
+                    if (authErr.code === 'auth/admin-restricted-operation') {
+                        errorMsg = "파이어베이스 인증 에러!\n\n데이터베이스 규칙만 수정하시고, [Authentication(인증)] 설정은 안 하셨습니다! 좌측 메뉴에서 [Authentication] -> [Sign-in method] 탭에서 '익명(Anonymous)'을 사용 설정해주세요.";
+                    } else if (authErr.code === 'auth/unauthorized-domain') {
+                        errorMsg = "도메인 거부 에러!\n\n현재 이 주소는 파이어베이스에 접속할 수 없습니다. VS Code의 Live Server(127.0.0.1)를 이용해주세요.";
+                    }
+                    window.showCustomAlert(errorMsg, "danger");
+                    if(statusEl) statusEl.innerHTML = '<span class="text-red-400 font-bold">클라우드 인증 거부됨</span>';
+                    return; // 에러 시 여기서 멈춰서 로컬 메모리 모드로 돌아감
+                }
+
+                // 2. 인증 성공 시 DB 연결 시도
+                onAuthStateChanged(auth, (currentUser) => {
+                    if (currentUser) {
+                        try {
+                            unsubscribeSync = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords'), { includeMetadataChanges: true }, (snapshot) => {
+                                
+                                // ★ 진짜 서버 통신 여부 확인 (캐시 데이터가 아닌 실제 구글 서버 통신일 때만 초록불 켜짐)
+                                if (snapshot.metadata.fromCache && snapshot.empty === false) {
+                                    window.isFirebaseActive = false;
+                                    if(statusEl) statusEl.innerHTML = `<span class="text-amber-500 font-extrabold animate-pulse">● 오프라인 (서버 연결 대기중...)</span>`;
+                                } else {
+                                    window.isFirebaseActive = true; 
+                                    if(statusEl) statusEl.innerHTML = `<span class="text-emerald-400 font-extrabold animate-pulse">● 실시간 클라우드 동기화 모드</span>`;
+                                }
+
+                                const records = []; snapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
+                                window.systemRecords = records;
+                                if (typeof window.updateAllLineScores === 'function') {
+                                    window.updateAllLineScores(); window.renderSummaryGrid();
+                                    if (document.getElementById('panel-detail').classList.contains('active')) { window.renderDetailTable(); window.renderInspReport(); }
+                                    if (document.getElementById('panel-analysis').classList.contains('active')) { 
+                                        window.renderFaultAnalysis(); 
+                                        window.renderAnalysisDetailList();
+                                    }
+                                }
+                            }, (dbError) => {
+                                console.error("Firestore 에러:", dbError);
+                                window.isFirebaseActive = false;
+                                if(statusEl) statusEl.innerHTML = `<span class="text-red-400 font-bold">DB 읽기 권한 없음</span>`;
+                                window.showCustomAlert("데이터베이스 읽기 권한이 없습니다. Firebase 콘솔의 [규칙] 탭이 'allow read, write: if true;' 로 설정되었는지 다시 한번 확인해 주세요.", "danger");
+                            });
+                        } catch (e) {
+                            window.showCustomAlert("DB 구독 설정 중 에러: " + e.message, "danger");
+                        }
+                    }
+                });
+
+                // ★ 무한 로딩/멈춤 현상을 막기 위한 안전한 쪼개기 전송(Batch) 모듈
+                window.firebaseHandler = {
+                    add: async (record) => {
+                        const safeRecord = sanitizeRecord(record);
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', safeRecord.id);
+                        await Promise.race([
+                            setDoc(docRef, safeRecord),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("서버 응답 지연 (방화벽 차단 의심)")), 10000))
+                        ]);
+                    },
+                    set: async (id, record) => {
+                        const safeRecord = sanitizeRecord(record);
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', id);
+                        await Promise.race([
+                            setDoc(docRef, safeRecord),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("서버 응답 지연 (방화벽 차단 의심)")), 10000))
+                        ]);
+                    },
+                    delete: async (id) => {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', id);
+                        await Promise.race([
+                            deleteDoc(docRef),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("서버 응답 지연 (방화벽 차단 의심)")), 10000))
+                        ]);
+                    },
+                    addBatch: async (records, progressCallback) => {
+                        const CHUNK_SIZE = 50; // 과부하를 막기 위해 50개씩 잘라서 안전하게 전송
+                        let processed = 0;
+                        
+                        // Firebase 에러를 유발하는 잘못된(undefined) 데이터를 깨끗하게 청소
+                        const safeRecords = records.map(r => sanitizeRecord(JSON.parse(JSON.stringify(r))));
+
+                        for (let i = 0; i < safeRecords.length; i += CHUNK_SIZE) {
+                            const chunk = safeRecords.slice(i, i + CHUNK_SIZE);
+                            const batch = writeBatch(db);
+                            chunk.forEach(r => {
+                                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords', r.id);
+                                batch.set(docRef, r);
+                            });
+                            
+                            await Promise.race([
+                                batch.commit(),
+                                new Promise((_, reject) => setTimeout(() => reject(new Error("서버 통신 지연 (사내 방화벽이 차단했을 수 있습니다)")), 15000))
+                            ]);
+                            processed += chunk.length;
+                            if(progressCallback) progressCallback(Math.round((processed / safeRecords.length) * 100));
+                        }
+                    }
+                };
+            } catch (e) { 
+                console.error("Firebase init error", e); 
+                window.showCustomAlert("Firebase 초기화 에러: " + e.message, "danger");
+            }
+        }
+        initFirebase();
+    </script>
+</body>
+</html>
