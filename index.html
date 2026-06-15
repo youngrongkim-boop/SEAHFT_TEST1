@@ -743,9 +743,18 @@
             Object.keys(lineStore).forEach(line => {
                 const periodRecords = window.systemRecords.filter(r => {
                     if (r.recordType !== 'inspection' || r.line !== line) return false;
+                    
                     const rDate = new Date(r.date);
-                    if (window.currentSummaryPeriod === 'daily') return r.date === window.currentTargetDate;
-                    else if (window.currentSummaryPeriod === 'weekly') {
+                    
+                    // ★ 수정 핵심: 미점검 상태인 항목은 기간에 상관없이 오늘 날짜 이전이면 모두 "해야 할 일(분모)"에 포함시킵니다.
+                    if (r.status === 'uninspected') {
+                        return r.date <= window.currentTargetDate;
+                    }
+                    
+                    // 완료된 항목은 사용자가 클릭한 조회 기간(일/주/월/년) 내에 속한 것만 "완료 실적(분자)"으로 인정합니다.
+                    if (window.currentSummaryPeriod === 'daily') {
+                        return r.date === window.currentTargetDate;
+                    } else if (window.currentSummaryPeriod === 'weekly') {
                         const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
                         return diffDays >= 0 && diffDays < 7;
                     } else if (window.currentSummaryPeriod === 'monthly') {
@@ -758,9 +767,18 @@
                 
                 let mechTotal = 0, mechComp = 0, elecTotal = 0, elecComp = 0;
                 periodRecords.forEach(r => {
-                    const isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || r.category.includes('전장') || r.category.includes('PLC') || r.category.includes('X-RAY');
-                    if(isElec) { elecTotal++; if(r.status === 'completed') elecComp++; } 
-                    else { mechTotal++; if(r.status === 'completed') mechComp++; }
+                    // 판넬(PANEL) 등 전기 설비 필터링 조건 추가 보완
+                    const isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || 
+                                   r.category.includes('전장') || r.category.toUpperCase().includes('PLC') || 
+                                   r.category.toUpperCase().includes('X-RAY') || r.category.toUpperCase().includes('PANEL');
+                    
+                    if(isElec) { 
+                        elecTotal++; 
+                        if(r.status === 'completed') elecComp++; 
+                    } else { 
+                        mechTotal++; 
+                        if(r.status === 'completed') mechComp++; 
+                    }
                 });
 
                 lineStore[line].total = periodRecords.length;
