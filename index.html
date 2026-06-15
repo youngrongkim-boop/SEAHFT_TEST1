@@ -29,7 +29,6 @@
         .logo-t1 { color: #1e3a8a; font-weight: 800; font-size: 16px; line-height: 1; margin-top: 4px; }
         .logo-t2 { color: #64748b; font-weight: 700; font-size: 8px; margin-top: 2px; }
 
-        /* 반응형 사이드바 제어를 위한 스타일 개선 */
         #sidebar { transition: transform 0.3s ease-in-out; z-index: 50; }
         .nav-group { color: #64748b; font-size: 11px; font-weight: 700; padding: 24px 24px 8px; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #1e293b; margin-top: 10px; }
         .nav-item { display: flex; align-items: center; padding: 14px 24px; color: #94a3b8; font-size: 14px; cursor: pointer; transition: 0.2s; }
@@ -61,7 +60,7 @@
         @media print {
             @page { size: auto; margin: 10mm; }
             body { background-color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: visible !important; }
-            #sidebar, header, .no-print, #previewSection, #editDataModal, #descEditModal, #remarkModal, #customAlert, #loadingOverlay, #loginOverlay, #sidebarOverlay, #adminAuthModal, #changePasswordModal, #confirmDeleteModal, #fileUrlModal { display: none !important; }
+            #sidebar, header, .no-print, #previewSection, #editDataModal, #descEditModal, #remarkModal, #customAlert, #loadingOverlay, #loginOverlay, #sidebarOverlay, #adminAuthModal, #changePasswordModal, #confirmDeleteModal { display: none !important; }
             main { width: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; flex: none !important; }
             .content-panel { display: none !important; }
             .content-panel.active { display: block !important; }
@@ -184,7 +183,6 @@
         <!-- ★ 반응형 헤더 -->
         <header class="h-16 md:h-20 bg-white border-b flex items-center justify-between px-4 lg:px-10 shrink-0 z-10 shadow-sm no-print">
             <div class="flex items-center space-x-2 md:space-x-4 min-w-0">
-                <!-- 모바일 햄버거 버튼 -->
                 <button onclick="window.toggleSidebar()" class="lg:hidden text-slate-500 hover:text-blue-600 focus:outline-none p-1 rounded-md shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
@@ -198,7 +196,7 @@
                 </button>
             </div>
             <div class="flex items-center space-x-2 shrink-0 pl-2">
-                <!-- ★ 수정: 버튼 클릭 시 비밀번호 검증 모달을 띄움 -->
+                <!-- ★ 수정: 버튼 클릭 시 비밀번호 검증 모달 띄움 -->
                 <button onclick="window.checkAndOpenEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl transition shadow-sm border border-slate-200 whitespace-nowrap">
                     <span class="mr-1">🔒</span>수정<span class="hidden sm:inline">/관리</span>
                 </button>
@@ -206,10 +204,8 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 md:p-10 custom-scroll bg-slate-50/50">
-            
             <!-- ★ 1. 메인: 설비 점검 종합 현황 -->
             <div id="panel-summary" class="content-panel active">
-                
                 <div class="bg-white rounded-xl border border-slate-100 p-2 md:p-2.5 shadow-sm mb-6 flex flex-wrap items-center gap-1 md:gap-2 w-fit no-print">
                     <span class="text-xs md:text-sm font-bold text-slate-800 px-2 md:px-4 hidden sm:block">조회 기간 설정:</span>
                     <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg shadow-sm">일간</button>
@@ -217,23 +213,19 @@
                     <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">월간</button>
                     <button id="sum-btn-yearly" onclick="window.setSummaryPeriod('yearly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">연간</button>
                 </div>
-
                 <div id="statusGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-10"></div>
             </div>
 
             <!-- ★ 2. Deep Dive Analysis (상세 정밀 분석) 패널 -->
             <div id="panel-detail" class="content-panel">
                 <div class="flex flex-col gap-4 md:gap-8">
-                    
-                    <!-- 상단: 상세 점검 리스트 (자동 스케줄링 연동) -->
+                    <!-- 상단: 상세 점검 리스트 -->
                     <div class="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 border border-slate-200 shadow-xl flex flex-col min-h-[400px] md:min-h-[550px]">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4 no-print">
                             <div>
                                 <h3 class="text-lg md:text-xl font-black text-slate-800 tracking-tighter" id="detailLineTitle">라인 상세 점검 항목</h3>
                                 <p class="text-[10px] md:text-[11px] text-slate-500 font-bold mt-1" id="detailLineProgress">진척도 계산 중...</p>
                             </div>
-                            
-                            <!-- ★ 반응형 필터 영역 -->
                             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full xl:w-auto">
                                 <select id="detailCategoryFilter" onchange="window.filterDetailByCategory(this.value)" class="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg outline-none cursor-pointer shadow-sm w-full sm:w-auto">
                                     <option value="all">설비명 (전체) ▼</option>
@@ -286,14 +278,12 @@
                         </div>
                         <div id="reportPagination"></div>
                     </div>
-
                 </div>
             </div>
 
             <!-- ★ 3. 데이터 통합 관리 패널 -->
             <div id="panel-input" class="content-panel">
                 <div class="w-full bg-white border border-slate-200 rounded-2xl md:rounded-3xl border-t-[8px] md:border-t-[12px] border-t-blue-800 p-6 md:p-10 lg:p-14 shadow-xl mb-12">
-                    
                     <div class="mb-6 md:mb-10 border-b border-slate-100 pb-4 md:pb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                         <div>
                             <h3 id="input-main-title" class="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter">점검 항목 등록</h3>
@@ -318,7 +308,6 @@
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">설비명</label>
                                 <select id="regCategoryInsp" onchange="window.loadSubItemsInsp()" class="w-full bg-slate-50 border border-slate-200 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm transition">
-                                    <!-- JS에서 동적 주입 -->
                                 </select>
                             </div>
                             <div class="space-y-2 md:space-y-3">
@@ -336,7 +325,6 @@
                                 </select>
                             </div>
                         </div>
-                        
                         <div class="space-y-2 md:space-y-3 mb-6 md:mb-10 w-full">
                             <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">작업 세부사항 선택 <span class="hidden sm:inline">(선택 시 바로 저장 내용에 적용됩니다)</span></label>
                             <div class="bg-white p-4 md:p-8 rounded-2xl border border-slate-200 shadow-sm w-full min-h-[120px] md:min-h-[140px] flex flex-col justify-between">
@@ -344,12 +332,10 @@
                                 <div id="subItemPaginationInsp" class="flex justify-center mt-4 md:mt-6 gap-2"></div>
                             </div>
                         </div>
-
                         <div class="flex flex-col sm:flex-row gap-3 md:gap-4 mb-10 md:mb-12 w-full">
                             <button onclick="window.showPanel('summary')" class="w-full sm:w-1/3 bg-slate-100 text-slate-500 font-bold py-3 md:py-4 rounded-xl hover:bg-slate-200 transition text-sm md:text-base">취소</button>
                             <button onclick="window.submitInspection()" class="w-full sm:flex-1 bg-blue-800 text-white font-black py-3 md:py-4 rounded-xl text-sm md:text-lg hover:bg-blue-900 transition-all shadow-lg">선택한 예방 점검 항목 등록</button>
                         </div>
-
                         <hr class="border-dashed border-slate-200 border-[1.5px] mb-6 md:mb-8">
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4 md:mb-6">
                             <div>
@@ -357,11 +343,10 @@
                             </div>
                             <a href="#" onclick="window.downloadSampleExcel('inspection')" class="text-[10px] md:text-[11px] font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-1.5 rounded-md text-center">양식 다운로드</a>
                         </div>
-                        
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadInsp').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 작업 세부사항, D열: 점검주기, E열: 기계/전기 구분(기계 또는 전기)</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 작업 세부사항, D열: 점검주기, E열: 기계/전기 구분</p>
                             <input type="file" id="excelUploadInsp" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'inspection')">
                         </div>
                     </section>
@@ -389,13 +374,18 @@
                                 <input type="date" id="regDateFault" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition">
                             </div>
                         </div>
-                        
                         <div class="space-y-2 md:space-y-3 mb-6 w-full">
                             <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">상세 고장 부위 선택</label>
                             <div class="bg-white p-4 md:p-8 rounded-2xl border border-red-100 shadow-sm w-full min-h-[120px] md:min-h-[140px] flex flex-col justify-between">
                                 <div id="subItemContainerFault" class="flex flex-wrap gap-2 md:gap-3 items-center"></div>
                                 <div id="subItemPaginationFault" class="flex justify-center mt-4 md:mt-6 gap-2"></div>
                             </div>
+                        </div>
+                        
+                        <!-- ★ 직접 파일 업로드 필드 탑재 -->
+                        <div class="space-y-2 md:space-y-3 mb-6 w-full">
+                            <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">관련 자료 첨부 (PPT, PDF, 사진 등 - 선택사항)</label>
+                            <input type="file" id="regFileFault" class="w-full bg-red-50/50 border border-red-100 p-2 md:p-3 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer" accept=".ppt,.pptx,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                         </div>
 
                         <div class="space-y-2 md:space-y-3 mb-8 md:mb-10 w-full">
@@ -404,12 +394,10 @@
 조치 : 
 대책 : </textarea>
                         </div>
-
                         <div class="flex flex-col sm:flex-row gap-3 md:gap-4 mb-10 md:mb-12 w-full">
                             <button onclick="window.showPanel('summary')" class="w-full sm:w-1/3 bg-slate-100 text-slate-500 font-bold py-3 md:py-4 rounded-xl hover:bg-slate-200 transition text-sm md:text-base">취소</button>
                             <button onclick="window.submitFault()" class="w-full sm:flex-1 bg-red-600 text-white font-black py-3 md:py-4 rounded-xl text-sm md:text-lg hover:bg-red-700 transition-all shadow-lg">고장 이력 데이터베이스 전송</button>
                         </div>
-
                         <hr class="border-dashed border-slate-200 border-[1.5px] mb-6 md:mb-8">
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4 md:mb-6">
                             <div>
@@ -417,11 +405,10 @@
                             </div>
                             <a href="#" onclick="window.downloadSampleExcel('fault')" class="text-[10px] md:text-[11px] font-bold text-red-600 hover:underline bg-red-50 px-3 py-1.5 rounded-md text-center">고장 양식 다운로드</a>
                         </div>
-                        
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadFault').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">A열: 설비라인, B열: 고장부류, C열: 상세부품, D열: 발생일자(YYYY-MM-DD), E열: 조치내용</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">A열: 설비라인, B열: 고장부류, C열: 상세부품, D열: 발생일자, E열: 조치내용</p>
                             <input type="file" id="excelUploadFault" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'fault')">
                         </div>
                     </section>
@@ -463,12 +450,9 @@
                             </button>
                         </div>
                     </div>
-                    
                     <div id="analysis-table-container" class="overflow-x-auto custom-scroll pb-2 border border-slate-100 rounded-lg">
-                        <!-- JS Dynamic Render (Matrix) -->
                     </div>
                 </div>
-                
                 <div class="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 border border-slate-200 shadow-sm min-h-[400px]">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 md:mb-6 border-b border-slate-100 pb-4">
                         <h3 class="text-lg md:text-xl font-black text-slate-800 flex items-center border-l-4 border-slate-800 pl-3" id="analysis-detail-title-text">
@@ -482,19 +466,17 @@
                         </div>
                     </div>
                     <div id="analysis-detail-list" class="space-y-4">
-                        <!-- JS Dynamic Render (List) -->
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 
-    <!-- ★ 수정 모달 (반응형 최적화 및 필터/삭제 적용) ★ -->
+    <!-- ★ 데이터 편집(마스터) 모달 -->
     <div id="editDataModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[200] flex items-center justify-center hidden p-2 sm:p-4">
         <div class="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 max-w-[90rem] w-full max-h-[95vh] flex flex-col shadow-2xl border border-slate-200 relative">
             
-            <!-- 관리자용 마스터 비밀번호 변경 버튼 (숨겨진 유틸리티) -->
+            <!-- 관리자용 마스터 비밀번호 변경 버튼 -->
             <button onclick="window.openChangePasswordModal()" class="absolute top-6 right-16 text-[10px] md:text-xs font-bold text-slate-400 hover:text-blue-600 transition flex items-center">
                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                 비밀번호 변경
@@ -509,35 +491,27 @@
                 <table class="w-full text-left border-collapse text-xs md:text-sm min-w-[800px]">
                     <thead class="sticky top-0 bg-white shadow-sm z-10">
                         <tr class="border-b-2 border-slate-100 text-slate-500">
-                            <!-- 구분(점검/고장) 드롭다운 필터 -->
+                            <!-- ★ 구분(점검/고장) 필터 드롭다운 -->
                             <th class="py-2.5 px-2 font-bold w-20 select-none">
                                 <select id="modalRecordTypeFilter" onchange="window.filterModalByRecordType(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm">
-                                    <option value="all">구분 (전체)</option>
+                                    <option value="all">구분 (전체) ▼</option>
                                     <option value="inspection">점검내역</option>
                                     <option value="fault">고장발생</option>
                                 </select>
                             </th>
-                            
                             <th class="py-2.5 px-2 font-bold w-24 select-none">
                                 <select id="modalLineFilter" onchange="window.filterModalByLine(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm">
                                     <option value="all">설비라인 (전체)</option>
-                                    <option value="CPL">CPL</option>
-                                    <option value="CRM">CRM</option>
-                                    <option value="CGL">CGL</option>
-                                    <option value="1CCL">1CCL</option>
-                                    <option value="2CCL">2CCL</option>
-                                    <option value="3CCL">3CCL</option>
-                                    <option value="ARP">ARP</option>
-                                    <option value="SSCL">SSCL</option>
+                                    <option value="CPL">CPL</option><option value="CRM">CRM</option><option value="CGL">CGL</option>
+                                    <option value="1CCL">1CCL</option><option value="2CCL">2CCL</option><option value="3CCL">3CCL</option>
+                                    <option value="ARP">ARP</option><option value="SSCL">SSCL</option>
                                 </select>
                             </th>
-                            
                             <th class="py-2.5 px-2 font-bold w-32 select-none">
                                 <select id="modalCategoryFilter" onchange="window.filterModalByCategory(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-1 outline-none cursor-pointer font-bold w-full text-[10px] md:text-xs hover:bg-slate-200 transition shadow-sm truncate">
                                     <option value="all">설비/분류 (전체)</option>
                                 </select>
                             </th>
-                            
                             <th class="py-2.5 px-2 font-bold min-w-[150px] cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('subItem')">상세/내용 <span id="sort-icon-subItem" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
                             <th class="py-2.5 px-2 font-bold w-20 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('cycle')">주기 <span id="sort-icon-cycle" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
                             <th class="py-2.5 px-2 font-bold w-28 cursor-pointer hover:text-blue-600 select-none group" onclick="window.sortModalData('date')">일자 <span id="sort-icon-date" class="text-[10px] text-slate-300 group-hover:text-blue-400 inline-block w-3 text-center">↕</span></th>
@@ -619,19 +593,6 @@
         </div>
     </div>
 
-    <!-- ★ 첨부파일 URL 수정/입력 모달 (prompt 대체) -->
-    <div id="fileUrlModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[300] flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center">
-            <h3 class="text-lg font-black text-slate-800 mb-2">관련 문서/PPT 링크 첨부</h3>
-            <p class="text-xs text-slate-500 font-medium mb-6 text-center">사내 클라우드, 구글 드라이브 등 <br>관련 파일의 웹 주소(URL)를 붙여넣으세요.</p>
-            <input type="text" id="fileUrlInput" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500 transition mb-6" placeholder="https://..." onkeydown="if(event.key==='Enter') window.saveFileUrl()">
-            <div class="flex gap-3 w-full">
-                <button onclick="window.closeFileUrlModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition text-sm">취소</button>
-                <button onclick="window.saveFileUrl()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl transition shadow-md text-sm">링크 저장</button>
-            </div>
-        </div>
-    </div>
-
     <!-- 특이사항 팝업 모달 -->
     <div id="remarkModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[250] flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-2xl p-6 md:p-8 w-full max-w-md shadow-2xl border border-slate-200">
@@ -680,13 +641,13 @@
         window.currentDetailTablePage = 0;
         window.currentReportTablePage = 0;
         
-        // ★ 마스터 권한 및 필터 상태
-        window.adminPassword = '0000'; // 초기 기본 비밀번호
+        // ★ 마스터 권한 및 모달 상태
+        window.adminPassword = '0000'; // 초기 비밀번호
         window.currentModalPage = 0; 
         window.currentModalRecordTypeFilter = 'all'; 
         window.currentModalLineFilter = 'all';
         window.currentModalCategoryFilter = 'all';
-        window.targetFileIdx = -1; // 파일 링크 수정 대상 인덱스
+        window.targetFileIdx = -1;
 
         const todayDate = new Date();
         window.currentTargetDate = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
@@ -696,7 +657,6 @@
         window.currentSortAsc = false;
         window.currentRemarkId = null;
 
-        // 모바일 사이드바 토글 로직
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -709,32 +669,12 @@
             }
         }
 
-        // ★ [데이터 다이어트/압축] 용량 초과로 인한 코드 잘림 현상을 막기 위해 공백 압축 적용
+        // [데이터 다이어트]
         const subItemMapInsp={"CPL":{"PAY OFF REEL":["POR MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","GEAR LUB' MOTOR 전류 및 소음 상태 점검","CPC HYD' MOTOR 전류 측정","CPC HYD' COOLING FAN MOTOR 전류 측정","CPC MOTOR 소음/ 온도 측정","CPC MOTOR 진동측정","CPC TANK OIL LEVEL SENSOR 상태 점검"],"FLATTENER":["MOTOR 전류 측정","ENTRY TOP MOTOR 전류 측정","EXIT TOP MOTOR 전류 측정","GEAR LUB MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정"],"SHEAR":["POSITION SENSOR 고정 상태 점검","TABLE POSITION SENSOR 고정 상태 점검"],"WELDER":["WELDER POSITION SENSOR 고정 및 케이블 상태 점검","TRIMMER POSITION SENSOR 고정 및 케이블 상태 점검","NOTCHER & PANCHER POSITION SENSOR 고정 및 케이블 상태 점검","싸이리스터 판넬 및 PLC 전원부 점검","칠러 MOTOR 전류 및 소음 상태 점검","칠러 PUMP 누수 상태 점검","칠러 TANK LEVEL 상태 점검","칠러 냉각수 온도 지시치 점검","칠러 냉각수 FLOW 상태 점검","HYD PUMP(#1) MOTOR 전류 측정","HYD PUMP(#1~#3) MOTOR 소음/온도 측정","HYD PUMP(#1 ~ #3) MOTOR 진동측정"],"TENSION BRIDLE ROLL":["NO.1-1 MOTOR 전류 측정","NO.1-1 MOTOR 소음 / 온도 측정","NO.1-1 MOTOR 진동측정","NO.1-2 MOTOR 전류 측정","NO.1-2 MOTOR 소음 / 온도 측정","NO.1-2 MOTOR 진동측정","NO.2-1 MOTOR 전류 측정","NO.2-1 MOTOR 소음 / 온도 측정","NO.2-1 MOTOR 진동측정","NO.2-2 MOTOR 전류 측정","NO.2-2 MOTOR 소음 / 온도 측정","NO.2-2 MOTOR 진동측정","NO.3-1 MOTOR 전류 측정","NO.3-1 MOTOR 소음 / 온도 측정","NO.3-1 MOTOR 진동측정","NO.3-2 MOTOR 전류 측정","NO.3-2 MOTOR 소음 / 온도 측정","NO.3-2 MOTOR 진동측정","NO.4-1 MOTOR 전류 측정","NO.4-1 MOTOR 소음 / 온도 측정","NO.4-1 MOTOR 진동측정","NO.4-2 MOTOR 전류 측정","NO.4-2 MOTOR 소음 / 온도 측정","NO.4-2 MOTOR 진동측정"],"D/PINCH ROLL":["NO.1 MOTOR 전류 측정","NO.1 MOTOR 소음 / 온도 측정","NO.1 MOTOR 진동측정","NO.2 MOTOR 전류 측정","NO.2 MOTOR 소음 / 온도 측정","NO.2 MOTOR 진동측정"],"Steering Unit":["No1 Steering Hyd Pump Motor 전류 측정","No1 Steering Position Sensor 고정상태 점검","No2 Steering Hyd Pump Motor 전류 측정","No2 Steering Position Sensor 고정상태 점검","No4 Steering Hyd Pump Motor 전류 측정","No4 Steering Position Sensor 고정상태 점검","No5 Steering Hyd Pump Motor 전류 측정","No5 Steering Position Sensor 고정상태 점검","No6 Steering Hyd Pump Motor 전류 측정","No6 Steering Position Sensor 고정상태 점검"],"ENTRY HYD":["PUMP MOTOR 전류 측정","PUMP MOTOR 소음 / 온도 측정","PUMP MOTOR 진동측정"],"ENTRY LOOPER":["WINCH DRUM MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","O-STOP, E-STOP LIMIT S.W 고정상태 점검","CALIBRATION PX SENSOR 고정상태 점검"],"SPENT ACID TRANSF TANK":["SPENT SPRAY PUMP MOTOR(1-1,1-2) 전류 측정","LEVEL SENSOR 동작 상태 확인"],"NO.1 ACID TANK":["#1 ACID TANK SPRAY PUMP MOTOR(1-1, 1-2) 전류 측정","온도 센서 동작 상태 확인","LEVEL SENSOR 동작 상태 확인"],"NO.2 ACID TANK":["#2 ACID TANK SPRAY PUMP MOTOR(2-1,2-2) 전류 측정","온도 센서 동작 상태 확인","LEVEL SENSOR 동작 상태 확인"],"NO.3 ACID TANK":["#3 ACID TANK SPRAY PUMP MOTOR(3-1, 3-2) 전류 측정","온도 센서 동작 상태 확인","LEVEL SENSOR 동작 상태 확인"],"NO.1 RINSE TANK":["SPRAY PUMP MOTOR 전류 측정","LEVEL SENSOR 동작 상태 확인"],"NO.2 RINSE TANK":["SPRAY PUMP MOTOR 전류 측정","LEVEL SENSOR 동작 상태 확인"],"NO.3 RINSE TANK":["SPRAY PUMP MOTOR 전류 측정","LEVEL SENSOR 동작 상태 확인","SUPPLY STEAM 온도센서 작동 상태 확인"],"HOT AIR DRYER":["MOTOR 모터 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정"],"FUME EXHAUST SYSTEM":["FUME EXHAUST FAN MOTOR 전류측정","FUME EXHAUST CIR PUMP MOTOR 전류측정","RINSE EXHAUST FAN MOTOR 전류측정","RINSE EXHAUST CIR PUMP MOTOR 전류측정"],"EXIT LOOPER":["MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","O-STOP, E-STOP LIMIT S.W 고정상태 점검","CALIBRATION PX SENSOR 교정 점검"],"TENSION REEL":["MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정","GEAR LUB' MOTOR 전류및 소음 상태 점검"],"EXIT PINCH ROLL":["MOTOR 전류 측정"],"EXIT  DEF' PINCH ROLL":["MOTOR 전류 측정"],"SCRAP CHOPPER ":["SCRAP CHOPPER WIDTH ADJUST MOTOR 전류 측정","SCRAP CHOPPER KNIFE MOTOR  전류 측정","SCRAP CHOPPER LUB' PUMP MOTOR 전류 측정","MOTOR 소음 / 온도 측정","MOTOR 진동측정"],"EXIT HYD":["PUMP MOTOR 전류 측정","PUMP MOTOR 소음 / 온도 측정","PUMP 진동측정"],"EXIT COIL CAR":["MOTOR 전류 측정"],"고압반 HV PANEL":["PANEL 부스바 이물질 및 절연 상태 점검(육안)","ACB 차단기 소음 상태 확인"],"고압반 LV PANEL":["PANEL 부스바 이물질 및 절연 상태 점검(육안)","ACB 차단기 소음 상태 확인"],"MCC Group":["단자대 케이블 고정상태 점검"],"Main PLC Panel":["단자대 케이블 고정상태 점검","PLC BACK UP BATTERY 점검"],"Vector Panel":["DRIVE COOLING FAN 동작상태 점검","단자대 케이블 고정상태 점검"]},"CRM":{"POR COIL CAR":["주행용 ENCODER COUPLING 점검","LIFTING 압력 센서 편차 압력 점검","LH COIL CAR ENCODER COUPLING 점검","LH COIL CAR LIFTING 압력 센서 편차 압력 점검"],"POR MOTOR":["MOTOR 전류 및 소음 점검","MOTOR COOLING FAN 전류 및 소음 점검","MOTOR ENCODER 고정및 진동상태 점검","GEAR LUB' MOTOR 전류및 소음 상태 점검"],"POR PINCH ROLL":["MOTOR 전류 및 소음 점검","MOTOR ENCODER 고정및 진동상태 점검"],"POR DEFLECTOR ROLL ":["DEF' MOTOR 전류및 소음 상태점검","SPEED ENCODER 고정 상태및 CABLE 상태점검"],"LEVELLER ":["MOTOR 전류및 소음 상태 점검","POSITION ENCODER#1 CABLE 상태점검","POSITION ENCODER#2 CABLE 상태점검"],"LH TENSION REEL MOTOR":["MOTOR COOLING FAN 전류 및 소음 점검","MOTOR COOLING FAN 이물질 청소","브러쉬 분진 청소 및 마모 점검","MOTOR ENCODER 고정및 진동 상태 점검","MOTOR 베어링 온도 센서 점검"],"LH PINCH ROLL":["PINCH ROLL MOTOR 전류 및 소음 점검","PINCH ROLL LOCK SENSOR 위치 점검","PINCH ROLL POSITION SENSOR 상태 점검"],"LH SHAPE METER ROLL":["MOTOR 전류 및 소음 점검","SHAPE METER AIR 공급 상태 점검"],"THICKNESS GAUGE":["내부 Purge Air 압력 점검","Cooling water FLOW 상태 점검"],"MILL STAND":["IMR SHIFTING ENCODER CABLE 점검","PASS LINE ENCODER CABLE 점검","HGC POSITION SENSOR CABLE 점검","HGC 압력 센서 상태 점검"],"MILL MAIN MOTOR":["MOTOR COOLING FAN#1 전류 및 소음 점검","MOTOR COOLING FAN #2 전류 및 소음 점검","브러쉬 분진 청소 및 마모 점검","MOTOR ENCO 고정및 진동 상태 점검","MOTOR 베어링 온도 센서 점검"],"GRIP PANEL":["POWER MODULE 냉각팬 상태 점검","OUTPUT CARD FUSE 단선 점검","단자대 CABLE 결선 점검","POWER RELAY 동작상태 점검"],"ROLL CHANGE CAR":["TRAVERSING MOTOR 전류 및 소음 점검","TRAVERSING MOTOR ENCODER CABLE 점검","SHIFTING MOTOR 전류 및 소음 점검","SHIFTING MOTOR ENCODER CABLE 점검"],"RH SHAPE METER ROLL":["MOTOR 전류 및 소음 점검","SHAPE METER AIR 공급 상태 점검"],"RH TENSION REEL MOTOR":["MOTOR COOLING FAN 전류 및 소음 점검","MOTOR COOLING FAN 이물질 청소","브러쉬 분진 청소 및 마모 점검","MOTOR 베어링 온도 센서 점검"],"FUME EXHAUST":["#1 MOTOR 전류 및 소음 점검","#2 MOTOR 전류 및 소음 점검"],"AIR BLOWERING":["MOTOR 전류 및 소음 점검"],"X-RAY":["#1 MOTOR 전류 및 소음 점검","PUMP 압력 지시치 점검","TANK LEVEL 점검","냉각수 온도 지시치 점검"],"HYD SYSTEM":["HP#1 MOTOR 전류 및 소음 점검","HP#2 MOTOR 전류 및 소음 점검","LP#1 MOTOR 전류 및 소음 점검","LP#2 MOTOR 전류 및 소음 점검","LP#3 MOTOR 전류 및 소음 점검","CIR MOTOR 전류및 소음 상태 점검"],"GEAR LUB SYSTEM":["#1 MOTOR 전류및 소음 상태 점검","#2 MOTOR 전류및 소음 상태 점검","CIR MOTOR 전류및 소음 상태 점검"],"BUR BEARING LUB SYSTEM":["#1 MOTOR 전류및 소음 상태 점검","#2 MOTOR 전류및 소음 상태 점검","CIR MOTOR 전류및 소음 상태 점검"],"MAIN DRIVE BEAR LUB SYSTEM":["HP MOTOR 전류및소음 상태 점검","LP MOTOR 전류및소음 상태 점검"],"FOS PANEL":["I/O CARD 상태 표시 점검","AO/AI CARD 상태 표시 점검","차단기 트립 유무 점검","HMI PC 동작 상태 점검"],"SYSTEM PUMP":["#1 MOTOR 전류및소음 상태 점검","#2 MOTOR 전류및소음 상태 점검","#3 MOTOR 전류및소음 상태 점검"],"EMULSION TANK#1,2":["LEVEL SENSOR 오염 및 동작상태 점검","HEATER CIR MOTOR 전류및 소음 상태 점검","교반기 1 MOTOR 전류및 소음 상태 점검","교반기 2 MOTOR 전류및 소음 상태 점검"],"EMULSION 원액 TANK#1,2":["LEVEL SENSOR 오염 및 동작상태 점검","교반기 MOTOR 전류및 소음 상태 점검"],"HOFMAN FILTER":["FILTER PUMP#1 MOTOR 전류및소음 상태 점검","FILTER PUMP#2 MOTOR 전류및소음 상태 점검","FILTER PUMP#3 MOTOR 전류및소음 상태 점검"],"HV PANEL":["VCB 차단기 소음 상태 점검","부스바 충전부위 발열 상태 점검 (육안)"],"LV PANEL":["ACB 차단기 소음 상태 점검","GOCR 세팅값 상태 점검"],"SBA GROUP MAIN DRIVE COGING":["TANK LEVEL 상태 점검","COOLING FAN 소음 점검"],"SBA GROUP UPS":["COOLING FAN 소음 점검","배전 전압 점검"],"SBB GROUP AUX PANEL":["TR 발열 유무 점검","POWER RELAY 동작상태 점검","단자기 열화 점검"],"SBF GROUP VECTOR":["DRIVE COOLING FAN 소음 점검"],"SBG GROUP A&D PLC":["전자접촉기 접점 마모 점검","CPU 상태 표시 점검","CPU 배터리 상태 점검"],"SBH GROUP AGC PLC":["CPU 상태 표시 점검","CPU 배터리 상태 점검"]},"CGL":{"Entry Section ( ~ Entry Accumulator )":["COIL CAR #1~#2 Calibration PX Sensor 고정상태 및 작동상태 점검","COIL CAR #1~#2 Lift Encoder 상태 점검","COIL CAR #1~#2 Traverse Encoder 상태점검","COIL CAR #1~#2 SKID SENSOR 접점 및 고정상태 점검","PAY OFF REEL #1~#2 Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Welder Position Sensor 고정상태 점검","Welder Strip Photo Sensor 수입작업","Welder Drive 작동상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검","Entry Accumulator LOAD CELL 장착상태 점검"],"Process Section ( ~ Furnace )":["RECTIFIER PANEL FAN 점검","RECTIFIER PANEL FILTER 점검","BRUSH MOTOR POSITION SENSOR 커플링 점검","SEAL ROLL CYLINDER POSITION SENSOR 고정상태 점검","PYRO METER PX 센서 상태 점검","PYRO METER 오염 점검","Furnace TEMP SENSOR CABLE 점검","BOU UV SENSOR 수입작업","BOU SOL VALVE 접점 점검","NO1 GUIDE ROLL CYILNDER POSITION SENSOR 고정상태 점검","NO2 GUIDE ROLL CYILNDER POSITION SENSOR 고정상태 점검","STRIP HEATER PANEL 쿨링팬 동작 점검"],"Process Section ( ~ SPM )":["NO5 TENSION METER TENSION METER 커플링 점검","NO6 TENSION METER TENSION METER DISPLAY 값 점검","SNOUT DAMPER POSITION 연결부 점검","SNOUT HEATER 단선 점검","SNOUT PANEL FAN 점검","환원 BURNER UV 센서 수입작업","환원 BURNER PRESSURE S/W & GAS SOL 접점 상태 점검","AIR KNIFE ENCODER 커플링 점검","AIR KNIFE CONNECTOR 접속상태 점검","SPM HGC CYLINDER ENCODER 커플링 점검","SPM SCREW DOWN ENCODER 커플링 점검","SPM SEREW DOWN POSITION SENSOR 커플링 점검","SPM SERVO VALVE STAND 누유 점검"],"Process Section ( ~ CHROMATE )":["LEVELLER ENCODER 커플링 점검","LEVELLER PS SENSOR 위치 점검","CHROMATE MOTOR ENCODER 고정상태 점검","CHROMATE LOAD CAL 상태 점검","CHROMATE DRIER Blower Rotating 방향 점검","CHROMATE DRYER'S Valve (Vent, Purge, Pilot) 동작 상태 점검","CHROMATE MOTOR 전류 지시치 점검","CHROMATE DRYER Panel Filter 점검","NO8 TENSION METER CABLE 상태 점검","NO9 TENSION METER DISPLAY 값 점검"],"Exit Section ( ~ Tension Reel )":["EXIT LOOPER MOTOR ENCODER CABLE 상태 점검","EXIT LOOPER CALIBRATION SENSOR 검출상태 점검","EXIT LOOPER LOAD CELL 검출상태 점검","WPO LASER SENSOR 오염 및 동작 상태점검","OILER TANK LEVEL SENSOR 검출상태 점검","OILER PANEL FAN 점검","EPC FRAME LIMIT S/W 상태점검","EPC CONTROL PANEL 필터점검","TENSION REEL #1~#2 MOTOR Encoder 점검","TENSION REEL MOTOR Position Sensor 커플링 점검","Out Band feeding Position Sensor 고정 상태 및 CABLE상태 점검","BEAT WATTER POSITION SENSOR 고정상태 점검","COIL CAR #1~#2 Lift Encoder 상태 점검","COIL CAR #1~#2 Traverse Encoder 상태점검","COIL CAR Limit S/W 상태 점검","COIL CAR Calibration PX Sensor 고정상태 및 작동상태 점검"],"PREMELT GI/GL 인터락":["GI PANEL 램프 상태 점검","GI POT LIMIT S/W 점검","GI PANEL ROOM 냉방기 점검","GL PANEL 램프 상태 점검","GL POT LIMIT S/W 점검","GL PANEL ROOM 냉방기 점검","PRE MELT PANEL 램프 상태 점검","PRE MELT POT LIMIT S/W 점검","PRE MELT PANEL ROOM 냉방기 점검"],"전기 & DRIVE ROOM":["Drive Room 항온 항습기 온도확인 및 청결 점검","Vector Drive Panel Cooling Fan 점검","Inverter Panel M.C & Inverter drive Cooling Fan 점검","Main PLC Panel PLC Alarm 점검","MCC PANEL 배기홴 동작 점검"],"Motor":["Coil Car Motor(31A)","Coil Car Motor(11.5A)","Pay Off Reel Motor(A)(230A)","Pay Off Reel Motor(B)(230A)","No1-1 Tension Bridle Motor (32A)","No1-2 Tension Bridle Motor (32A)","No1-3 Tension Bridle Motor (60A)","ENTRY HYD MOTOR (129.1A)","ENTRY LOOPER MOTOR (200A)","No2 Tension Bridle Motor (35A)","No3-1 Tension Bridle Motor (75A)","No3-2 Tension Bridle Motor (75A)","No4-1 Tension Bridle Motor (55A)","No4-2 Tension Bridle Motor (55A)","No4-3 Tension Bridle Motor (55A)","NO1 AFTER POT COOLING FAN MOTOR (310A)","NO2 AFTER POT COOLING FAN MOTOR (310A)","NO.1 JET COOLING FAN MOTOR (250A)","NO.2 JET COOLING FAN MOTOR (250A)","NO.3 JET COOLING FAN MOTOR (250A)","MTK (98A)","No5-2 Tension Bridle Motor (96A)","No5-3 Tension Bridle Motor (96A)","No6-1 Tension Bridle Motor (196A)","No6-2 Tension Bridle Motor (196A)","No7-1 Tension Bridle Motor (235A)","No7-2 Tension Bridle Motor (235A)","No7-3 Tension Bridle Motor (235A)","No8-4 Tension Bridle Motor (158A)","No8-5 Tension Bridle Motor (158A)","No9-Tension Bridle Motor (122A)","EXIT LOOPER MOTOR (200A)","No10-Tension Bridle Motor (80A)","No11-Tension Bridle Motor (96A)","TENSION REEL MOTOR (A)(230A)","TENSION REEL MOTOR (B)(230A)"],"Motor 진동":["Coil Car Motor 진동 측정","Pay Off Reel Motor 진동 측정","No1-1 Tension Bridle Motor 진동 측정","No1-2 Tension Bridle Motor 진동 측정","No1-3 Tension Bridle Motor 진동 측정","ENTRY HYD MOTOR 진동 측정","ENTRY LOOPER MOTOR 진동 측정","No2 Tension Bridle Motor 진동 측정","No3-1 Tension Bridle Motor 진동 측정","No3-2 Tension Bridle Motor 진동 측정","No4-1 Tension Bridle Motor 진동 측정","No4-2 Tension Bridle Motor 진동 측정","No4-3 Tension Bridle Motor 진동 측정","NO1 AFTER POT COOILNG FAN MOTOR 진동 측정","NO2 AFTER POT COOILNG FAN MOTOR 진동 측정","NO.1 JET COOLING FAN MOTOR 진동 측정","NO.2 JET COOLING FAN MOTOR 진동 측정","NO.3 JET COOLING FAN MOTOR 진동 측정","No5-1 Tension Bridle Motor 진동 측정","No5-2 Tension Bridle Motor 진동 측정","No5-3 Tension Bridle Motor 진동 측정","No6-1 Tension Bridle Motor 진동 측정","No6-2 Tension Bridle Motor 진동 측정","No7-1 Tension Bridle Motor 진동 측정","No7-2 Tension Bridle Motor 진동 측정","No7-3 Tension Bridle Motor 진동 측정","No8-4 Tension Bridle Motor 진동 측정","No8-5 Tension Bridle Motor 진동 측정","No9-Tension Bridle Motor 진동 측정","EXIT LOOPER MOTOR 진동 측정","No10-Tension Bridle Motor 진동 측정","No11-Tension Bridle Motor 진동 측정","TENSION REEL MOTOR (A)진동 측정","TENSION REEL MOTOR (B)진동 측정"]},"1CCL":{"Entry Section ( ~ Entry Accumulator )":["PAY OFF REEL Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Strip Joiner Limit & Safty Sensor 상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검"],"Process Section ( ~ Primer Quench )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","OVEN Transmitter 동작 상태 점검"],"Process Section ( ~ Tension Leveller )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","Tension Leveller Encoder Lamp 점등 상태 점검","Prime/Finish Black Light Lamp 점등 상태 점검"],"Exit Section ( ~ Rewind Reel )":["Exit Accumulator PX Sensor & Limit & Encoder상태 점검","Rewind Reel Section & Robot PX.PH 센서 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Film EPC & Rewind EPC 유니트 점검 및 동작 상태 점검","Rewind Reel Section Encoder Lamp 점등 상태 점검"],"RTO":["MAIN #A.B.C 온도측정 상태 점검","MAIN #A.B.C INNET/OUTNET DAMPER 동작 상태 점검","Damper 배관 누설 상태 점검","MAIN 배관 온도 센서 상태 점검","INVERTER COOLING FAN 동작 상태 점검"],"전기 & DRIVE ROOM":["Drive Room 항온 항습기 온도확인 및 청결 점검","Vector Drive Panel Cooling Fan 점검","Inverter Panel M.C & Inverter drive Cooling Fan 점검","Main PLC & RTO Backup 배터리 & Lamp 상태점검"],"Motor":["POR#1","POR#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","ENTRY ACCUMULATOR","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","EXIT ACCUMULATOR","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","REWIDE REEL","CHEMICAL COATER TOP APP' ROLL","CHEMICAL COATER TOP PICKUP ROLL","CHEMICAL COATER BOTTOM APP' ROLL","CHEMICAL COATER BOTTOM PICKUP ROLL","PRIME COATER TOP APP' ROLL","PRIME COATER TOP PICKUP ROLL","PRIME COATER BOTTOM APP' ROLL","PRIME COATER BOTTOM PICKUP ROLL","1FINISH COATER 1B APP' ROLL","1FINISH COATER 1B PICKUP ROLL","2FINISH COATER TOP APP' ROLL","2FINISH COATER TOP PICKUP ROLL","2FINISH COATER BOTTOM APP' ROLL","2FINISH COATER BOTTOM PICKUP ROLL","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","PRIMER OVEN RC FAN #4","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","RTO MAIN FAN","RTO HEATING EXHAUST PROCESS FAN#1","RTO HEATING EXHAUST PROCESS FAN#2","RTO PRIME FAN","RTO FINISH FAN","RTO PREHEAT BURNER FAN"],"Motor 진동 측정":["POR#1","POR#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","ENTRY ACCUMULATOR","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","EXIT ACCUMULATOR","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","REWIDE REEL","CHEMICAL COATER TOP APP' ROLL","CHEMICAL COATER TOP PICKUP ROLL","CHEMICAL COATER BOTTOM APP' ROLL","CHEMICAL COATER BOTTOM PICKUP ROLL","PRIME COATER TOP APP' ROLL","PRIME COATER TOP PICKUP ROLL","PRIME COATER BOTTOM APP' ROLL","PRIME COATER BOTTOM PICKUP ROLL","1FINISH COATER 1B APP' ROLL","1FINISH COATER 1B PICKUP ROLL","2FINISH COATER TOP APP' ROLL","2FINISH COATER TOP PICKUP ROLL","2FINISH COATER BOTTOM APP' ROLL","2FINISH COATER BOTTOM PICKUP ROLL","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","PRIMER OVEN RC FAN #4","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","RTO MAIN FAN","RTO HEATING EXHAUST PROCESS FAN#1","RTO HEATING EXHAUST PROCESS FAN#2","RTO PRIME FAN","RTO FINISH FAN","RTO PREHEAT BURNER FAN"]},"2CCL":{"Entry Section ( ~ Entry Accumulator )":["PAY OFF REEL Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Strip Joiner Limit & Safty Sensor 상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검"],"Process Section ( ~Primer Quench )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater px sensor 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","OVEN Transmitter 동작 상태 점검"],"Process Section ( ~ Tension Leveller )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","Tension Leveller Encoder Lamp 점등 상태 점검","Prime/Finish Black Light Lamp 점등 상태 점검"],"Exit Section ( ~ Rewind Reel )":["Exit Accumulator PX Sensor & Limit & Encoder상태 점검","Rewind Reel Section & Robot PX.PH 센서 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Film EPC & Rewind EPC 유니트 점검 및 동작 상태 점검","Rewind Reel Section Encoder Lamp 점등 상태 점검"],"RTO":["MAIN #A.B.C 온도측정 상태 점검","MAIN #A.B.C INNET/OUTNET DAMPER 동작 상태 점검","Damper 배관 누설 상태 점검","MAIN 배관 온도 센서 상태 점검","RTO 배전반 점검"],"DRIVE & 전기실":["냉방기 필터 청소 및 상태 점검","DRIVE & INVERTER COOLING FAN 동작 상태 점검","고압.저압. MCC반 동작 및 LAMP 상태 점검"],"MOTOR 전류 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 3","NO.7 BRIDLE ROLL 4","NO.7 BRIDLE ROLL 5","NO.7 BRIDLE ROLL 6","NO.7 BRIDLE ROLL 7","NO.7 BRIDLE ROLL 8","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","TENSION REEL","ENTRY HYDRAULIC MAIN MOTOR","ENTRY HYDRAULIC STANDBY MOTOR","EXIT HYD MAIN PUMP MOTOR","EXIT HYD STANDBY PUMP MOTOR","RTO MAIN FAN","RTO OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"],"MOTOR 진동 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1 BRIDLE ROLL 1","NO.1 BRIDLE ROLL 2","NO.2 BRIDLE ROLL 1","NO.2 BRIDLE ROLL 2","NO.3 BRIDLE ROLL 1","NO.3 BRIDLE ROLL 2","NO.4 BRIDLE ROLL 1","NO.4 BRIDLE ROLL 2","NO.5 BRIDLE ROLL 1","NO.5 BRIDLE ROLL 2","NO.6 BRIDLE ROLL 1","NO.6 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 1","NO.7 BRIDLE ROLL 2","NO.7 BRIDLE ROLL 3","NO.7 BRIDLE ROLL 4","NO.7 BRIDLE ROLL 5","NO.7 BRIDLE ROLL 6","NO.7 BRIDLE ROLL 7","NO.7 BRIDLE ROLL 8","NO.8 BRIDLE ROLL 1","NO.8 BRIDLE ROLL 2","TENSION REEL","ENTRY HYDRAULIC MAIN MOTOR","ENTRY HYDRAULIC STANDBY MOTOR","EXIT HYD MAIN PUMP MOTOR","EXIT HYD STANDBY PUMP MOTOR","RTO MAIN FAN","RTO OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"]},"3CCL":{"Entry Section ( ~ Entry Accumulator )":["PAY OFF REEL Section PX.PH Sensor 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Pinch Roll Length Encoder 커플링 상태 점검","Welder Position sensor 상태 & Chiller 작동상태 점검","Entry Accumulator PX Sensor & Limit & Encoder 상태 점검"],"Process Section ( ~Primer Quench )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater px sensor 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","OVEN Transmitter 동작 상태 점검"],"Process Section ( ~ Tension Leveller )":["OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Coater Roll Motor Encoder 커플링 상태 점검","NIP Pressure Indigator 동작 상태 점검","Quench Spray Pressure SW 동작 상태 점검","Tension Leveller Encoder Lamp 점등 상태 점검","Prime/Finish Black Light Lamp 점등 상태 점검"],"Exit Section ( ~ Rewind Reel )":["Exit Accumulator PX Sensor & Limit & Encoder상태 점검","Rewind Reel Section Robot PX.PH 센서 상태 점검","OS Panel 버튼 & JOG SW & Sel' SW 상태 점검","Film EPC & Rewind EPC 유니트 점검 및 동작 상태 점검","Rewind Reel Section Encoder Lamp 점등 상태 점검"],"RTO":["MAIN A.B.C 온도측정 상태 점검","MAIN A.B.C INNET/OUTNET DAMPER 동작 상태 점검","Damper 배관 누설 상태 점검","MAIN 배관 온도 센서 상태 점검","RTO 배전반 점검"],"DRIVE & 전기실":["냉방기 필터 청소 및 상태 점검","DRIVE & INVERTER COOLING FAN 동작 상태 점검","고압.저압. MCC반 동작 및 LAMP 상태 점검"],"MOTOR 전류 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1-1 TENSION BRIDLE ROLL","NO.1-2 TENSION BRIDLE ROLL","NO.1-3 TENSION BRIDLE ROLL","NO.2-1 TENSION BRIDLE ROLL","NO.2-2 TENSION BRIDLE ROLL","NO.3-1 TENSION BRIDLE ROLL","NO.3-2 TENSION BRIDLE ROLL","NO.4-1 TENSION BRIDLE ROLL","NO.4-2 TENSION BRIDLE ROLL","NO.5-1 TENSION BRIDLE ROLL","NO.5-2 TENSION BRIDLE ROLL","NO.6-1 TENSION BRIDLE ROLL","NO.6-2 TENSION BRIDLE ROLL","NO.7-1 TENSION BRIDLE ROLL","NO.7-2 TENSION BRIDLE ROLL","NO.8-1 TENSION BRIDLE ROLL","NO.8-2 TENSION BRIDLE ROLL","NO.8-3 TENSION BRIDLE ROLL","NO.8-4 TENSION BRIDLE ROLL","NO.8-5 TENSION BRIDLE ROLL","NO.8-6 TENSION BRIDLE ROLL","NO.8-7 TENSION BRIDLE ROLL","NO.8-8 TENSION BRIDLE ROLL","NO.9-1 TENSION BRIDLE ROLL","NO.9-2 TENSION BRIDLE ROLL","NO.9-3 TENSION BRIDLE ROLL","TENSION REEL","RTO MAIN FAN","PRIME OVEN EXHAUST FAN","FINSH OVEN EXHAUST FAN","CLEAR OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"],"MOTOR 진동 측정":["PAY OFF REEL#1","PAY OFF REEL#2","NO.1-1 TENSION BRIDLE ROLL","NO.1-2 TENSION BRIDLE ROLL","NO.1-3 TENSION BRIDLE ROLL","NO.2-1 TENSION BRIDLE ROLL","NO.2-2 TENSION BRIDLE ROLL","NO.3-1 TENSION BRIDLE ROLL","NO.3-2 TENSION BRIDLE ROLL","NO.4-1 TENSION BRIDLE ROLL","NO.4-2 TENSION BRIDLE ROLL","NO.5-1 TENSION BRIDLE ROLL","NO.5-2 TENSION BRIDLE ROLL","NO.6-1 TENSION BRIDLE ROLL","NO.6-2 TENSION BRIDLE ROLL","NO.7-1 TENSION BRIDLE ROLL","NO.7-2 TENSION BRIDLE ROLL","NO.8-1 TENSION BRIDLE ROLL","NO.8-2 TENSION BRIDLE ROLL","NO.8-3 TENSION BRIDLE ROLL","NO.8-4 TENSION BRIDLE ROLL","NO.8-5 TENSION BRIDLE ROLL","NO.8-6 TENSION BRIDLE ROLL","NO.8-7 TENSION BRIDLE ROLL","NO.8-8 TENSION BRIDLE ROLL","NO.9-1 TENSION BRIDLE ROLL","NO.9-2 TENSION BRIDLE ROLL","NO.9-3 TENSION BRIDLE ROLL","TENSION REEL","RTO MAIN FAN","PRIME OVEN EXHAUST FAN","FINSH OVEN EXHAUST FAN","CLEAR OVEN EXHAUST FAN","PRIMER OVEN RC FAN #1","PRIMER OVEN RC FAN #2","PRIMER OVEN RC FAN #3","FINISH OVEN RC FAN #1","FINISH OVEN RC FAN #2","FINISH OVEN RC FAN #3","FINISH OVEN RC FAN #4","FINISH OVEN RC FAN #5","CLEAR OVEN RC FAN #1","CLEAR OVEN RC FAN #2","CLEAR OVEN RC FAN #3"]},"ARP":{"ROASTER 상부열전대 3EA":["고정상태 및 절연상태 점검"],"ROASTER 상부유량계(FIT-03, FIT-01, FIT-05) ":["유량계 유량 수치 정상 상태 점검작업"],"BUNNERUV SENSOR 3EA":["SENSOR 수입 및 상태 점검 작업"],"BUNNERIGNITION 3EA":["IGNITION 상태 점검"],"ROASTER 하부LUMP BREAKER MOTOR (LB01) 1EA":["MOTOR 전류 측정"],"ROASTER 하부ROTARY MOTOR (F01) 1EA":["MOTOR 전류 측정"],"ROASTER 하부HOT CONVEYOR MOTOR (HOC01) 1EA":["MOTOR 전류 측정"],"SCREEN SCREEN MOTOR (RV02) 1EA":["MOTOR 전류 측정"],"SCREEN SCREEN MOTOR (VS01) 1EA":["MOTOR 전류 측정"],"SCREEN ROTARY MOTOR (F02) 1EA":["MOTOR 전류 측정"],"SCRUBBER LEVEL SENSOR 2EA":["LEVEL SENSOR 수입 작업 및 고정 부분 점검","유량계 유량 수치 정상 상태 점검작업"],"OXIDE BIN 상부 OXIDE FAN 토출압력계 정상상태 확인":["MOTOR 전류 측정"],"OXIDE BIN 상부 OXIDE LEVEL SENSOR 3EA":["LEVEL SENSOR 수입 작업 및 고정 부분 점검"]," ROTARY MOTOR (F03) 1EA":["MOTOR 전류 측정"]," OXIDE 하부 LEVEL 표시기":["LEVEL 상태 확인"],"BAGGING MACHINE BAGGING CONVAYOR MOTOR 1EA":["MOTOR 전류 측정"],"COMBUSTION COMBUSTION FAN MOTOR 1EA":["MOTOR 전류 측정"]," ID EXHAUST FAN (F1) MOTOR 1EA":["MOTOR 전류 측정"]," 열전대 (TE-26,27,28)":["열전대 고정 상태 및 절연 상태 점검"],"PUMP실 신산(FA) PUMP MOTOR (P8) 2EA":["MOTOR 전류 측정"],"PUMP실 폐산(WPL) PUMP MOTOR (P1) 2EA":["MOTOR 전류 측정"],"PUMP실 재염산(RA) PUMP MOTOR (P13) 2EA":["MOTOR 전류 측정"],"PUMP실 린스(RW) PUMP MOTOR (P12) 2EA":["MOTOR 전류 측정"],"PUMP실 SCRUBBER PUMP MOTOR (P10) 3EA":["MOTOR 전류 측정"],"PUMP실 VENTURI PUMP MOTOR (P02) 2EA":["MOTOR 전류 측정"],"PUMP실 CPL PUMP MOTOR (P03) 2EA":["MOTOR 전류 측정"],"PUMP실 SUMP PUMP (P17) 1EA":["MOTOR 전류 측정"],"PUMP실 SEAL PUMP 2EA":["MOTOR 전류 측정"],"MOTOR 절연저항 측정":["MOTOR 절연저항 측정"],"PUMP실 유량계 (FIT-09, FIT-13, FIT-05)":["유량계 유량 수치 정상 상태 및 방수 상태 점검"],"PUMP실 압력계 PSL 7EA":["압력계 정상 압력 상태 점검"],"전기실 INVERTER PANEL":["COOLING FAN 점검"],"전기실 PLC":["PLC BACK 기 점검 및 교체"]},"SSCL":{"MAIN DRIVE":["MAIN DRIVE MOTOR 진동 및 온도 점검"],"TANK":["TANK LEVEL SENSOR 및 알람 로직 테스트"],"기타":["기타 점검 항목"]}};
         const subItemMapFault={"drive":["모터(베어링)","엔코더","BRAKE","밸브","드라이브(모터모듈)","컨버터","냉각팬"],"xray":["TUBE","SHUTTER"],"plc":["CPU","통신"],"electric":["센서","스위치","단락/지락","히터"],"relay":["보호계전기 동작/오류"],"human":["작업자 조작 실수"],"etc":["기타 미분류 항목"]};
-        
-        const typeMap = {
-            'drive': '구동 모터 결함', 'xray': '계측 센서 오류', 'plc': 'PLC/통신 장애',
-            'electric': '정전/전압 이상', 'relay': '정전/전압 이상', 'human': '기타', 'etc': '기타'
-        };
-
+        const typeMap = { 'drive': '구동 모터 결함', 'xray': '계측 센서 오류', 'plc': 'PLC/통신 장애', 'electric': '정전/전압 이상', 'relay': '정전/전압 이상', 'human': '기타', 'etc': '기타' };
         const cycleNameMap = { 'daily': '일별', 'weekly': '주별', 'monthly': '월별', 'quarterly': '분기별', 'none': '-' };
-
-        const lineStore = {
-            'CPL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
-            'CRM': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
-            'CGL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
-            '1CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
-            '2CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
-            '3CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
-            'ARP': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 },
-            'SSCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }
-        };
-
-        const chartColors = {
-            '정전/전압 이상': '#93c5fd', '구동 모터 결함': '#fcd34d', 
-            '계측 센서 오류': '#d8b4fe', 'PLC/통신 장애': '#6ee7b7', '기타': '#cbd5e1'
-        };
+        const lineStore = { 'CPL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'CRM': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'CGL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, '1CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, '2CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, '3CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'ARP': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'SSCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 } };
 
         window.generateInitialDummyData = function(targetDateStr) { return []; }
 
@@ -1115,7 +1055,7 @@
                             <div class="mt-3 md:mt-4 border-t border-slate-100 pt-3">
                                 <a href="${finalUrl}" target="_blank" class="px-3 py-1.5 md:py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-[10px] md:text-xs font-bold hover:bg-blue-100 transition inline-flex items-center w-full sm:w-auto justify-center">
                                     <svg class="w-3 h-3 md:w-4 md:h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                                    관련 문서/PPT 열기
+                                    첨부 문서 열기
                                 </a>
                             </div>
                         `;
@@ -1148,7 +1088,6 @@
             const backBtn = document.getElementById('backToSummaryBtn');
             const dateContainer = document.getElementById('headerDatePickerContainer');
 
-            // 모바일 뷰일 경우 메뉴 선택 후 사이드바 자동 닫기
             if (window.innerWidth < 1024) {
                 const sidebar = document.getElementById('sidebar');
                 if (!sidebar.classList.contains('-translate-x-full')) {
@@ -1844,14 +1783,24 @@
                 if (!inputDate) return window.showCustomAlert("발생 일자를 지정해 주세요.", "danger");
 
                 document.getElementById('loadingOverlay').classList.remove('hidden');
+                
+                let fileUrl = '';
+                const fileInput = document.getElementById('regFileFault');
+                if (fileInput.files.length > 0) {
+                    try {
+                        document.getElementById('loadingText').innerText = "첨부파일 서버 업로드 중...";
+                        fileUrl = await window.uploadToFirebaseStorage(fileInput.files[0]);
+                    } catch (err) {
+                        document.getElementById('loadingOverlay').classList.add('hidden');
+                        return window.showCustomAlert("파일 업로드 실패: " + err.message + "\n(파이어베이스 Storage 규칙이 켜져 있는지 확인하세요!)", "danger");
+                    }
+                }
+
                 document.getElementById('loadingText').innerText = "고장 이력 등록 중...";
                 
                 const line = document.getElementById('regLineFault').value;
                 const category = document.getElementById('regCategoryFault').value;
                 const regDescText = document.getElementById('regDescFault').value.trim() || `${window.selectedSubItemFault} 고장 발생 및 조치 내역`;
-                
-                // ★ 기존의 prompt URL 입력 대신 첨부 모달(fileUrlModal) 적용
-                const fileUrl = document.getElementById('regFileUrlFault').value.trim();
 
                 const partType = ['xray', 'plc', 'electric', 'relay'].includes(category) ? '전기' : '기계';
 
@@ -1870,7 +1819,7 @@
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 window.showCustomAlert(`[고장 이력 등록] ${line} 라인 ${window.selectedSubItemFault} 고장이 데이터베이스에 저장되었습니다.`, "success");
                 document.getElementById('regDescFault').value = '원인 : \n조치 : \n대책 : ';
-                document.getElementById('regFileUrlFault').value = ''; 
+                fileInput.value = ''; 
                 window.showDetail(line); 
             } catch (err) { 
                 console.error(err); 
@@ -1879,7 +1828,6 @@
             }
         }
 
-        // ★ 신규: 수정/관리 버튼 클릭 시 바로 모달창이 열리는게 아니라 비밀번호 확인 모달을 먼저 띄움
         window.checkAndOpenEditModal = function() {
             document.getElementById('adminAuthModal').classList.remove('hidden');
             document.getElementById('adminPasswordInput').value = '';
@@ -1890,7 +1838,7 @@
             const input = document.getElementById('adminPasswordInput').value;
             if (input === window.adminPassword) {
                 document.getElementById('adminAuthModal').classList.add('hidden');
-                window.openEditModal(); // 비밀번호 맞으면 원래 모달창 오픈
+                window.openEditModal(); 
             } else {
                 window.showCustomAlert('마스터 비밀번호가 일치하지 않습니다.', 'danger');
             }
@@ -1942,27 +1890,33 @@
             window.closeDescEditModal();
         }
 
-        // ★ 신규: prompt 제거, 링크 직접 입력을 위한 전용 모달 오픈
         window.editFileUrl = function(idx) {
-            window.targetFileIdx = idx;
-            const row = window.tempRecords[idx];
-            document.getElementById('fileUrlInput').value = row.fileUrl || '';
-            document.getElementById('fileUrlModal').classList.remove('hidden');
-            document.getElementById('fileUrlInput').focus();
-        }
-
-        window.closeFileUrlModal = function() {
-            document.getElementById('fileUrlModal').classList.add('hidden');
-            window.targetFileIdx = -1;
-        }
-
-        window.saveFileUrl = function() {
-            if (window.targetFileIdx > -1) {
-                const url = document.getElementById('fileUrlInput').value.trim();
-                window.updateTempRecord(window.targetFileIdx, 'fileUrl', url);
-                window.renderModalRows();
-                window.closeFileUrlModal();
+            if (!window.uploadToFirebaseStorage) {
+                return window.showCustomAlert("클라우드 스토리지 모듈이 아직 로드되지 않았습니다.", "danger");
             }
+            
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = ".ppt,.pptx,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg";
+            
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    document.getElementById('loadingOverlay').classList.remove('hidden');
+                    document.getElementById('loadingText').innerText = "첨부파일 업로드 중...";
+                    try {
+                        const url = await window.uploadToFirebaseStorage(file);
+                        window.updateTempRecord(idx, 'fileUrl', url);
+                        window.renderModalRows();
+                        window.showCustomAlert(`[${file.name}] 파일이 성공적으로 첨부되었습니다.\n반드시 하단의 [변경사항 저장] 버튼을 눌러야 최종 반영됩니다.`, "success");
+                    } catch (err) {
+                        window.showCustomAlert("업로드 실패: " + err.message + "\n(파이어베이스 Storage 규칙이 켜져 있는지 확인하세요!)", "danger");
+                    } finally {
+                        document.getElementById('loadingOverlay').classList.add('hidden');
+                    }
+                }
+            };
+            fileInput.click();
         }
 
         window.filterModalByRecordType = function(type) {
@@ -2005,7 +1959,6 @@
             window.renderModalRows();
         }
 
-        // ★ 신규: 전체 삭제 확인 모달 제어
         window.openConfirmDeleteModal = function() {
             document.getElementById('confirmDeleteModal').classList.remove('hidden');
         }
@@ -2039,7 +1992,6 @@
             window.showCustomAlert('현재 필터링된 항목이 모두 임시 삭제되었습니다.\n하단의 [변경사항 저장]을 누르셔야 최종 반영됩니다.', 'success');
         }
 
-        // ★ 신규: 비밀번호 변경 모달 제어
         window.openChangePasswordModal = function() {
             document.getElementById('changePasswordModal').classList.remove('hidden');
             document.getElementById('newPasswordInput').value = '';
@@ -2118,7 +2070,7 @@
                 return tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-bold">수정할 이력이 존재하지 않습니다.</td></tr>`;
             }
             
-            // ★ 수정: 페이지 표시 개수를 15개에서 30개로 두 배 확대!
+            // ★ 수정: 페이지 표시 개수를 30개로 대폭 확대
             const ITEMS_PER_PAGE = 30; 
             const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
             if (window.currentModalPage >= totalPages && totalPages > 0) window.currentModalPage = totalPages - 1;
@@ -2170,7 +2122,7 @@
                 
                 const hasFile = row.fileUrl && row.fileUrl.trim() !== '';
                 const linkBtnClass = hasFile ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200' : 'bg-indigo-50 text-indigo-500 hover:bg-indigo-100';
-                const linkBtnTitle = hasFile ? '첨부파일 변경 (현재 파일 존재)' : '관련 파일 첨부 (웹 URL 링크)';
+                const linkBtnTitle = hasFile ? '첨부파일 변경 (현재 파일 존재)' : '관련 파일 첨부 (PC/모바일 업로드)';
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
@@ -2213,14 +2165,20 @@
             document.getElementById('modalPagination').innerHTML = paginationHtml;
         }
 
-        window.deleteRowInModal = function(idx) { 
-            window.tempRecords.splice(idx, 1); 
-            const ITEMS_PER_PAGE = 30; // 삭제 시에도 30개로 유지 검증
-            const totalPages = Math.ceil(window.tempRecords.length / ITEMS_PER_PAGE);
-            if (window.currentModalPage >= totalPages && window.currentModalPage > 0) {
-                window.currentModalPage--;
+        window.handleModalCategoryChange = function(idx, newCat, isFault) {
+            if (window.tempRecords[idx]) {
+                const row = window.tempRecords[idx];
+                if (isFault) {
+                    row.category = newCat;
+                    row.subItem = subItemMapFault[newCat][0];
+                } else {
+                    let targetMap = subItemMapInsp[row.line] || subItemMapInsp['CRM'];
+                    if(!targetMap[newCat]) targetMap[newCat] = ['기타'];
+                    row.category = newCat;
+                    row.subItem = targetMap[newCat][0];
+                }
+                window.renderModalRows();
             }
-            window.renderModalRows(); 
         }
 
         window.saveEditedData = async function() {
@@ -2399,6 +2357,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // ★ 신규: Firebase Storage 엔진 수입
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyD25Sgz50I6bJ27ac3Cbt2bASuaNVuVJg0", 
@@ -2410,7 +2371,7 @@
         };
         
         const appId = 'seah-cm-pdm-appid';
-        let db = null; let auth = null; let unsubscribeSync = null;
+        let db = null; let auth = null; let unsubscribeSync = null; let storage = null;
 
         // ★ 파이어베이스 메서드들을 다른 함수에서도 쓰기 위해 창 밖으로 빼놓기 (비밀번호 변경용)
         window._db = null; window._doc = null; window._setDoc = null; window._appId = appId;
@@ -2425,6 +2386,7 @@
                 const app = initializeApp(firebaseConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app, "seahft1");
+                storage = getStorage(app); // Storage 활성화
                 
                 window._db = db; window._doc = doc; window._setDoc = setDoc;
                 
@@ -2559,6 +2521,21 @@
                     } catch (error) {
                         console.error("로그아웃 에러", error);
                     }
+                }
+
+                // ★ 신규: 첨부파일 직접 업로드 전역 함수
+                window.uploadToFirebaseStorage = async function(file) {
+                    if (!storage) throw new Error("Firebase Storage가 아직 초기화되지 않았습니다.");
+                    
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `fault_docs/${Date.now()}_${Math.random().toString(36).substring(2,8)}.${fileExt}`;
+                    const fileRef = ref(storage, fileName);
+                    
+                    // 파일 업로드 실행
+                    await uploadBytes(fileRef, file);
+                    // 업로드된 파일의 다운로드 URL 가져오기
+                    const downloadUrl = await getDownloadURL(fileRef);
+                    return downloadUrl;
                 }
 
                 // 묶음 전송 모듈 유지
