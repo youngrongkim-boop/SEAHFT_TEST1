@@ -310,7 +310,8 @@
 
                     <!-- 2. 설비 고장 이력 등록 섹션 -->
                     <section id="section-fault-input" class="hidden">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-6 w-full">
+                        <!-- ★ 3칸에서 4칸(기계/전기 드롭다운 추가)으로 그리드 레이아웃 확장 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 w-full">
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">고장 발생 라인</label>
                                 <select id="regLineFault" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition">
@@ -321,9 +322,17 @@
                             </div>
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">고장 부류</label>
-                                <select id="regCategoryFault" onchange="window.loadSubItemsFault(this.value)" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition">
+                                <select id="regCategoryFault" onchange="window.handleCategoryChangeFault(this.value)" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition">
                                     <option value="drive" selected>구동부</option><option value="xray">X-RAY</option><option value="plc">PLC</option>
                                     <option value="electric">전장품</option><option value="relay">보호계전기</option><option value="human">HUMAN ERROR</option><option value="etc">미분류</option>
+                                </select>
+                            </div>
+                            <!-- ★ 신규: 기계/전기 분류 선택 (고장 이력) -->
+                            <div class="space-y-2 md:space-y-3">
+                                <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">고장 분류 (기계/전기)</label>
+                                <select id="regPartTypeFault" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition">
+                                    <option value="기계" selected>기계</option>
+                                    <option value="전기">전기</option>
                                 </select>
                             </div>
                             <div class="space-y-2 md:space-y-3">
@@ -394,15 +403,23 @@
                     <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-400 to-red-500 no-print"></div>
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 md:mb-6">
                         <h3 class="text-lg md:text-2xl font-black text-slate-800 tracking-tighter" id="analysis-main-title">설비팀 고장 자료 (연간 누적 현황)</h3>
-                        <div class="flex items-center w-full sm:w-auto">
-                            <div class="flex items-center space-x-1 md:space-x-2 bg-slate-100 p-1 md:p-1.5 rounded-xl shadow-sm no-print w-full sm:w-auto">
+                        
+                        <div class="flex items-center flex-wrap gap-2 w-full sm:w-auto">
+                            <!-- ★ 신규: 기계/전기 필터 버튼 그룹 -->
+                            <div class="flex items-center space-x-1 bg-slate-100 p-1 md:p-1.5 rounded-xl shadow-sm no-print w-full sm:w-auto">
+                                <button id="ana-part-all" onclick="window.setAnalysisPartType('all')" class="flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all bg-slate-800 text-white shadow-sm">전체</button>
+                                <button id="ana-part-mech" onclick="window.setAnalysisPartType('기계')" class="flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">기계</button>
+                                <button id="ana-part-elec" onclick="window.setAnalysisPartType('전기')" class="flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">전기</button>
+                            </div>
+                            
+                            <div class="flex items-center space-x-1 bg-slate-100 p-1 md:p-1.5 rounded-xl shadow-sm no-print w-full sm:w-auto">
                                 <button id="ana-btn-daily" onclick="window.setAnalysisPeriod('daily')" class="flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">일간</button>
                                 <button id="ana-btn-monthly" onclick="window.setAnalysisPeriod('monthly')" class="flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">월간</button>
                                 <button id="ana-btn-yearly" onclick="window.setAnalysisPeriod('yearly')" class="flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all bg-blue-600 text-white shadow-sm">연간</button>
                             </div>
-                            <button onclick="window.print()" class="hidden md:flex ml-3 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl shadow-md transition-all items-center no-print whitespace-nowrap">
+                            <button onclick="window.print()" class="hidden md:flex ml-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl shadow-md transition-all items-center no-print whitespace-nowrap">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                리포트 인쇄
+                                인쇄
                             </button>
                         </div>
                     </div>
@@ -586,6 +603,7 @@
         window.currentSummaryPeriod = 'daily'; 
         window.currentAnalysisPeriod = 'yearly';
         window.currentAnalysisDetailPeriod = 'all'; 
+        window.currentAnalysisPartType = 'all'; // ★ 분석 리포트 전기/기계 필터 변수 추가
         window.currentInspReportPeriod = 'daily';
         window.activeAnalysisLine = 'all';
         window.isFirebaseActive = false;
@@ -832,6 +850,21 @@
             window.renderAnalysisDetailList();
         }
 
+        // ★ 신규: 분석 리포트 기계/전기 필터 설정 함수
+        window.setAnalysisPartType = function(type) {
+            window.currentAnalysisPartType = type;
+            const btnMap = { 'all': 'ana-part-all', '기계': 'ana-part-mech', '전기': 'ana-part-elec' };
+            Object.keys(btnMap).forEach(key => {
+                const btn = document.getElementById(btnMap[key]);
+                if(btn) {
+                    if(key === type) btn.className = 'flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all bg-slate-800 text-white shadow-sm';
+                    else btn.className = 'flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm';
+                }
+            });
+            window.renderFaultAnalysis();
+            window.renderAnalysisDetailList();
+        }
+
         window.renderFaultAnalysis = function() {
             const targetDate = new Date(window.currentTargetDate);
             const tYear = targetDate.getFullYear();
@@ -841,7 +874,12 @@
             let periodFaults = [];
             let dateStr = '';
             
-            const allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+            let allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+            
+            // ★ 신규: 기계/전기 필터 로직 적용
+            if (window.currentAnalysisPartType !== 'all') {
+                allFaults = allFaults.filter(r => r.partType === window.currentAnalysisPartType);
+            }
 
             if (window.currentAnalysisPeriod === 'daily') {
                 if(titleEl) titleEl.innerText = '설비팀 고장 자료 (일간 현황)';
@@ -982,7 +1020,13 @@
             const tMonth = targetDate.getMonth() + 1;
             const tDateStr = window.currentTargetDate;
 
-            const allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+            let allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+            
+            // ★ 신규: 세부 내역에서도 기계/전기 필터 로직 적용
+            if (window.currentAnalysisPartType !== 'all') {
+                allFaults = allFaults.filter(r => r.partType === window.currentAnalysisPartType);
+            }
+
             let periodFaults = [];
             let dateStr = '';
 
@@ -1000,7 +1044,9 @@
                 dateStr = `${tYear}년`;
             }
 
-            let detailTitle = `${window.activeAnalysisLine === 'all' ? '전체 라인' : window.activeAnalysisLine + ' 라인'} 세부 고장 내역 (${dateStr})`;
+            // ★ 제목에 기계/전기 구분을 텍스트로 반영
+            let typeStr = window.currentAnalysisPartType === 'all' ? '기계/전기 전체' : window.currentAnalysisPartType + ' 고장';
+            let detailTitle = `${window.activeAnalysisLine === 'all' ? '전체 라인' : window.activeAnalysisLine + ' 라인'} [${typeStr}] 세부 내역 (${dateStr})`;
             const titleEl = document.getElementById('analysis-detail-title-text');
             if (titleEl) titleEl.innerText = detailTitle;
 
@@ -1028,13 +1074,17 @@
                             </div>
                         `;
                     }
+                    
+                    const partTypeBadge = f.partType === '전기' 
+                        ? '<span class="bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded text-[10px] font-bold shrink-0 inline-block w-[36px] text-center ml-1">전기</span>' 
+                        : '<span class="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-bold shrink-0 inline-block w-[36px] text-center ml-1">기계</span>';
 
                     listHtml += `
                         <div class="text-xs md:text-sm text-slate-800 leading-relaxed border border-slate-200 shadow-sm pb-4 md:pb-5 hover:border-blue-300 hover:shadow-md p-3 md:p-4 rounded-xl transition bg-white">
                             <div class="font-black mb-2 md:mb-3 text-sm md:text-base flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-100 pb-2 gap-2 sm:gap-0">
                                 <div class="flex items-center flex-wrap gap-1 md:gap-2">
                                     <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                                    <span class="text-blue-700 mr-1">[${f.line}]</span> ${f.subItem} 
+                                    <span class="text-blue-700 mr-1">[${f.line}]</span> ${f.subItem} ${partTypeBadge}
                                     <span class="text-slate-400 font-semibold text-[10px] md:text-xs bg-slate-100 px-2 py-0.5 rounded-full mt-1 sm:mt-0">발생일 : ${f.date}</span>
                                 </div>
                                 <span class="text-[10px] md:text-xs font-bold px-2 py-1 md:px-2.5 md:py-1 rounded bg-red-50 text-red-600 border border-red-100 w-fit">${f.type}</span>
@@ -1157,7 +1207,7 @@
                         
                         <div class="mb-3 md:mb-4">
                             <div class="flex justify-between items-end mb-1">
-                                <span class="text-[10px] md:text-xs font-bold text-slate-500">기계</span>
+                                <span class="text-[10px] md:text-xs font-bold text-slate-500">기계 점검</span>
                                 <span class="text-xs md:text-sm font-black text-blue-600">${mechPercent}%</span>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-2">
@@ -1167,7 +1217,7 @@
                         
                         <div class="mb-3 md:mb-4">
                             <div class="flex justify-between items-end mb-1">
-                                <span class="text-[10px] md:text-xs font-bold text-slate-500">전기</span>
+                                <span class="text-[10px] md:text-xs font-bold text-slate-500">전기 점검</span>
                                 <span class="text-xs md:text-sm font-black text-emerald-500">${elecPercent}%</span>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-2">
@@ -1546,7 +1596,8 @@
                 btnFault.className = 'flex-1 md:flex-none px-3 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl font-black text-xs md:text-sm transition-all bg-red-600 text-white shadow-sm whitespace-nowrap';
                 secFault.classList.remove('hidden');
                 mainTitle.innerText = '고장 이력 등록';
-                window.loadSubItemsFault(document.getElementById('regCategoryFault').value);
+                // ★ 탭 이동 시 고장 카테고리에 맞게 기계/전기 드롭다운 자동 갱신 적용
+                window.handleCategoryChangeFault(document.getElementById('regCategoryFault').value);
             }
         }
         
@@ -1628,6 +1679,15 @@
             document.querySelectorAll('#subItemContainerInsp button.type-tab').forEach(b => b.className = 'type-tab');
             btn.className = 'type-tab active bg-blue-600 text-white'; 
             window.selectedSubItemInsp = itemText;
+        }
+
+        // ★ 신규: 고장 등록 시 카테고리에 맞춰 기계/전기 드롭다운 자동 맵핑 로직 추가
+        window.handleCategoryChangeFault = function(val) {
+            window.loadSubItemsFault(val);
+            const partTypeSelect = document.getElementById('regPartTypeFault');
+            if (partTypeSelect) {
+                partTypeSelect.value = ['xray', 'plc', 'electric', 'relay'].includes(val) ? '전기' : '기계';
+            }
         }
 
         window.loadSubItemsFault = function(cat) {
@@ -1770,7 +1830,8 @@
                 const category = document.getElementById('regCategoryFault').value;
                 const regDescText = document.getElementById('regDescFault').value.trim() || `${window.selectedSubItemFault} 고장 발생 및 조치 내역`;
 
-                const partType = ['xray', 'plc', 'electric', 'relay'].includes(category) ? '전기' : '기계';
+                // ★ 읽어올 때 카테고리 기반이 아니라 명시적으로 선택한 select 태그의 값을 가져옵니다.
+                const partType = document.getElementById('regPartTypeFault') ? document.getElementById('regPartTypeFault').value : (['xray', 'plc', 'electric', 'relay'].includes(category) ? '전기' : '기계');
 
                 const newRecord = { 
                     id: generateUUID(), recordType: 'fault', line: line, category: category, 
