@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>설비관리 시스템</title>
-    <script src="https://cdn.tailwindcss.com"></script>`
+    <title>세아씨엠 차세대 AI 예지보전 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- ★ 엑셀 파싱을 위한 SheetJS 라이브러리 추가 -->
@@ -276,6 +276,11 @@
                                     <option value="monthly">월별 점검</option><option value="quarterly">분기별 점검</option>
                                 </select>
                             </div>
+                            <!-- ★ 신규: 점검 기준 입력칸 추가 -->
+                            <div class="space-y-2 md:space-y-3 lg:col-span-4">
+                                <label class="font-black text-slate-400 text-[10px] md:text-[11px] uppercase tracking-wide">점검 기준 (선택사항)</label>
+                                <input type="text" id="regStandardInsp" placeholder="예: 온도 40도 이하, 소음 없음 등" class="w-full bg-slate-50 border border-slate-200 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm transition">
+                            </div>
                         </div>
                         
                         <div class="space-y-2 md:space-y-3 mb-6 md:mb-10 w-full">
@@ -302,24 +307,35 @@
                         <div class="dropzone p-6 md:p-8 border-slate-300 bg-white shadow-sm w-full" onclick="document.getElementById('excelUploadInsp').click()">
                             <svg class="w-6 h-6 md:w-8 md:h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             <p class="text-xs md:text-sm font-bold text-slate-600">클릭하여 엑셀(.xlsx, .csv) 파일 업로드</p>
-                            <!-- ★ 추가: E열 기계/전기 구분 안내 수정 -->
-                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>B열: 설비명, C열: 기계/전기 구분, D열: 작업 세부사항, E열: 점검주기</p>
+                            <!-- ★ 엑셀 업로드 양식 안내 수정 -->
+                            <p class="text-[10px] md:text-xs text-slate-500 mt-2 hidden md:block">※ 파일의 시트명(하단 탭)은 CPL, CRM 등 라인명으로 인식합니다.<br>A열: 순번, B열: 설비명, C열: 기계/전기 구분, D열: 작업 세부사항, E열: 점검기준, F열: 점검주기(선택)</p>
                             <input type="file" id="excelUploadInsp" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelUpload(event, 'inspection')">
                         </div>
                     </section>
 
                     <!-- 2. 설비 고장 이력 등록 섹션 -->
-                    <section id="section-fault-input" class="hidden">
-                        <!-- ★ 3칸에서 4칸(기계/전기 드롭다운 추가)으로 그리드 레이아웃 확장 -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 w-full">
-                            <div class="space-y-2 md:space-y-3">
-                                <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">고장 발생 라인</label>
-                                <select id="regLineFault" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition">
-                                    <option value="CPL">CPL</option><option value="CRM" selected>CRM</option><option value="CGL">CGL</option>
-                                    <option value="1CCL">1CCL</option><option value="2CCL">2CCL</option><option value="3CCL">3CCL</option>
-                                    <option value="ARP">ARP</option><option value="SSCL">SSCL</option>
-                                </select>
-                            </div>
+                        <div class="flex-grow overflow-x-auto custom-scroll border border-slate-100 rounded-lg">
+                            <table class="w-full text-left border-collapse text-xs min-w-[700px]">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold sticky top-0 z-10">
+                                    <tr>
+                                        <!-- ★ 헤더에 '점검 기준' 추가 및 레이아웃 너비 조정 -->
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-12 text-center whitespace-nowrap">번호</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-32 md:w-40 whitespace-nowrap">설비명</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-16 text-center whitespace-nowrap">구분</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-16 text-center whitespace-nowrap">주차</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 min-w-[200px]">작업 세부사항 (내용)</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 min-w-[120px]">점검 기준</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-16 text-center whitespace-nowrap">상태</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-16 text-center whitespace-nowrap">특이사항</th>
+                                        <th class="py-2.5 md:py-3 px-3 md:px-4 w-32 text-center no-print whitespace-nowrap">실적 처리</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailTableBody" class="divide-y divide-slate-100 font-semibold text-slate-600">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="detailPagination"></div>
+                    </div>
                             <div class="space-y-2 md:space-y-3">
                                 <label class="font-black text-red-400 text-[10px] md:text-[11px] uppercase tracking-wide">고장 부류</label>
                                 <select id="regCategoryFault" onchange="window.handleCategoryChangeFault(this.value)" class="w-full bg-red-50/50 border border-red-100 p-3 md:p-4 rounded-xl font-bold outline-none focus:ring-2 focus:ring-red-500 text-xs md:text-sm transition">
@@ -568,9 +584,10 @@
     <!-- 특이사항 팝업 모달 -->
     <div id="remarkModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[250] flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-2xl p-6 md:p-8 w-full max-w-md shadow-2xl border border-slate-200">
-            <h3 class="text-lg md:text-xl font-black text-slate-800 mb-2 border-l-4 border-blue-600 pl-3">점검 특이사항</h3>
+            <!-- ★ 제목 id 추가 (상황에 따라 텍스트 변경용) -->
+            <h3 class="text-lg md:text-xl font-black text-slate-800 mb-2 border-l-4 border-blue-600 pl-3" id="remarkModalTitle">점검 특이사항</h3>
             <p id="remarkModalSubItem" class="text-xs md:text-sm text-slate-500 font-bold mb-4"></p>
-            <textarea id="remarkArea" rows="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 md:p-4 text-xs md:text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700" placeholder="점검 중 발견된 특이사항이나 조치 내역을 입력해주세요."></textarea>
+            <textarea id="remarkArea" rows="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 md:p-4 text-xs md:text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700" placeholder="점검 중 발견된 특이사항이나 조치 내역을 상세히 적어주세요."></textarea>
             <div class="flex justify-end mt-4 md:mt-6 space-x-2 md:space-x-3">
                 <button onclick="window.closeRemarkModal()" class="px-4 py-2 md:px-5 md:py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs md:text-sm font-bold transition">취소</button>
                 <button onclick="window.saveRemark()" class="px-4 py-2 md:px-5 md:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-md transition">저장하기</button>
@@ -684,8 +701,7 @@
 
         window.closeCustomAlert = function() {
             document.getElementById('customAlert').classList.add('hidden');
-        }
-
+        // ★ 데이터 모델에 standard(점검기준) 속성 추가
         function sanitizeRecord(r) {
             return {
                 id: r.id || generateUUID(),
@@ -696,6 +712,7 @@
                 type: r.type || '기타',
                 partType: r.partType || '기계', 
                 cycle: r.cycle || 'none',
+                standard: r.standard || '', // ★ 신규: 점검 기준
                 date: r.date || window.currentTargetDate,
                 status: r.status || 'uninspected',
                 desc: r.desc || '',
@@ -1207,7 +1224,7 @@
                         
                         <div class="mb-3 md:mb-4">
                             <div class="flex justify-between items-end mb-1">
-                                <span class="text-[10px] md:text-xs font-bold text-slate-500">기계</span>
+                                <span class="text-[10px] md:text-xs font-bold text-slate-500">기계 점검</span>
                                 <span class="text-xs md:text-sm font-black text-blue-600">${mechPercent}%</span>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-2">
@@ -1217,7 +1234,7 @@
                         
                         <div class="mb-3 md:mb-4">
                             <div class="flex justify-between items-end mb-1">
-                                <span class="text-[10px] md:text-xs font-bold text-slate-500">전기</span>
+                                <span class="text-[10px] md:text-xs font-bold text-slate-500">전기 점검</span>
                                 <span class="text-xs md:text-sm font-black text-emerald-500">${elecPercent}%</span>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-2">
@@ -1292,10 +1309,9 @@
 
                 const statusClass = status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700';
                 const statusText = status === 'completed' ? '점검완료' : '미점검';
-                const buttonClass = status === 'completed' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-400 hover:bg-slate-500';
                 const cycleKo = cycleNameMap[r.cycle] || '일반';
                 
-                const remarkBtnText = remark ? '수정' : '작성';
+                const remarkBtnText = remark ? '보기/수정' : '작성';
                 const remarkBtnClass = remark ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
                 
                 const partTypeBadge = r.partType === '전기' 
@@ -1316,6 +1332,21 @@
                     }
                 }
 
+                // ★ 신규: 양호/불량 분리 및 점검 기준 표시
+                const standardText = r.standard ? r.standard : '<span class="text-slate-300">-</span>';
+                
+                let actionButtons = '';
+                if (status === 'completed') {
+                    actionButtons = `<button onclick="window.cancelInspectionStatus('${r.id}')" class="text-slate-500 bg-slate-200 hover:bg-slate-300 text-[10px] md:text-xs font-black px-3 py-1.5 rounded-lg transition w-full">실적 취소</button>`;
+                } else {
+                    actionButtons = `
+                        <div class="flex gap-1 justify-center">
+                            <button onclick="window.handleInspectionResult('${r.id}', 'good')" class="text-white bg-blue-500 hover:bg-blue-600 text-[10px] md:text-xs font-black px-3 py-1.5 rounded-lg transition flex-1">양호</button>
+                            <button onclick="window.handleInspectionResult('${r.id}', 'bad')" class="text-white bg-red-500 hover:bg-red-600 text-[10px] md:text-xs font-black px-3 py-1.5 rounded-lg transition flex-1">불량</button>
+                        </div>
+                    `;
+                }
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center text-slate-400 whitespace-nowrap">${idx + 1}</td>
@@ -1323,12 +1354,13 @@
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center whitespace-nowrap">${partTypeBadge}</td>
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center whitespace-nowrap"><span class="px-2 py-0.5 rounded bg-slate-100 text-[9px] md:text-[10px] text-slate-500 font-black">${cycleKo}</span></td>
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-slate-500 text-[11px] md:text-xs leading-relaxed min-w-[200px]">${r.subItem}${dateBadge}</td>
+                        <td class="py-2.5 md:py-4 px-3 md:px-4 text-slate-600 font-semibold text-[11px] md:text-xs whitespace-nowrap md:whitespace-normal break-keep">${standardText}</td>
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center whitespace-nowrap"><span class="px-2 md:px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black tracking-wider ${statusClass}">${statusText}</span></td>
                         <td class="py-2.5 md:py-4 px-3 md:px-4 text-center whitespace-nowrap">
                             <button onclick="window.openRemarkModal('${r.id}')" class="text-[10px] font-black px-2 md:px-3 py-1 rounded-lg transition ${remarkBtnClass}">${remarkBtnText}</button>
                         </td>
-                        <td class="py-2.5 md:py-4 px-3 md:px-4 text-center no-print whitespace-nowrap">
-                            <button onclick="window.toggleInspectionStatus('${r.id}')" class="text-white text-[10px] md:text-xs font-black px-3 md:px-4 py-1.5 rounded-xl transition ${buttonClass}">${status === 'completed' ? '실적 취소' : '실적 조치'}</button>
+                        <td class="py-2.5 md:py-4 px-3 md:px-4 text-center no-print whitespace-nowrap min-w-[110px]">
+                            ${actionButtons}
                         </td>
                     </tr>
                 `;
@@ -1369,20 +1401,30 @@
             window.renderDetailTable();
         }
 
-        window.toggleInspectionStatus = async function(id) {
+        // ★ 신규: 양호/불량 분리 로직
+        window.handleInspectionResult = function(id, type) {
+            if (type === 'good') {
+                window.completeInspectionRecord(id, '양호');
+            } else if (type === 'bad') {
+                window.pendingInspectionResult = true; // 불량 처리 중 플래그 켜기
+                window.openRemarkModal(id);
+            }
+        }
+
+        // ★ 신규: 공통 실적 완료 처리 함수 (다음 주기 생성 포함)
+        window.completeInspectionRecord = async function(id, autoRemark = '') {
             const record = window.systemRecords.find(r => r.id === id);
             if (!record) return;
 
             try {
-                let nextStatus = record.status === 'completed' ? 'uninspected' : 'completed';
                 let nextRecord = null;
+                let newDateStr = window.currentTargetDate;
                 
-                let newDateStr = record.date;
-                if (nextStatus === 'completed') {
-                    newDateStr = window.currentTargetDate;
-                }
+                // 기존 코멘트 유지하되 autoRemark가 있으면 병합
+                let finalRemark = record.remark;
+                if (!finalRemark && autoRemark) finalRemark = autoRemark;
                 
-                if (nextStatus === 'completed' && record.cycle !== 'none') {
+                if (record.cycle !== 'none') {
                     const nextDate = new Date(newDateStr); 
                     if (record.cycle === 'daily') nextDate.setDate(nextDate.getDate() + 1);
                     else if (record.cycle === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
@@ -1404,6 +1446,7 @@
                             subItem: record.subItem,
                             type: record.type,
                             partType: record.partType || '기계',
+                            standard: record.standard || '',
                             cycle: record.cycle,
                             date: nextDateStr,
                             status: 'uninspected',
@@ -1414,17 +1457,16 @@
                 }
 
                 if (window.isFirebaseActive && window.firebaseHandler) {
-                    await window.firebaseHandler.set(id, sanitizeRecord({ ...record, status: nextStatus, date: newDateStr }));
+                    await window.firebaseHandler.set(id, sanitizeRecord({ ...record, status: 'completed', date: newDateStr, remark: finalRemark }));
                     if (nextRecord) await window.firebaseHandler.add(sanitizeRecord(nextRecord));
                 } else {
-                    record.status = nextStatus;
+                    record.status = 'completed';
                     record.date = newDateStr;
+                    record.remark = finalRemark;
                     if (nextRecord) window.systemRecords.push(nextRecord);
                 }
 
-                if(nextStatus === 'completed') {
-                    setTimeout(() => window.showCustomAlert(`[점검 실적 등록 완료]\n해당 일자의 점검 실적이 기록되었으며, 주기 설정에 따라 다음 점검 예정일(${nextRecord ? nextRecord.date : '기존유지'}) 데이터가 자동 생성되었습니다.`, 'success'), 200);
-                }
+                setTimeout(() => window.showCustomAlert(`[점검 실적 등록 완료]\n처리가 완료되었으며, 다음 점검 예정일 데이터가 자동 생성되었습니다.`, 'success'), 100);
 
                 window.updateAllLineScores();
                 window.renderSummaryGrid();
@@ -1436,28 +1478,69 @@
             }
         }
 
+        // ★ 기존의 toggle은 이제 '실적 취소' 전용으로 사용
+        window.cancelInspectionStatus = async function(id) {
+            const record = window.systemRecords.find(r => r.id === id);
+            if (!record) return;
+
+            try {
+                if (window.isFirebaseActive && window.firebaseHandler) {
+                    await window.firebaseHandler.set(id, sanitizeRecord({ ...record, status: 'uninspected' }));
+                } else {
+                    record.status = 'uninspected';
+                }
+                window.updateAllLineScores();
+                window.renderSummaryGrid();
+                window.renderDetailTable();
+                window.renderInspReport(); 
+            } catch(e) {
+                console.error(e);
+                window.showCustomAlert("취소 중 오류가 발생했습니다: " + e.message, "danger");
+            }
+        }
+
         window.openRemarkModal = function(id) {
             const record = window.systemRecords.find(r => r.id === id);
             if(!record) return;
             
             window.currentRemarkId = id;
             document.getElementById('remarkModalSubItem').innerText = `[${record.line}] ${record.subItem}`;
-            document.getElementById('remarkArea').value = record.remark || '';
+            
+            // ★ 불량 클릭 시 필수 입력 모드로 UI 변경
+            const titleEl = document.getElementById('remarkModalTitle');
+            const textArea = document.getElementById('remarkArea');
+            if (window.pendingInspectionResult) {
+                titleEl.innerText = "불량 특이사항 입력 (필수)";
+                titleEl.className = "text-lg md:text-xl font-black text-red-600 mb-2 border-l-4 border-red-600 pl-3";
+                textArea.value = record.remark || '불량 사유: \n조치 예정: ';
+            } else {
+                titleEl.innerText = "점검 특이사항";
+                titleEl.className = "text-lg md:text-xl font-black text-slate-800 mb-2 border-l-4 border-blue-600 pl-3";
+                textArea.value = record.remark || '';
+            }
+            
             document.getElementById('remarkModal').classList.remove('hidden');
         }
 
         window.closeRemarkModal = function() {
             document.getElementById('remarkModal').classList.add('hidden');
             window.currentRemarkId = null;
+            window.pendingInspectionResult = false; // 플래그 초기화
         }
 
         window.saveRemark = async function() {
             if(!window.currentRemarkId) return;
             const remarkText = document.getElementById('remarkArea').value.trim();
+            
+            // ★ 불량 시 빈칸 거부 로직
+            if (window.pendingInspectionResult && remarkText.replace(/불량 사유: |조치 예정: |\n/g, '').trim().length < 2) {
+                return window.showCustomAlert("불량 판정 시 상세 사유를 반드시 입력해야 합니다.", "danger");
+            }
+
             const record = window.systemRecords.find(r => r.id === window.currentRemarkId);
             
             try {
-                if(record) {
+                if(record && !window.pendingInspectionResult) {
                     if (window.isFirebaseActive && window.firebaseHandler) {
                         await window.firebaseHandler.set(record.id, sanitizeRecord({ ...record, remark: remarkText }));
                     } else {
@@ -1465,10 +1548,17 @@
                     }
                 }
                 
-                window.renderDetailTable();
-                window.renderInspReport();
                 window.closeRemarkModal();
-                window.showCustomAlert("특이사항이 저장되었습니다.", "success");
+                
+                // ★ 불량 모드였다면 여기서 완료(실적 등록) 트리거
+                if (window.pendingInspectionResult) {
+                    window.completeInspectionRecord(window.currentRemarkId, remarkText);
+                    window.pendingInspectionResult = false;
+                } else {
+                    window.renderDetailTable();
+                    window.renderInspReport();
+                    window.showCustomAlert("특이사항이 저장되었습니다.", "success");
+                }
             } catch(e) {
                 console.error(e);
                 window.showCustomAlert("저장 중 오류: " + e.message, "danger");
@@ -1778,13 +1868,14 @@
                 const category = document.getElementById('regCategoryInsp').value;
                 const partType = document.getElementById('regPartTypeInsp').value; 
                 const cycle = document.getElementById('regCycleInsp').value; 
+                const standard = document.getElementById('regStandardInsp').value.trim(); // ★ 신규
                 const inputDate = window.currentTargetDate; 
                 const regDescText = window.selectedSubItemInsp;
                 
                 const newRecord = { 
                     id: generateUUID(), recordType: 'inspection', line: line, category: category, 
                     subItem: window.selectedSubItemInsp, type: typeMap[category] || '기타', partType: partType, 
-                    cycle: cycle, date: inputDate, status: 'uninspected', desc: regDescText, remark: '' 
+                    cycle: cycle, standard: standard, date: inputDate, status: 'uninspected', desc: regDescText, remark: '' 
                 };
 
                 if (window.isFirebaseActive && window.firebaseHandler) {
@@ -1794,6 +1885,7 @@
                 }
 
                 document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('regStandardInsp').value = ''; // 초기화
                 window.showCustomAlert(`[점검 데이터 등록 완료] ${line} 라인 점검 항목이 추가되었습니다.`, "success");
                 window.showDetail(line); 
             } catch (err) { 
@@ -2269,15 +2361,12 @@
                         const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
                         
                         for(let i=1; i<json.length; i++) {
-                            let cat = String(json[i][1] || '').trim();
-                            let partTypeStr = String(json[i][2] || '').trim(); // ★ C열: 기계/전기 구분
-                            let sub = String(json[i][3] || '').trim(); // ★ D열: 작업 세부사항
-                            let cycleStr = String(json[i][4] || '').trim(); // ★ E열: 점검주기
-                            
-                            if (matchedLine === 'CPL' && String(json[i][3] || '').match(/^K\d+/)) {
-                                sub = String(json[i][5] || '').trim(); 
-                                cycleStr = String(json[i][6] || '').trim();
-                            }
+                            // ★ A열:순번(무시), B열:설비명, C열:기계전기, D열:내용, E열:점검기준, F열:주기(선택)
+                            let cat = String(json[i][1] || '').trim(); // B
+                            let partTypeStr = String(json[i][2] || '').trim(); // C
+                            let sub = String(json[i][3] || '').trim(); // D
+                            let standardStr = String(json[i][4] || '').trim(); // E
+                            let cycleStr = String(json[i][5] || '').trim(); // F
                             
                             if(cat && sub && cat !== 'undefined' && sub !== 'undefined') {
                                 let cycleVal = 'daily';
@@ -2290,7 +2379,7 @@
                                 
                                 window.parsedExcelData.push(sanitizeRecord({ 
                                     id: generateUUID(), recordType: 'inspection', line: matchedLine, category: cat, 
-                                    type: typeStr, partType: partTypeVal, cycle: cycleVal, subItem: sub, date: window.currentTargetDate, status: 'uninspected', desc: sub, remark: ''
+                                    type: typeStr, partType: partTypeVal, cycle: cycleVal, standard: standardStr, subItem: sub, date: window.currentTargetDate, status: 'uninspected', desc: sub, remark: ''
                                 }));
                             }
                         }
