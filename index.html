@@ -164,7 +164,7 @@
                 <div class="flex flex-col xl:flex-row gap-4 md:gap-6 mb-6">
                     <!-- 기간 선택 버튼 셋 -->
                     <div class="bg-white rounded-xl md:rounded-2xl border border-slate-100 p-3 md:p-4 shadow-sm flex flex-col justify-center gap-2 shrink-0 h-fit no-print w-full xl:w-48">
-                        <span class="text-xs font-bold text-slate-500 mb-1 ml-1">조회 기간</span>
+                        <span class="text-xs font-bold text-slate-500 mb-1 ml-1">상관관계 분석 기간</span>
                         <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg shadow-sm text-left pl-4">일간 실적 분석</button>
                         <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">주간 누적 분석</button>
                         <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">월간 누적 분석</button>
@@ -623,7 +623,23 @@
         </div>
     </div>
 
-    <!-- ★ 동기식 코어 엔진 -->
+    <!-- ★ 신규: 구글 로그인 오버레이 (로그인 안 된 경우 표시) -->
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[999] flex flex-col items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 border border-slate-200">
+            <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">시스템 보안 로그인</h2>
+            <p class="text-xs text-slate-500 font-medium mb-8 text-center leading-relaxed">접근 권한이 있는<br>구글(Google) 계정으로 로그인해주세요.</p>
+            
+            <button onclick="window.loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3.5 px-4 rounded-xl transition shadow-sm">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Google 계정으로 계속하기
+            </button>
+        </div>
+    </div>
+
+    <!-- ★ 동기식 코어 엔진 (기존 스크립트는 유지) -->
     <script>
         // ============================================================================
         // [1] 전역 변수 및 맵핑 데이터 세팅
@@ -2592,10 +2608,11 @@
         });
     </script>
 
-    <!-- ★ 파이어베이스 연동 및 디버깅 스크립트 -->
+    <!-- ★ 파이어베이스 연동 및 구글 로그인 스크립트 개편 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // ★ 수정됨: GoogleAuthProvider, signInWithPopup, signOut 등을 추가로 import 합니다.
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // 고객님의 파이어베이스 설정
@@ -2614,43 +2631,54 @@
         async function initFirebase() {
             const statusEl = document.getElementById('cloud-status');
             try {
-                // 경고창: file:/// 로 실행했는지 감지
                 if (window.location.protocol === 'file:') {
                     window.showCustomAlert("⚠️ 파이어베이스는 내 컴퓨터(file://)에서 직접 열면 작동하지 않습니다!\n\nVS Code 우측 하단의 'Go Live' 버튼(Live Server)을 눌러서 실행해 주세요.", "danger");
                 }
 
-                // 고객님의 DB로 강제 연결
                 const app = initializeApp(firebaseConfig); 
                 auth = getAuth(app); 
-                
-                // ★ 수정된 부분: (default) 대신 고객님이 만드신 'seahft1' 데이터베이스를 명시적으로 타겟팅합니다!
                 db = getFirestore(app, "seahft1");
                 
-                if(statusEl) statusEl.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">클라우드 인증 중...</span>';
-                
-                // 1. 에러 추적기를 달아 익명 로그인 시도
-                try {
-                    await signInAnonymously(auth);
-                } catch (authErr) {
-                    console.error("인증 에러:", authErr);
-                    let errorMsg = "인증 실패: " + authErr.message;
-                    if (authErr.code === 'auth/admin-restricted-operation') {
-                        errorMsg = "파이어베이스 인증 에러!\n\n데이터베이스 규칙만 수정하시고, [Authentication(인증)] 설정은 안 하셨습니다! 좌측 메뉴에서 [Authentication] -> [Sign-in method] 탭에서 '익명(Anonymous)'을 사용 설정해주세요.";
-                    } else if (authErr.code === 'auth/unauthorized-domain') {
-                        errorMsg = "도메인 거부 에러!\n\n현재 이 주소는 파이어베이스에 접속할 수 없습니다. VS Code의 Live Server(127.0.0.1)를 이용해주세요.";
+                // ★ 신규: 구글 로그인 함수
+                window.loginWithGoogle = async function() {
+                    const provider = new GoogleAuthProvider();
+                    try {
+                        await signInWithPopup(auth, provider);
+                    } catch (error) {
+                        console.error("구글 로그인 에러:", error);
+                        window.showCustomAlert("구글 로그인에 실패했습니다.\n" + error.message, "danger");
                     }
-                    window.showCustomAlert(errorMsg, "danger");
-                    if(statusEl) statusEl.innerHTML = '<span class="text-red-400 font-bold">클라우드 인증 거부됨</span>';
-                    return; // 에러 시 여기서 멈춰서 로컬 메모리 모드로 돌아감
-                }
+                };
 
-                // 2. 인증 성공 시 DB 연결 시도
+                // ★ 신규: 로그아웃 함수
+                window.logoutGoogle = async function() {
+                    try {
+                        await signOut(auth);
+                        window.location.reload(); // 로그아웃 시 페이지 새로고침
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                // ★ 인증 상태 감지 (로그인 되었는지 여부 체크)
                 onAuthStateChanged(auth, (currentUser) => {
+                    const loginOverlay = document.getElementById('loginOverlay');
+                    
                     if (currentUser) {
+                        // 로그인 성공 상태
+                        if (loginOverlay) loginOverlay.classList.add('hidden');
+                        
+                        // 사이드바에 로그인한 계정 표시 및 로그아웃 버튼
+                        document.getElementById('loginUserEmailDisplay').innerHTML = `
+                            ${currentUser.email} 
+                            <button onclick="window.logoutGoogle()" class="ml-1 text-slate-500 hover:text-red-400 cursor-pointer underline">로그아웃</button>
+                        `;
+                        
+                        if(statusEl) statusEl.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">데이터 동기화 중...</span>';
+
                         try {
+                            // 데이터베이스 실시간 연동 시작
                             unsubscribeSync = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'inspectionRecords'), { includeMetadataChanges: true }, (snapshot) => {
-                                
-                                // ★ 진짜 서버 통신 여부 확인 (캐시 데이터가 아닌 실제 구글 서버 통신일 때만 초록불 켜짐)
                                 if (snapshot.metadata.fromCache && snapshot.empty === false) {
                                     window.isFirebaseActive = false;
                                     if(statusEl) statusEl.innerHTML = `<span class="text-amber-500 font-extrabold animate-pulse">● 오프라인 (서버 연결 대기중...)</span>`;
@@ -2673,15 +2701,20 @@
                                 console.error("Firestore 에러:", dbError);
                                 window.isFirebaseActive = false;
                                 if(statusEl) statusEl.innerHTML = `<span class="text-red-400 font-bold">DB 읽기 권한 없음</span>`;
-                                window.showCustomAlert("데이터베이스 읽기 권한이 없습니다. Firebase 콘솔의 [규칙] 탭이 'allow read, write: if true;' 로 설정되었는지 다시 한번 확인해 주세요.", "danger");
+                                window.showCustomAlert("데이터베이스 읽기 권한이 없습니다. Firebase 규칙 설정을 확인해주세요.", "danger");
                             });
                         } catch (e) {
                             window.showCustomAlert("DB 구독 설정 중 에러: " + e.message, "danger");
                         }
+                    } else {
+                        // 로그인 안 된 상태 -> 구글 로그인 오버레이 표시
+                        if (loginOverlay) loginOverlay.classList.remove('hidden');
+                        document.getElementById('loginUserEmailDisplay').innerText = "로그인 필요";
+                        if (statusEl) statusEl.innerHTML = '<span class="text-red-400 font-bold">인증 대기 중...</span>';
                     }
                 });
 
-                // ★ 무한 로딩/멈춤 현상을 막기 위한 안전한 쪼개기 전송(Batch) 모듈
+                // 무한 로딩/멈춤 현상을 막기 위한 안전한 쪼개기 전송(Batch) 모듈
                 window.firebaseHandler = {
                     add: async (record) => {
                         const safeRecord = sanitizeRecord(record);
@@ -2707,10 +2740,8 @@
                         ]);
                     },
                     addBatch: async (records, progressCallback) => {
-                        const CHUNK_SIZE = 50; // 과부하를 막기 위해 50개씩 잘라서 안전하게 전송
+                        const CHUNK_SIZE = 50; 
                         let processed = 0;
-                        
-                        // Firebase 에러를 유발하는 잘못된(undefined) 데이터를 깨끗하게 청소
                         const safeRecords = records.map(r => sanitizeRecord(JSON.parse(JSON.stringify(r))));
 
                         for (let i = 0; i < safeRecords.length; i += CHUNK_SIZE) {
