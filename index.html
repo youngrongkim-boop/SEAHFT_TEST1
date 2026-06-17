@@ -2448,18 +2448,36 @@
 
             try {
                 if (window.isFirebaseActive && window.firebaseHandler) {
+                    // 1. 삭제된 데이터 처리
                     const deleted = window.systemRecords.filter(orig => !window.tempRecords.some(temp => temp.id === orig.id));
                     
-                    const deletePromises = deleted.map(d => window.firebaseHandler.delete(d.id));
-                    await Promise.all(deletePromises);
+                    if (deleted.length > 0) {
+                        const deletePromises = deleted.map(d => window.firebaseHandler.delete(d.id));
+                        await Promise.all(deletePromises);
+                    }
 
-                    const sanitizedTempRecords = window.tempRecords.map(r => sanitizeRecord(r));
-                    
-                    if(window.firebaseHandler.addBatch) {
-                        await window.firebaseHandler.addBatch(sanitizedTempRecords);
-                    } else {
-                        const savePromises = sanitizedTempRecords.map(temp => window.firebaseHandler.set(temp.id, temp));
-                        await Promise.all(savePromises);
+                    // 2. ★ 최적화: 내용이 수정되거나 추가된 데이터만 솎아내기
+                    const isModified = (oldObj, newObj) => {
+                        const keysToCheck = ['recordType', 'line', 'category', 'subItem', 'type', 'partType', 'cycle', 'standard', 'date', 'status', 'desc', 'remark', 'fileUrl'];
+                        return keysToCheck.some(key => oldObj[key] !== newObj[key]);
+                    };
+
+                    const changedRecords = window.tempRecords.filter(temp => {
+                        const orig = window.systemRecords.find(r => r.id === temp.id);
+                        if (!orig) return true; // 원본에 없으면 새로 추가된 항목
+                        return isModified(orig, temp); // 값이 하나라도 다르면 수정된 항목
+                    });
+
+                    // 3. 변경된 항목만 클라우드에 전송
+                    if (changedRecords.length > 0) {
+                        const sanitizedChangedRecords = changedRecords.map(r => sanitizeRecord(r));
+                        
+                        if(window.firebaseHandler.addBatch) {
+                            await window.firebaseHandler.addBatch(sanitizedChangedRecords);
+                        } else {
+                            const savePromises = sanitizedChangedRecords.map(temp => window.firebaseHandler.set(temp.id, temp));
+                            await Promise.all(savePromises);
+                        }
                     }
                 } else {
                     window.systemRecords = window.tempRecords;
