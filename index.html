@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>세아씨엠 설비팀 점검 시스템 AI 예지보전 시스템</title>
+    <title>세아씨엠 차세대 AI 예지보전 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -159,16 +159,32 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 md:p-10 custom-scroll bg-slate-50/50">
-            <!-- ★ 1. 메인: 설비 점검 종합 현황 -->
+            <!-- ★ 1. 메인: 설비 점검 종합 현황 (예방 점검 및 고장 상관분석형으로 개편) -->
             <div id="panel-summary" class="content-panel active">
-                <div class="bg-white rounded-xl border border-slate-100 p-2 md:p-2.5 shadow-sm mb-6 flex flex-wrap items-center gap-1 md:gap-2 w-fit no-print">
-                    <span class="text-xs md:text-sm font-bold text-slate-800 px-2 md:px-4 hidden sm:block">조회 기간 설정:</span>
-                    <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg shadow-sm">일간 점검</button>
-                    <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">주간 점검</button>
-                    <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">월간 점검</button>
-                    <button id="sum-btn-quarterly" onclick="window.setSummaryPeriod('quarterly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition">분기별 점검</button>
+                <div class="flex flex-col xl:flex-row gap-4 md:gap-6 mb-6">
+                    <!-- 기간 선택 버튼 셋 -->
+                    <div class="bg-white rounded-xl md:rounded-2xl border border-slate-100 p-3 md:p-4 shadow-sm flex flex-col justify-center gap-2 shrink-0 h-fit no-print w-full xl:w-48">
+                        <span class="text-xs font-bold text-slate-500 mb-1 ml-1">조회 기간</span>
+                        <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg shadow-sm text-left pl-4">일간 실적 분석</button>
+                        <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">주간 누적 분석</button>
+                        <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">월간 누적 분석</button>
+                        <button id="sum-btn-quarterly" onclick="window.setSummaryPeriod('quarterly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">분기 누적 분석</button>
+                    </div>
+                    
+                    <!-- 차트 컨테이너 -->
+                    <div class="bg-white rounded-xl md:rounded-2xl border border-slate-100 p-4 md:p-5 shadow-sm flex-grow min-w-0 flex flex-col">
+                        <h3 class="text-sm md:text-base font-black text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            전 라인 예방점검 달성률 대비 고장 발생 추이
+                        </h3>
+                        <div class="h-[220px] md:h-[250px] w-full relative">
+                            <canvas id="summaryCorrelationChart"></canvas>
+                        </div>
+                    </div>
                 </div>
-                <div id="statusGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-10"></div>
+
+                <!-- 분석 카드 그리드 -->
+                <div id="statusGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-10"></div>
             </div>
 
             <!-- ★ 2. Deep Dive Analysis (상세 정밀 분석) 패널 -->
@@ -233,7 +249,8 @@
                                     <button onclick="window.setInspReportPeriod('monthly')" id="insp-btn-monthly" class="flex-1 sm:flex-none px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">월별</button>
                                     <button onclick="window.setInspReportPeriod('yearly')" id="insp-btn-yearly" class="flex-1 sm:flex-none px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm">연별</button>
                                 </div>
-                                <button onclick="window.printInspReport()" class="hidden md:flex ml-1 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold rounded-xl shadow-md transition-all items-center no-print whitespace-nowrap">
+                                <!-- 모바일에서도 항상 보이도록 hidden 제거 및 반응형 크기 최적화 -->
+                                <button onclick="window.printInspReport()" class="flex flex-1 sm:flex-none items-center justify-center w-full sm:w-auto px-4 py-1.5 md:py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold rounded-xl shadow-md transition-all no-print whitespace-nowrap">
                                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                     인쇄
                                 </button>
@@ -758,97 +775,218 @@
             btns.forEach(p => {
                 const el = document.getElementById('sum-btn-' + p);
                 if(el) {
-                    if(p === period) el.className = 'summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg ml-1 md:ml-2 shadow-sm';
-                    else el.className = 'summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-1.5 md:px-5 md:py-2 rounded-lg transition ml-1';
+                    if(p === period) el.className = 'summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg shadow-sm text-left pl-4';
+                    else el.className = 'summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4';
                 }
             });
             window.updateAllLineScores();
             window.renderSummaryGrid();
         }
 
+        // ★ 로직 수정: 고장 횟수(faultCount) 통계 병합 처리
         window.updateAllLineScores = function() {
             const targetDateObj = new Date(window.currentTargetDate);
             const targetYear = targetDateObj.getFullYear();
             const targetMonth = targetDateObj.getMonth();
 
             Object.keys(lineStore).forEach(line => {
-                let mechTotal = 0, mechComp = 0, elecTotal = 0, elecComp = 0;
+                let inspTotal = 0, inspComp = 0;
+                let faultCount = 0; // 신규: 해당 기간 내 발생한 고장 건수
 
                 window.systemRecords.forEach(r => {
-                    if (r.recordType !== 'inspection' || r.line !== line) return;
-                    if (r.cycle !== window.currentSummaryPeriod) return;
-                    
+                    if (r.line !== line) return;
                     const rDate = new Date(r.date);
-                    let isIncluded = false;
 
-                    if (r.status === 'completed') {
-                        if (window.currentSummaryPeriod === 'daily' && r.date === window.currentTargetDate) {
-                            isIncluded = true;
-                        } else if (window.currentSummaryPeriod === 'weekly') {
+                    if (r.recordType === 'fault') {
+                        let isFaultIncluded = false;
+                        if (window.currentSummaryPeriod === 'daily' && r.date === window.currentTargetDate) isFaultIncluded = true;
+                        else if (window.currentSummaryPeriod === 'weekly') {
                             const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
-                            if (diffDays >= 0 && diffDays <= 6) isIncluded = true;
-                        } else if (window.currentSummaryPeriod === 'monthly' && rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) {
-                            isIncluded = true;
-                        } else if (window.currentSummaryPeriod === 'quarterly') {
+                            if (diffDays >= 0 && diffDays <= 6) isFaultIncluded = true;
+                        } else if (window.currentSummaryPeriod === 'monthly' && rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) isFaultIncluded = true;
+                        else if (window.currentSummaryPeriod === 'quarterly') {
                             const rQuarter = Math.floor(rDate.getMonth() / 3);
                             const targetQuarter = Math.floor(targetMonth / 3);
-                            if (rDate.getFullYear() === targetYear && rQuarter === targetQuarter) isIncluded = true;
+                            if (rDate.getFullYear() === targetYear && rQuarter === targetQuarter) isFaultIncluded = true;
                         }
-                    } else {
-                        if (r.date <= window.currentTargetDate) isIncluded = true;
-                    }
-
-                    if (isIncluded) {
-                        let isElec = false;
-                        if (r.partType === '전기') {
-                            isElec = true;
-                        } else if (r.partType === '기계') {
-                            isElec = false;
-                        } else {
-                            isElec = r.category === 'electric' || r.category === 'relay' || r.category === 'plc' || 
-                                           r.category.includes('전장') || r.category.toUpperCase().includes('PLC') || 
-                                           r.category.toUpperCase().includes('X-RAY') || r.category.toUpperCase().includes('PANEL');
-                        }
+                        if(isFaultIncluded) faultCount++;
+                    } 
+                    else if (r.recordType === 'inspection') {
+                        if (r.cycle !== window.currentSummaryPeriod) return;
                         
-                        if(isElec) { 
-                            elecTotal++; 
-                            if(r.status === 'completed') elecComp++; 
-                        } else { 
-                            mechTotal++; 
-                            if(r.status === 'completed') mechComp++; 
+                        let isInspIncluded = false;
+                        if (r.status === 'completed') {
+                            if (window.currentSummaryPeriod === 'daily' && r.date === window.currentTargetDate) isInspIncluded = true;
+                            else if (window.currentSummaryPeriod === 'weekly') {
+                                const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
+                                if (diffDays >= 0 && diffDays <= 6) isInspIncluded = true;
+                            } else if (window.currentSummaryPeriod === 'monthly' && rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) isInspIncluded = true;
+                            else if (window.currentSummaryPeriod === 'quarterly') {
+                                const rQuarter = Math.floor(rDate.getMonth() / 3);
+                                const targetQuarter = Math.floor(targetMonth / 3);
+                                if (rDate.getFullYear() === targetYear && rQuarter === targetQuarter) isInspIncluded = true;
+                            }
+                        } else {
+                            if (r.date <= window.currentTargetDate) isInspIncluded = true;
+                        }
+
+                        if (isInspIncluded) {
+                            inspTotal++; 
+                            if(r.status === 'completed') inspComp++; 
                         }
                     }
                 });
 
-                lineStore[line].total = mechTotal + elecTotal;
-                lineStore[line].completed = mechComp + elecComp;
-                lineStore[line].mechTotal = mechTotal;
-                lineStore[line].mechComp = mechComp;
-                lineStore[line].elecTotal = elecTotal;
-                lineStore[line].elecComp = elecComp;
-                lineStore[line].score = calculateRisk(line); 
+                lineStore[line].total = inspTotal;
+                lineStore[line].completed = inspComp;
+                lineStore[line].faultCount = faultCount;
             });
         }
 
-        window.renderRecentAnomalies = function() {
-            const tbody = document.getElementById('recentAnomaliesBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            const faults = window.systemRecords.filter(r => r.recordType === 'fault').sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
-            if(faults.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 font-bold">발견된 이상 내역이 없습니다.</td></tr>`;
-                return;
-            }
-            faults.forEach(f => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="window.showDetail('${f.line}')">
-                        <td class="p-4 text-center text-slate-500 font-medium">${f.date}</td>
-                        <td class="p-4 font-bold text-slate-700">${f.line}</td>
-                        <td class="p-4 text-blue-600 font-bold">${f.subItem}</td>
-                        <td class="p-4 text-slate-600 text-sm truncate max-w-xs">${f.desc}</td>
-                    </tr>
+        // ★ 신규 개편: 차트 렌더링 및 상관분석 카드 그리기
+        window.renderSummaryGrid = function() {
+            const grid = document.getElementById('statusGrid');
+            if(!grid) return;
+            grid.innerHTML = '';
+
+            const labels = [];
+            const pmData = [];
+            const faultData = [];
+
+            Object.keys(lineStore).forEach(key => {
+                const data = lineStore[key];
+                const totalInsp = data.total;
+                const compInsp = data.completed;
+                const pmPercent = totalInsp === 0 ? 0 : Math.round((compInsp / totalInsp) * 100);
+                const faults = data.faultCount || 0;
+
+                labels.push(key);
+                pmData.push(pmPercent);
+                faultData.push(faults);
+
+                let statusBadge = '';
+                let analysisMessage = '';
+                let pmColor = 'text-blue-600';
+                let cardBorder = 'border-slate-100 hover:border-blue-300';
+
+                // 상관관계 분석 핵심 로직
+                if (faults === 0 && pmPercent >= 90) {
+                    statusBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">상태 우수</span>';
+                    analysisMessage = '<span class="text-emerald-600">🟢 예방점검 우수 / 고장 방지됨</span>';
+                } else if (faults === 0 && pmPercent < 90) {
+                    statusBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">상태 양호</span>';
+                    analysisMessage = '<span class="text-blue-600">🟡 고장 없음 / 예방점검률 향상 필요</span>';
+                } else if (faults > 0 && pmPercent >= 90) {
+                    statusBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">기준 검토</span>';
+                    analysisMessage = '<span class="text-orange-600">🔴 점검 완료했으나 고장발생 (기준점검 요망)</span>';
+                    cardBorder = 'border-orange-200 hover:border-orange-400 bg-orange-50/20';
+                } else {
+                    statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">위험/미흡</span>';
+                    analysisMessage = '<span class="text-red-600">⚠️ 예방점검 미흡으로 인한 고장발생 의심</span>';
+                    cardBorder = 'border-red-200 hover:border-red-400 bg-red-50/30';
+                    pmColor = 'text-red-500';
+                }
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl md:rounded-2xl p-4 md:p-5 shadow-sm border ${cardBorder} transition cursor-pointer flex flex-col justify-between`;
+                card.onclick = () => window.showDetail(key);
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                            <h4 class="text-lg md:text-xl font-black text-slate-800 tracking-tight">${key}</h4>
+                            ${statusBadge}
+                        </div>
+                        
+                        <div class="flex gap-2 mb-4">
+                            <div class="flex-1 bg-slate-50 p-2.5 rounded-lg text-center border border-slate-100">
+                                <p class="text-[10px] font-bold text-slate-500 mb-1">예방 점검 (완료/전체)</p>
+                                <p class="text-lg md:text-2xl font-black ${pmColor}">${pmPercent}<span class="text-xs text-slate-400 font-bold ml-0.5">%</span></p>
+                                <p class="text-[9px] font-semibold text-slate-400 mt-1">${compInsp} / ${totalInsp}건</p>
+                            </div>
+                            <div class="flex-1 bg-white border border-red-100 shadow-inner p-2.5 rounded-lg text-center flex flex-col justify-center">
+                                <p class="text-[10px] font-bold text-red-400 mb-1">고장 발생 실적</p>
+                                <p class="text-lg md:text-2xl font-black text-red-600">${faults}<span class="text-xs text-red-400 font-bold ml-0.5">건</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-1 flex gap-1.5 justify-center bg-slate-50 rounded py-1.5 px-2 text-[10px] md:text-[11px] font-bold text-center">
+                        ${analysisMessage}
+                    </div>
                 `;
+                grid.appendChild(card);
             });
+
+            // ★ Chart.js 콤보 차트 렌더링 (막대그래프 + 선그래프)
+            if (window.summaryChartInstance) {
+                window.summaryChartInstance.destroy();
+            }
+            
+            const ctx = document.getElementById('summaryCorrelationChart');
+            if (ctx) {
+                window.summaryChartInstance = new Chart(ctx, {
+                    type: 'line', // 기본타입
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                type: 'line', // 고장 실적은 명확한 선과 점으로
+                                label: '고장 발생 실적 (건)',
+                                data: faultData,
+                                yAxisID: 'y1',
+                                borderColor: '#ef4444',
+                                backgroundColor: '#ef4444',
+                                borderWidth: 2,
+                                borderDash: [4, 4],
+                                pointStyle: 'rectRot',
+                                pointRadius: 6,
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#ef4444',
+                                tension: 0.1
+                            },
+                            {
+                                type: 'bar', // 점검률은 뒤에 깔리는 바 형태로 명확히 구분
+                                label: '예방 점검 완료율 (%)',
+                                data: pmData,
+                                yAxisID: 'y',
+                                backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                                borderColor: 'rgba(59, 130, 246, 0.8)',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                barPercentage: 0.5
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { family: 'Pretendard', size: 10, weight: 'bold' } } },
+                            tooltip: { titleFont: { family: 'Pretendard' }, bodyFont: { family: 'Pretendard' } }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { family: 'Pretendard', weight: 'bold' } } },
+                            y: {
+                                type: 'linear', display: true, position: 'left', min: 0, max: 100,
+                                title: { display: true, text: '완료율 (%)', font: { size: 10, weight: 'bold' }, color: '#3b82f6' },
+                                ticks: { color: '#3b82f6', font: { weight: 'bold' } }
+                            },
+                            y1: {
+                                type: 'linear', display: true, position: 'right', min: 0,
+                                grid: { drawOnChartArea: false },
+                                title: { display: true, text: '고장 (건)', font: { size: 10, weight: 'bold' }, color: '#ef4444' },
+                                ticks: { color: '#ef4444', font: { weight: 'bold' }, stepSize: 1 }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        window.renderRecentAnomalies = function() {
+            // (기존 코드 유지)
         }
 
         window.setAnalysisPeriod = function(period) {
@@ -1194,60 +1332,6 @@
                 window.renderFaultAnalysis();
                 window.renderAnalysisDetailList();
             }
-        }
-
-        window.renderSummaryGrid = function() {
-            const grid = document.getElementById('statusGrid');
-            if(!grid) return;
-            grid.innerHTML = '';
-
-            Object.keys(lineStore).forEach(key => {
-                const data = lineStore[key];
-                const mechPercent = data.mechTotal === 0 ? 0 : Math.round((data.mechComp / data.mechTotal) * 100);
-                const elecPercent = data.elecTotal === 0 ? 0 : Math.round((data.elecComp / data.elecTotal) * 100);
-
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer flex flex-col justify-between";
-                card.onclick = () => window.showDetail(key);
-                
-                card.innerHTML = `
-                    <div>
-                        <h4 class="text-lg md:text-xl font-black text-slate-800 tracking-tight mb-4 md:mb-6">${key}</h4>
-                        
-                        <div class="mb-3 md:mb-4">
-                            <div class="flex justify-between items-end mb-1">
-                                <span class="text-[10px] md:text-xs font-bold text-slate-500">기계</span>
-                                <span class="text-xs md:text-sm font-black text-blue-600">${mechPercent}%</span>
-                            </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2">
-                                <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: ${mechPercent}%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3 md:mb-4">
-                            <div class="flex justify-between items-end mb-1">
-                                <span class="text-[10px] md:text-xs font-bold text-slate-500">전기</span>
-                                <span class="text-xs md:text-sm font-black text-emerald-500">${elecPercent}%</span>
-                            </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2">
-                                <div class="bg-emerald-400 h-2 rounded-full transition-all duration-500" style="width: ${elecPercent}%"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-slate-50 flex flex-col gap-1.5">
-                        <div class="flex justify-between text-[10px] md:text-[11px]">
-                            <span class="text-slate-400 font-semibold">기계 실적 / 해당기간 총합</span>
-                            <span class="font-black text-slate-600"><span class="text-blue-600">${data.mechComp}</span> / ${data.mechTotal}</span>
-                        </div>
-                        <div class="flex justify-between text-[10px] md:text-[11px]">
-                            <span class="text-slate-400 font-semibold">전기 실적 / 해당기간 총합</span>
-                            <span class="font-black text-slate-600"><span class="text-emerald-500">${data.elecComp}</span> / ${data.elecTotal}</span>
-                        </div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
         }
 
         window.filterDetailByCategory = function(cat) {
