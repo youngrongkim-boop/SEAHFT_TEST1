@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>세아씨엠 차세대 AI 예지보전 시스템</title>
+    <title>세아씨엠 설비팀 점검시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- ★ 엑셀 파싱을 위한 SheetJS 라이브러리 추가 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.1ㅁ8.5/xlsx.full.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;700;800;900&display=swap');
@@ -159,69 +159,46 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 md:p-10 custom-scroll bg-slate-50/50">
-            <!-- ★ 1. 메인: 설비 점검 종합 현황 (간결하고 직관적인 보고서 대시보드형으로 전면 개편) -->
+            <!-- ★ 1. 메인: 설비 점검 종합 현황 (예방 점검 및 고장 상관분석형으로 개편) -->
             <div id="panel-summary" class="content-panel active">
-                <!-- 상단 헤더 및 기간 필터 -->
-                <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">예방점검 - 고장 상관분석</h2>
-                        <p class="text-xs md:text-sm text-slate-500 font-medium mt-1">점검 달성률과 실제 고장 발생의 연관성을 한눈에 파악합니다.</p>
+                <div class="flex flex-col xl:flex-row gap-4 md:gap-6 mb-6">
+                    <!-- 기간 선택 버튼 셋 -->
+                    <!-- ★ 수정: "기간 사용자 설정" 기능 추가 -->
+                    <div class="bg-white rounded-xl md:rounded-2xl border border-slate-100 p-3 md:p-4 shadow-sm flex flex-col justify-center gap-2 shrink-0 h-fit no-print w-full xl:w-56">
+                        <span class="text-xs font-bold text-slate-500 mb-1 ml-1">분석 기간</span>
+                        <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg shadow-sm text-left pl-4">일간 실적 분석</button>
+                        <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">주간 누적 분석</button>
+                        <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">월간 누적 분석</button>
+                        <button id="sum-btn-quarterly" onclick="window.setSummaryPeriod('quarterly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4">분기 누적 분석</button>
+                        <button id="sum-btn-custom" onclick="window.setSummaryPeriod('custom')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4 border border-slate-200 bg-slate-50 mt-1">기간 설정 📅</button>
+                        
+                        <!-- ★ 신규: 사용자 지정 날짜 선택 폼 (기본 숨김) -->
+                        <div id="sum-custom-date-container" class="hidden flex-col gap-2 mt-2 border-t border-slate-100 pt-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-slate-400 w-6">시작</span>
+                                <input type="date" id="sumStartDate" onchange="window.updateCustomSummary()" class="text-xs font-bold text-slate-600 border border-slate-200 rounded-md p-1.5 outline-none flex-1 focus:ring-1 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-slate-400 w-6">종료</span>
+                                <input type="date" id="sumEndDate" onchange="window.updateCustomSummary()" class="text-xs font-bold text-slate-600 border border-slate-200 rounded-md p-1.5 outline-none flex-1 focus:ring-1 focus:ring-blue-500">
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm flex gap-1 w-full md:w-auto overflow-x-auto">
-                        <button id="sum-btn-daily" onclick="window.setSummaryPeriod('daily')" class="summary-period-btn active bg-slate-800 text-white text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap">일간</button>
-                        <button id="sum-btn-weekly" onclick="window.setSummaryPeriod('weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap">주간 누적</button>
-                        <button id="sum-btn-prev-weekly" onclick="window.setSummaryPeriod('prev-weekly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap">전주 실적</button>
-                        <button id="sum-btn-monthly" onclick="window.setSummaryPeriod('monthly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap">월간 누적</button>
-                        <button id="sum-btn-quarterly" onclick="window.setSummaryPeriod('quarterly')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap">분기 누적</button>
-                        <button id="sum-btn-custom" onclick="window.setSummaryPeriod('custom')" class="summary-period-btn text-slate-500 hover:bg-slate-100 text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap border border-slate-200 ml-1">기간 설정</button>
-                    </div>
-                </div>
-
-                <!-- 사용자 지정 기간 입력 (숨김 기본) -->
-                <div id="sum-custom-date-container" class="hidden items-center justify-end gap-2 mb-6 -mt-3">
-                    <input type="date" id="sumStartDate" onchange="window.updateCustomSummary()" class="text-xs font-bold text-slate-600 border border-slate-200 rounded-md p-1.5 outline-none focus:ring-1 focus:ring-slate-500">
-                    <span class="text-xs font-bold text-slate-400">~</span>
-                    <input type="date" id="sumEndDate" onchange="window.updateCustomSummary()" class="text-xs font-bold text-slate-600 border border-slate-200 rounded-md p-1.5 outline-none focus:ring-1 focus:ring-slate-500">
-                </div>
-
-                <!-- 핵심 KPI 3종 -->
-                <div id="topKpiContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <!-- JS Rendered -->
-                </div>
-
-                <!-- 차트 및 요약 테이블 (좌측: 차트 넓게, 우측: 리스트 테이블 좁게) -->
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
-                    <!-- 콤보 차트 컨테이너 -->
-                    <div class="xl:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 md:p-6 shadow-sm flex flex-col">
-                        <h3 class="text-sm font-bold text-slate-800 mb-4" id="summaryChartTitle">전 라인 예방점검 달성률 대비 고장 발생 추이</h3>
-                        <div class="h-[250px] md:h-[320px] w-full relative">
+                    
+                    <!-- 차트 컨테이너 -->
+                    <div class="bg-white rounded-xl md:rounded-2xl border border-slate-100 p-4 md:p-5 shadow-sm flex-grow min-w-0 flex flex-col">
+                        <h3 class="text-sm md:text-base font-black text-slate-800 mb-4 flex items-center gap-2" id="summaryChartTitle">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            전 라인 일간 예방점검 달성률 대비 고장 발생 추이
+                        </h3>
+                        <div class="h-[220px] md:h-[250px] w-full relative">
                             <canvas id="summaryCorrelationChart"></canvas>
                         </div>
                     </div>
-
-                    <!-- 라인별 종합 진단 결과 요약 테이블 -->
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-[340px] md:h-auto xl:max-h-[410px]">
-                        <div class="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
-                            <h3 class="text-sm font-bold text-slate-800">라인별 상태 요약</h3>
-                            <span class="text-[10px] text-slate-400 font-medium">클릭 시 상세 이동</span>
-                        </div>
-                        <div class="overflow-y-auto custom-scroll flex-1">
-                            <table class="w-full text-left text-xs md:text-sm">
-                                <thead class="bg-white sticky top-0 border-b border-slate-100 text-slate-400 font-bold text-[10px] z-10 shadow-sm">
-                                    <tr>
-                                        <th class="py-2.5 px-4 w-1/4">설비 라인</th>
-                                        <th class="py-2.5 px-2 text-right">점검률</th>
-                                        <th class="py-2.5 px-3 text-right">고장</th>
-                                        <th class="py-2.5 px-4 text-center">AI 진단</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="statusGrid" class="divide-y divide-slate-100 font-medium text-slate-700 bg-white">
-                                    <!-- JS Rendered -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
+
+                <!-- 분석 카드 그리드 -->
+                <div id="statusGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-10"></div>
             </div>
 
             <!-- ★ 2. Deep Dive Analysis (상세 정밀 분석) 패널 -->
@@ -700,7 +677,7 @@
         window.currentAnalysisDetailPeriod = 'all'; 
         window.currentAnalysisPartType = 'all'; 
         window.currentInspReportPeriod = 'daily';
-        window.isPrintingInspAll = false; 
+        window.isPrintingInspAll = false; // ★ 신규: 리포트 전체 인쇄 모드 상태값
         window.activeAnalysisLine = 'all';
         window.isFirebaseActive = false;
         window.firebaseHandler = null; 
@@ -743,7 +720,7 @@
         const subItemMapFault={"drive":["모터(베어링)","엔코더","BRAKE","밸브","드라이브(모터모듈)","컨버터","냉각팬"],"xray":["TUBE","SHUTTER"],"plc":["CPU","통신"],"electric":["센서","스위치","단락/지락","히터"],"relay":["보호계전기 동작/오류"],"human":["작업자 조작 실수"],"etc":["기타 미분류 항목"]};
         const typeMap = { 'drive': '구동 모터 결함', 'xray': '계측 센서 오류', 'plc': 'PLC/통신 장애', 'electric': '정전/전압 이상', 'relay': '정전/전압 이상', 'human': '기타', 'etc': '기타' };
         const cycleNameMap = { 'daily': '일별', 'weekly': '주별', 'monthly': '월별', 'quarterly': '분기별', 'none': '-' };
-        const lineStore = { 'CPL': { total: 0, completed: 0, faultCount: 0 }, 'CRM': { total: 0, completed: 0, faultCount: 0 }, 'CGL': { total: 0, completed: 0, faultCount: 0 }, '1CCL': { total: 0, completed: 0, faultCount: 0 }, '2CCL': { total: 0, completed: 0, faultCount: 0 }, '3CCL': { total: 0, completed: 0, faultCount: 0 }, 'ARP': { total: 0, completed: 0, faultCount: 0 }, 'SSCL': { total: 0, completed: 0, faultCount: 0 } };
+        const lineStore = { 'CPL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'CRM': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'CGL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, '1CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, '2CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, '3CCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'ARP': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 }, 'SSCL': { mechTotal: 0, mechComp: 0, elecTotal: 0, elecComp: 0 } };
 
         window.generateInitialDummyData = function(targetDateStr) { return []; }
 
@@ -782,6 +759,7 @@
             document.getElementById('customAlert').classList.add('hidden');
         } 
 
+        // ★ 데이터 모델에 standard(점검기준) 속성 추가
         function sanitizeRecord(r) {
             return {
                 id: r.id || generateUUID(),
@@ -792,7 +770,7 @@
                 type: r.type || '기타',
                 partType: r.partType || '기계', 
                 cycle: r.cycle || 'none',
-                standard: r.standard || '',
+                standard: r.standard || '', // ★ 신규: 점검 기준
                 date: r.date || window.currentTargetDate,
                 status: r.status || 'uninspected',
                 desc: r.desc || '',
@@ -811,21 +789,38 @@
             return { category: 'etc', subItem: subItemMapFault['etc'][0], type: '기타' };
         }
 
+        function calculateRisk(line) {
+            const targetDateObj = new Date(window.currentTargetDate);
+            const records = window.systemRecords.filter(r => r.recordType === 'fault' && r.line === line && new Date(r.date) <= targetDateObj).sort((a,b) => new Date(a.date) - new Date(b.date));
+            if(records.length === 0) return 0;
+            const firstDate = new Date(records[0].date);
+            const lastDate = new Date(records[records.length-1].date);
+            let safeAvgCycle = 30; 
+            if(records.length > 1) {
+                const averageCycleDays = ((lastDate - firstDate) / 86400000) / (records.length - 1);
+                safeAvgCycle = Math.max(averageCycleDays, 10);
+            }
+            const daysSinceLastFault = (targetDateObj - lastDate) / 86400000;
+            if(daysSinceLastFault < 0) return 0;
+            let risk = (daysSinceLastFault / safeAvgCycle) * 100;
+            return Math.floor(Math.max(10, Math.min(risk, 95)));
+        }
+
         window.setSummaryPeriod = function(period) {
             window.currentSummaryPeriod = period;
-            const btns = ['daily', 'weekly', 'prev-weekly', 'monthly', 'quarterly', 'custom'];
+            const btns = ['daily', 'weekly', 'monthly', 'quarterly', 'custom'];
             btns.forEach(p => {
                 const el = document.getElementById('sum-btn-' + p);
                 if(el) {
-                    if(p === period) el.className = 'summary-period-btn active bg-slate-800 text-white text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap shadow-sm';
-                    else el.className = 'summary-period-btn text-slate-500 hover:bg-slate-100 text-[11px] md:text-xs font-bold px-4 py-2 rounded-lg transition whitespace-nowrap';
+                    if(p === period) el.className = 'summary-period-btn active bg-blue-600 text-white text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg shadow-sm text-left pl-4';
+                    else el.className = 'summary-period-btn text-slate-500 hover:bg-slate-100 text-xs md:text-sm font-bold px-3 py-2 md:py-2.5 rounded-lg transition text-left pl-4';
                 }
             });
             
             const customContainer = document.getElementById('sum-custom-date-container');
             if(customContainer) {
-                if(period === 'custom') customContainer.classList.replace('hidden', 'flex');
-                else customContainer.classList.replace('flex', 'hidden');
+                if(period === 'custom') customContainer.classList.remove('hidden');
+                else customContainer.classList.add('hidden');
             }
 
             if(period !== 'custom') {
@@ -840,11 +835,9 @@
             const targetYear = targetDateObj.getFullYear();
             const targetMonth = targetDateObj.getMonth();
 
-            let sysInspTotal = 0, sysInspComp = 0, sysFaultCount = 0;
-
             Object.keys(lineStore).forEach(line => {
                 let inspTotal = 0, inspComp = 0;
-                let faultCount = 0; 
+                let faultCount = 0; // 신규: 해당 기간 내 발생한 고장 건수
 
                 window.systemRecords.forEach(r => {
                     if (r.line !== line) return;
@@ -856,9 +849,6 @@
                         else if (window.currentSummaryPeriod === 'weekly') {
                             const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
                             if (diffDays >= 0 && diffDays <= 6) isFaultIncluded = true;
-                        } else if (window.currentSummaryPeriod === 'prev-weekly') {
-                            const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
-                            if (diffDays >= 7 && diffDays <= 13) isFaultIncluded = true;
                         } else if (window.currentSummaryPeriod === 'monthly' && rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) isFaultIncluded = true;
                         else if (window.currentSummaryPeriod === 'quarterly') {
                             const rQuarter = Math.floor(rDate.getMonth() / 3);
@@ -869,12 +859,10 @@
                             const eDate = document.getElementById('sumEndDate').value;
                             if (sDate && eDate && r.date >= sDate && r.date <= eDate) isFaultIncluded = true;
                         }
-                        if(isFaultIncluded) { faultCount++; sysFaultCount++; }
+                        if(isFaultIncluded) faultCount++;
                     } 
                     else if (r.recordType === 'inspection') {
-                        let filterCycle = window.currentSummaryPeriod;
-                        if (filterCycle === 'prev-weekly') filterCycle = 'weekly';
-                        if (r.cycle !== filterCycle && filterCycle !== 'custom') return;
+                        if (r.cycle !== window.currentSummaryPeriod && window.currentSummaryPeriod !== 'custom') return;
                         
                         let isInspIncluded = false;
                         if (r.status === 'completed') {
@@ -882,9 +870,6 @@
                             else if (window.currentSummaryPeriod === 'weekly') {
                                 const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
                                 if (diffDays >= 0 && diffDays <= 6) isInspIncluded = true;
-                            } else if (window.currentSummaryPeriod === 'prev-weekly') {
-                                const diffDays = (targetDateObj - rDate) / (1000 * 60 * 60 * 24);
-                                if (diffDays >= 7 && diffDays <= 13) isInspIncluded = true;
                             } else if (window.currentSummaryPeriod === 'monthly' && rDate.getFullYear() === targetYear && rDate.getMonth() === targetMonth) isInspIncluded = true;
                             else if (window.currentSummaryPeriod === 'quarterly') {
                                 const rQuarter = Math.floor(rDate.getMonth() / 3);
@@ -896,18 +881,12 @@
                                 if (sDate && eDate && r.date >= sDate && r.date <= eDate) isInspIncluded = true;
                             }
                         } else {
-                            if (window.currentSummaryPeriod === 'prev-weekly') {
-                                const pastTargetDate = new Date(targetDateObj);
-                                pastTargetDate.setDate(pastTargetDate.getDate() - 7);
-                                if (rDate <= pastTargetDate) isInspIncluded = true;
-                            } else {
-                                if (rDate <= targetDateObj) isInspIncluded = true;
-                            }
+                            if (r.date <= window.currentTargetDate) isInspIncluded = true;
                         }
 
                         if (isInspIncluded) {
-                            inspTotal++; sysInspTotal++;
-                            if(r.status === 'completed') { inspComp++; sysInspComp++; }
+                            inspTotal++; 
+                            if(r.status === 'completed') inspComp++; 
                         }
                     }
                 });
@@ -916,56 +895,9 @@
                 lineStore[line].completed = inspComp;
                 lineStore[line].faultCount = faultCount;
             });
-            
-            // ★ 신규: 상단 3개 핵심 KPI HTML 렌더링
-            const topKpiContainer = document.getElementById('topKpiContainer');
-            if (topKpiContainer) {
-                const sysPmPercent = sysInspTotal === 0 ? 0 : Math.round((sysInspComp / sysInspTotal) * 100);
-                let worstPmLine = '-'; let worstPmVal = 100;
-                let worstFaultLine = '-'; let worstFaultVal = 0;
-                
-                Object.keys(lineStore).forEach(line => {
-                    const data = lineStore[line];
-                    const pm = data.total === 0 ? 100 : Math.round((data.completed / data.total) * 100);
-                    if(data.total > 0 && pm < worstPmVal) { worstPmVal = pm; worstPmLine = line; }
-                    if(data.faultCount > worstFaultVal) { worstFaultVal = data.faultCount; worstFaultLine = line; }
-                });
-
-                topKpiContainer.innerHTML = `
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center justify-between">
-                        <div>
-                            <span class="text-[10px] md:text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wider">전사 예방점검 달성률</span>
-                            <div class="flex items-baseline gap-1"><span class="text-3xl font-black text-slate-800">${sysPmPercent}</span><span class="text-sm font-bold text-slate-400">%</span></div>
-                        </div>
-                        <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center justify-between">
-                        <div>
-                            <span class="text-[10px] md:text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wider">전사 고장 발생</span>
-                            <div class="flex items-baseline gap-1"><span class="text-3xl font-black ${sysFaultCount > 0 ? 'text-red-500' : 'text-slate-800'}">${sysFaultCount}</span><span class="text-sm font-bold text-slate-400">건</span></div>
-                        </div>
-                        <div class="w-12 h-12 rounded-full ${sysFaultCount > 0 ? 'bg-red-50 text-red-400 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'} border shadow-inner flex items-center justify-center">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center justify-between">
-                        <div>
-                            <span class="text-[10px] md:text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wider">집중 점검 요망 라인</span>
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-xl md:text-2xl font-black text-slate-800 truncate max-w-[120px]">${worstFaultVal > 0 ? worstFaultLine : (worstPmVal < 100 ? worstPmLine : '없음')}</span>
-                            </div>
-                        </div>
-                        <div class="w-12 h-12 rounded-full bg-orange-50 border border-orange-100 shadow-inner flex items-center justify-center text-orange-500">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        </div>
-                    </div>
-                `;
-            }
         }
 
-        // ★ 신규 개편: 차트 렌더링 및 테이블 형태의 요약 리스트 그리기
+        // ★ 신규 개편: 차트 렌더링 및 상관분석 카드 그리기
         window.renderSummaryGrid = function() {
             const grid = document.getElementById('statusGrid');
             if(!grid) return;
@@ -987,50 +919,72 @@
                 faultData.push(faults);
 
                 let statusBadge = '';
-                
-                // 직관적이고 깔끔한 상태 뱃지 테이블용 디자인
+                let analysisMessage = '';
+                let pmColor = 'text-blue-600';
+                let cardBorder = 'border-slate-100 hover:border-blue-300';
+
+                // 상관관계 분석 핵심 로직
                 if (faults === 0 && pmPercent >= 90) {
-                    statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">양호</span>';
+                    statusBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">상태 우수</span>';
+                    analysisMessage = '<span class="text-emerald-600">🟢 예방점검 우수 / 고장 방지됨</span>';
                 } else if (faults === 0 && pmPercent < 90) {
-                    statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">점검 요망</span>';
+                    statusBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">상태 양호</span>';
+                    analysisMessage = '<span class="text-blue-600">🟡 고장 없음 / 예방점검률 향상 필요</span>';
                 } else if (faults > 0 && pmPercent >= 90) {
-                    statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100">기준 검토</span>';
+                    statusBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">기준 검토</span>';
+                    analysisMessage = '<span class="text-orange-600">🔴 점검 완료했으나 고장발생 (기준점검 요망)</span>';
+                    cardBorder = 'border-orange-200 hover:border-orange-400 bg-orange-50/20';
                 } else {
-                    statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">취약 (위험)</span>';
+                    statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wide">위험/미흡</span>';
+                    analysisMessage = '<span class="text-red-600">⚠️ 예방점검 미흡으로 인한 고장발생 의심</span>';
+                    cardBorder = 'border-red-200 hover:border-red-400 bg-red-50/30';
+                    pmColor = 'text-red-500';
                 }
 
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition cursor-pointer group";
-                tr.onclick = () => window.showDetail(key);
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl md:rounded-2xl p-4 md:p-5 shadow-sm border ${cardBorder} transition cursor-pointer flex flex-col justify-between`;
+                card.onclick = () => window.showDetail(key);
                 
-                tr.innerHTML = `
-                    <td class="py-3 px-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-4 bg-slate-300 rounded-full group-hover:bg-slate-600 transition-colors"></div>
-                            <span class="font-bold text-slate-800">${key}</span>
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                            <h4 class="text-lg md:text-xl font-black text-slate-800 tracking-tight">${key}</h4>
+                            ${statusBadge}
                         </div>
-                    </td>
-                    <td class="py-3 px-2 text-right font-bold ${pmPercent < 90 ? 'text-slate-400' : 'text-slate-700'}">${pmPercent}%</td>
-                    <td class="py-3 px-3 text-right font-black ${faults > 0 ? 'text-red-500' : 'text-slate-400'}">${faults}</td>
-                    <td class="py-3 px-4 text-center">${statusBadge}</td>
+                        
+                        <div class="flex gap-2 mb-4">
+                            <div class="flex-1 bg-slate-50 p-2.5 rounded-lg text-center border border-slate-100">
+                                <p class="text-[10px] font-bold text-slate-500 mb-1">예방 점검 (완료/전체)</p>
+                                <p class="text-lg md:text-2xl font-black ${pmColor}">${pmPercent}<span class="text-xs text-slate-400 font-bold ml-0.5">%</span></p>
+                                <p class="text-[9px] font-semibold text-slate-400 mt-1">${compInsp} / ${totalInsp}건</p>
+                            </div>
+                            <div class="flex-1 bg-white border border-red-100 shadow-inner p-2.5 rounded-lg text-center flex flex-col justify-center">
+                                <p class="text-[10px] font-bold text-red-400 mb-1">고장 발생 실적</p>
+                                <p class="text-lg md:text-2xl font-black text-red-600">${faults}<span class="text-xs text-red-400 font-bold ml-0.5">건</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-1 flex gap-1.5 justify-center bg-slate-50 rounded py-1.5 px-2 text-[10px] md:text-[11px] font-bold text-center">
+                        ${analysisMessage}
+                    </div>
                 `;
-                grid.appendChild(tr);
+                grid.appendChild(card);
             });
 
             const titleMap = {
                 'daily': '일간',
-                'weekly': '주간',
-                'prev-weekly': '전주',
-                'monthly': '월간',
-                'quarterly': '분기',
-                'custom': '지정된 기간'
+                'weekly': '주간 누적',
+                'monthly': '월간 누적',
+                'quarterly': '분기 누적',
+                'custom': '사용자 지정 기간'
             };
             const chartTitleEl = document.getElementById('summaryChartTitle');
             if (chartTitleEl) {
-                chartTitleEl.innerHTML = `전 라인 <b>[${titleMap[window.currentSummaryPeriod] || ''}]</b> 예방점검 달성률 대비 고장 발생 추이`;
+                chartTitleEl.innerHTML = `<svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> 전 라인 ${titleMap[window.currentSummaryPeriod] || ''} 예방점검 달성률 대비 고장 발생 추이`;
             }
 
-            // ★ Chart.js 콤보 차트 렌더링 (디자인 톤 정리)
+            // ★ Chart.js 콤보 차트 렌더링 (막대그래프 + 선그래프)
             if (window.summaryChartInstance) {
                 window.summaryChartInstance.destroy();
             }
@@ -1038,12 +992,12 @@
             const ctx = document.getElementById('summaryCorrelationChart');
             if (ctx) {
                 window.summaryChartInstance = new Chart(ctx, {
-                    type: 'line', 
+                    type: 'line', // 기본타입
                     data: {
                         labels: labels,
                         datasets: [
                             {
-                                type: 'line', 
+                                type: 'line', // 고장 실적은 명확한 선과 점으로
                                 label: '고장 발생 실적 (건)',
                                 data: faultData,
                                 yAxisID: 'y1',
@@ -1051,22 +1005,22 @@
                                 backgroundColor: '#ef4444',
                                 borderWidth: 2,
                                 borderDash: [4, 4],
-                                pointStyle: 'circle',
-                                pointRadius: 5,
-                                pointHoverRadius: 7,
+                                pointStyle: 'rectRot',
+                                pointRadius: 6,
+                                pointHoverRadius: 8,
                                 pointBackgroundColor: '#ef4444',
-                                tension: 0.2
+                                tension: 0.1
                             },
                             {
-                                type: 'bar', 
+                                type: 'bar', // 점검률은 뒤에 깔리는 바 형태로 명확히 구분
                                 label: '예방 점검 완료율 (%)',
                                 data: pmData,
                                 yAxisID: 'y',
-                                backgroundColor: 'rgba(71, 85, 105, 0.1)',
-                                borderColor: 'rgba(71, 85, 105, 0.3)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                                borderColor: 'rgba(59, 130, 246, 0.8)',
                                 borderWidth: 1,
                                 borderRadius: 4,
-                                barPercentage: 0.6
+                                barPercentage: 0.5
                             }
                         ]
                     },
@@ -1075,22 +1029,21 @@
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { position: 'top', labels: { font: { family: 'Pretendard', size: 11, weight: 'bold' } } },
-                            tooltip: { titleFont: { family: 'Pretendard' }, bodyFont: { family: 'Pretendard' }, backgroundColor: 'rgba(15, 23, 42, 0.9)' }
+                            legend: { position: 'top', labels: { font: { family: 'Pretendard', size: 10, weight: 'bold' } } },
+                            tooltip: { titleFont: { family: 'Pretendard' }, bodyFont: { family: 'Pretendard' } }
                         },
                         scales: {
-                            x: { grid: { display: false }, ticks: { font: { family: 'Pretendard', weight: 'bold', size: 10 } } },
+                            x: { grid: { display: false }, ticks: { font: { family: 'Pretendard', weight: 'bold' } } },
                             y: {
                                 type: 'linear', display: true, position: 'left', min: 0, max: 100,
-                                title: { display: true, text: '완료율 (%)', font: { size: 10, weight: 'bold' }, color: '#64748b' },
-                                ticks: { color: '#64748b', font: { weight: 'bold', size: 10 } },
-                                grid: { color: '#f1f5f9' }
+                                title: { display: true, text: '완료율 (%)', font: { size: 10, weight: 'bold' }, color: '#3b82f6' },
+                                ticks: { color: '#3b82f6', font: { weight: 'bold' } }
                             },
                             y1: {
                                 type: 'linear', display: true, position: 'right', min: 0,
                                 grid: { drawOnChartArea: false },
                                 title: { display: true, text: '고장 (건)', font: { size: 10, weight: 'bold' }, color: '#ef4444' },
-                                ticks: { color: '#ef4444', font: { weight: 'bold', size: 10 }, stepSize: 1 }
+                                ticks: { color: '#ef4444', font: { weight: 'bold' }, stepSize: 1 }
                             }
                         }
                     }
@@ -1099,6 +1052,403 @@
         }
 
         window.renderRecentAnomalies = function() {
+            // (기존 코드 유지)
+        }
+
+        window.setAnalysisPeriod = function(period) {
+            window.currentAnalysisPeriod = period;
+            window.activeAnalysisLine = 'all'; 
+            
+            const btns = ['daily', 'monthly', 'yearly', 'custom'];
+            btns.forEach(p => {
+                const btn = document.getElementById('ana-btn-' + p);
+                if(btn) {
+                    if(p === period) btn.className = 'flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all bg-blue-600 text-white shadow-sm';
+                    else btn.className = 'flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm';
+                }
+            });
+
+            const customContainer = document.getElementById('ana-custom-date-container');
+            if(customContainer) {
+                if(period === 'custom') {
+                    customContainer.classList.remove('hidden');
+                    customContainer.classList.add('flex');
+                } else {
+                    customContainer.classList.add('hidden');
+                    customContainer.classList.remove('flex');
+                }
+            }
+
+            if(period !== 'custom') {
+                window.renderFaultAnalysis();
+            }
+        }
+
+        window.setAnalysisLine = function(line) {
+            window.activeAnalysisLine = line;
+            window.renderFaultAnalysis();
+            window.renderAnalysisDetailList();
+        }
+
+        window.setAnalysisPartType = function(type) {
+            window.currentAnalysisPartType = type;
+            const btnMap = { 'all': 'ana-part-all', '기계': 'ana-part-mech', '전기': 'ana-part-elec' };
+            Object.keys(btnMap).forEach(key => {
+                const btn = document.getElementById(btnMap[key]);
+                if(btn) {
+                    if(key === type) btn.className = 'flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all bg-slate-800 text-white shadow-sm';
+                    else btn.className = 'flex-1 sm:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm';
+                }
+            });
+            window.renderFaultAnalysis();
+            window.renderAnalysisDetailList();
+        }
+
+        window.renderFaultAnalysis = function() {
+            const targetDate = new Date(window.currentTargetDate);
+            const tYear = targetDate.getFullYear();
+            const tMonth = targetDate.getMonth() + 1;
+
+            const titleEl = document.getElementById('analysis-main-title');
+            let periodFaults = [];
+            let dateStr = '';
+            
+            let allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+            
+            if (window.currentAnalysisPartType !== 'all') {
+                allFaults = allFaults.filter(r => r.partType === window.currentAnalysisPartType);
+            }
+
+            if (window.currentAnalysisPeriod === 'daily') {
+                if(titleEl) titleEl.innerText = '설비팀 고장 자료 (일간 현황)';
+                dateStr = window.currentTargetDate;
+                periodFaults = allFaults.filter(r => r.date === window.currentTargetDate);
+            } else if (window.currentAnalysisPeriod === 'monthly') {
+                if(titleEl) titleEl.innerText = '설비팀 고장 자료 (월간 누적 현황)';
+                dateStr = `${tYear}년 ${tMonth}월`;
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear && new Date(r.date).getMonth() + 1 === tMonth);
+            } else if (window.currentAnalysisPeriod === 'custom') {
+                const sDate = document.getElementById('anaStartDate').value;
+                const eDate = document.getElementById('anaEndDate').value;
+                if(titleEl) titleEl.innerText = `설비팀 고장 자료 (${sDate} ~ ${eDate})`;
+                dateStr = `${sDate} ~ ${eDate}`;
+                periodFaults = allFaults.filter(r => r.date >= sDate && r.date <= eDate);
+            } else {
+                if(titleEl) titleEl.innerText = '설비팀 고장 자료 (연간 누적 현황)';
+                dateStr = `${tYear}년`;
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear);
+            }
+
+            const lines = ['CPL', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'ARP', 'SSCL'];
+            let thead = '';
+            let tbody = '';
+            
+            if (window.currentAnalysisPeriod === 'yearly') {
+                thead = `<tr class="bg-orange-100/40 border-y-2 border-slate-300 text-slate-700 font-black">
+                            <th class="py-2 md:py-3 px-2 md:px-4 border-x border-slate-200 w-16 md:w-24 whitespace-nowrap">구분</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 border-x border-slate-200 bg-orange-100/70 w-12 md:w-20 whitespace-nowrap">소계</th>`;
+                for(let i=1; i<=12; i++) {
+                    const isCur = (i === tMonth);
+                    thead += `<th class="py-2 md:py-3 px-1 md:px-2 border-x border-slate-200 ${isCur ? 'bg-blue-100 text-blue-800' : ''} whitespace-nowrap">${i}월</th>`;
+                }
+                thead += `</tr>`;
+
+                let totalCounts = new Array(12).fill(0);
+                let totalSum = 0;
+
+                lines.forEach(line => {
+                    let lineFaults = periodFaults.filter(r => r.line === line);
+                    let rowSum = lineFaults.length;
+                    totalSum += rowSum;
+                    
+                    const isSelected = window.activeAnalysisLine === line;
+                    const trClass = isSelected ? 'bg-blue-50 border-y-2 border-blue-400 shadow-inner' : 'border-b border-slate-200 hover:bg-slate-50 cursor-pointer';
+
+                    tbody += `<tr class="${trClass}" onclick="window.setAnalysisLine('${line}')">
+                                <td class="py-2 md:py-2.5 font-bold border-x border-slate-300 ${isSelected ? 'text-blue-700' : 'text-slate-700 bg-slate-50'} whitespace-nowrap">${line}</td>
+                                <td class="py-2 md:py-2.5 font-black border-x border-slate-300 text-orange-600 ${isSelected ? 'bg-orange-100' : 'bg-orange-50/50'}">${rowSum}</td>`;
+                    
+                    for(let i=1; i<=12; i++) {
+                        let mCount = lineFaults.filter(r => (new Date(r.date).getMonth() + 1) === i).length;
+                        totalCounts[i-1] += mCount;
+                        const isCur = (i === tMonth);
+                        tbody += `<td class="py-2 md:py-2.5 border-x border-slate-200 ${isCur ? 'bg-blue-50/50 font-bold text-blue-700' : ''}">${mCount > 0 ? mCount : ''}</td>`;
+                    }
+                    tbody += `</tr>`;
+                });
+
+                tbody += `<tr class="border-y-2 border-slate-300 bg-slate-100 font-black text-slate-800 cursor-pointer hover:bg-slate-200" onclick="window.setAnalysisLine('all')">
+                            <td class="py-2 md:py-3 border-x border-slate-300 whitespace-nowrap">합계</td>
+                            <td class="py-2 md:py-3 border-x border-slate-300 text-orange-600">${totalSum}</td>`;
+                for(let i=0; i<12; i++) {
+                    const isCur = (i === tMonth - 1);
+                    tbody += `<td class="py-2 md:py-3 border-x border-slate-300 ${isCur ? 'bg-blue-100/50 text-blue-800' : ''}">${totalCounts[i] > 0 ? totalCounts[i] : ''}</td>`;
+                }
+                tbody += `</tr>`;
+
+            } else {
+                const catKeys = ['drive', 'xray', 'plc', 'electric', 'human', 'etc'];
+                const catNames = ['구동부', 'X-RAY/센서', 'PLC/통신', '전장품', 'HUMAN ERROR', '미분류'];
+                
+                thead = `<tr class="bg-orange-100/40 border-y-2 border-slate-300 text-slate-700 font-black">
+                            <th class="py-2 md:py-3 px-2 md:px-4 border-x border-slate-200 w-16 md:w-24 whitespace-nowrap">구분</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 border-x border-slate-200 bg-orange-100/70 w-12 md:w-20 whitespace-nowrap">소계</th>`;
+                catNames.forEach(c => {
+                    thead += `<th class="py-2 md:py-3 px-1 md:px-2 border-x border-slate-200 whitespace-nowrap text-[10px] md:text-sm">${c}</th>`;
+                });
+                thead += `</tr>`;
+
+                let totalCounts = new Array(catKeys.length).fill(0);
+                let totalSum = 0;
+
+                lines.forEach(line => {
+                    let lineFaults = periodFaults.filter(r => r.line === line);
+                    let rowSum = lineFaults.length;
+                    totalSum += rowSum;
+                    
+                    const isSelected = window.activeAnalysisLine === line;
+                    const trClass = isSelected ? 'bg-blue-50 border-y-2 border-blue-400 shadow-inner' : 'border-b border-slate-200 hover:bg-slate-50 cursor-pointer';
+
+                    tbody += `<tr class="${trClass}" onclick="window.setAnalysisLine('${line}')">
+                                <td class="py-2 md:py-2.5 font-bold border-x border-slate-300 ${isSelected ? 'text-blue-700' : 'text-slate-700 bg-slate-50'} whitespace-nowrap">${line}</td>
+                                <td class="py-2 md:py-2.5 font-black border-x border-slate-300 text-orange-600 ${isSelected ? 'bg-orange-100' : 'bg-orange-50/50'}">${rowSum}</td>`;
+                    
+                    catKeys.forEach((cat, idx) => {
+                        let cCount = lineFaults.filter(r => r.category === cat).length;
+                        totalCounts[idx] += cCount;
+                        tbody += `<td class="py-2 md:py-2.5 border-x border-slate-200">${cCount > 0 ? cCount : ''}</td>`;
+                    });
+                    tbody += `</tr>`;
+                });
+
+                tbody += `<tr class="border-y-2 border-slate-300 bg-slate-100 font-black text-slate-800 cursor-pointer hover:bg-slate-200" onclick="window.setAnalysisLine('all')">
+                            <td class="py-2 md:py-3 border-x border-slate-300 whitespace-nowrap">합계</td>
+                            <td class="py-2 md:py-3 border-x border-slate-300 text-orange-600">${totalSum}</td>`;
+                catKeys.forEach((cat, idx) => {
+                    tbody += `<td class="py-2 md:py-3 border-x border-slate-300">${totalCounts[idx] > 0 ? totalCounts[idx] : ''}</td>`;
+                });
+                tbody += `</tr>`;
+            }
+
+            document.getElementById('analysis-table-container').innerHTML = `
+                <table class="w-full text-center border-collapse text-[10px] md:text-sm min-w-[600px]">
+                    <thead>${thead}</thead>
+                    <tbody class="text-slate-600 font-semibold">${tbody}</tbody>
+                </table>
+            `;
+        }
+
+        window.setAnalysisDetailPeriod = function(period) {
+            window.currentAnalysisDetailPeriod = period;
+            ['all', 'daily', 'monthly', 'yearly', 'custom'].forEach(p => {
+                const btn = document.getElementById('ana-detail-btn-' + p);
+                if(btn) {
+                    if(p === period) btn.className = 'flex-1 sm:flex-none px-2.5 md:px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-black transition-all bg-blue-600 text-white shadow-sm';
+                    else btn.className = 'flex-1 sm:flex-none px-2.5 md:px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-black transition-all text-slate-500 hover:bg-white hover:shadow-sm';
+                }
+            });
+
+            const customContainer = document.getElementById('ana-detail-custom-date-container');
+            if(customContainer) {
+                if(period === 'custom') {
+                    customContainer.classList.remove('hidden');
+                    customContainer.classList.add('flex');
+                } else {
+                    customContainer.classList.add('hidden');
+                    customContainer.classList.remove('flex');
+                }
+            }
+
+            if(period !== 'custom') {
+                window.renderAnalysisDetailList();
+            }
+        }
+
+        window.renderAnalysisDetailList = function() {
+            const targetDate = new Date(window.currentTargetDate);
+            const tYear = targetDate.getFullYear();
+            const tMonth = targetDate.getMonth() + 1;
+            const tDateStr = window.currentTargetDate;
+
+            let allFaults = window.systemRecords.filter(r => r.recordType === 'fault');
+            
+            if (window.currentAnalysisPartType !== 'all') {
+                allFaults = allFaults.filter(r => r.partType === window.currentAnalysisPartType);
+            }
+
+            let periodFaults = [];
+            let dateStr = '';
+
+            if (window.currentAnalysisDetailPeriod === 'all') {
+                periodFaults = allFaults;
+                dateStr = '전체 누적 기간';
+            } else if (window.currentAnalysisDetailPeriod === 'daily') {
+                periodFaults = allFaults.filter(r => r.date === tDateStr);
+                dateStr = tDateStr;
+            } else if (window.currentAnalysisDetailPeriod === 'monthly') {
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear && new Date(r.date).getMonth() + 1 === tMonth);
+                dateStr = `${tYear}년 ${tMonth}월`;
+            } else if (window.currentAnalysisDetailPeriod === 'custom') {
+                const sDate = document.getElementById('anaDetailStartDate').value;
+                const eDate = document.getElementById('anaDetailEndDate').value;
+                periodFaults = allFaults.filter(r => r.date >= sDate && r.date <= eDate);
+                dateStr = `${sDate} ~ ${eDate}`;
+            } else if (window.currentAnalysisDetailPeriod === 'yearly') {
+                periodFaults = allFaults.filter(r => new Date(r.date).getFullYear() === tYear);
+                dateStr = `${tYear}년`;
+            }
+
+            let typeStr = window.currentAnalysisPartType === 'all' ? '기계/전기 전체' : window.currentAnalysisPartType + ' 고장';
+            let detailTitle = `${window.activeAnalysisLine === 'all' ? '전체 라인' : window.activeAnalysisLine + ' 라인'} [${typeStr}] 세부 내역 (${dateStr})`;
+            const titleEl = document.getElementById('analysis-detail-title-text');
+            if (titleEl) titleEl.innerText = detailTitle;
+
+            let filteredFaults = periodFaults;
+            if(window.activeAnalysisLine !== 'all') {
+                filteredFaults = filteredFaults.filter(r => r.line === window.activeAnalysisLine);
+            }
+            filteredFaults.sort((a,b) => (a.date < b.date ? 1 : (a.date > b.date ? -1 : 0)));
+
+            let listHtml = '';
+            if(filteredFaults.length === 0) {
+                listHtml = `<div class="text-slate-500 text-center py-12 font-bold bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs md:text-sm">해당 조건에 부합하는 고장 내역이 없습니다.</div>`;
+            } else {
+                filteredFaults.forEach(f => {
+                    let fileBtnHtml = '';
+                    if (f.fileUrl) {
+                        let finalUrl = f.fileUrl;
+                        if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) finalUrl = 'http://' + finalUrl;
+                        fileBtnHtml = `
+                            <div class="mt-3 md:mt-4 border-t border-slate-100 pt-3">
+                                <a href="${finalUrl}" target="_blank" class="px-3 py-1.5 md:py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-[10px] md:text-xs font-bold hover:bg-blue-100 transition inline-flex items-center w-full sm:w-auto justify-center">
+                                    <svg class="w-3 h-3 md:w-4 md:h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                    첨부 문서 열기
+                                </a>
+                            </div>
+                        `;
+                    }
+                    
+                    const partTypeBadge = f.partType === '전기' 
+                        ? '<span class="bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded text-[10px] md:text-xs font-bold shrink-0 inline-block w-[36px] text-center ml-1">전기</span>' 
+                        : '<span class="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-[10px] md:text-xs font-bold shrink-0 inline-block w-[36px] text-center ml-1">기계</span>';
+
+                    listHtml += `
+                        <div class="text-xs md:text-sm text-slate-800 leading-relaxed border border-slate-200 shadow-sm pb-4 md:pb-5 hover:border-blue-300 hover:shadow-md p-3 md:p-4 rounded-xl transition bg-white">
+                            <div class="font-black mb-2 md:mb-3 text-sm md:text-base flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-100 pb-2 gap-2 sm:gap-0">
+                                <div class="flex items-center flex-wrap gap-1 md:gap-2">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                                    <span class="text-blue-700 mr-1">[${f.line}]</span> ${f.subItem} ${partTypeBadge}
+                                    <span class="text-slate-400 font-semibold text-[10px] md:text-xs bg-slate-100 px-2 py-0.5 rounded-full mt-1 sm:mt-0">발생일 : ${f.date}</span>
+                                </div>
+                                <span class="text-[10px] md:text-xs font-bold px-2 py-1 md:px-2.5 md:py-1 rounded bg-red-50 text-red-600 border border-red-100 w-fit">${f.type}</span>
+                            </div>
+                            <div class="pl-1 md:pl-2 whitespace-pre-wrap text-slate-600 font-medium text-xs md:text-sm leading-6 md:leading-7">${f.desc}</div>
+                            ${fileBtnHtml}
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('analysis-detail-list').innerHTML = listHtml;
+        }
+
+        window.showPanel = function(id) {
+            document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            const backBtn = document.getElementById('backToSummaryBtn');
+            const dateContainer = document.getElementById('headerDatePickerContainer');
+
+            if (window.innerWidth < 1024) {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('-translate-x-full')) {
+                    window.toggleSidebar();
+                }
+            }
+
+            if(backBtn) {
+                if(id === 'detail') backBtn.classList.remove('hidden');
+                else backBtn.classList.add('hidden');
+            }
+
+            if(id === 'summary') {
+                document.getElementById('nav-summary').classList.add('active');
+                document.getElementById('headerTitle').innerText = '설비 점검 종합 현황';
+                dateContainer.classList.remove('hidden');
+            } else if(id === 'input') {
+                document.getElementById('nav-input').classList.add('active');
+                document.getElementById('headerTitle').innerText = '데이터 통합 관리 등록';
+                window.switchInputTab('inspection'); 
+                document.getElementById('regDateFault').value = window.currentTargetDate;
+                dateContainer.classList.add('hidden');
+            } else if(id === 'analysis') {
+                document.getElementById('nav-analysis').classList.add('active');
+                document.getElementById('headerTitle').innerText = '고장 분석 리포트';
+                dateContainer.classList.remove('hidden'); 
+                window.renderFaultAnalysis();
+                window.renderAnalysisDetailList();
+            } else if(id === 'detail') {
+                dateContainer.classList.add('hidden');
+            }
+        }
+
+        window.showDetail = function(name) {
+            window.activeLine = name;
+            window.activeCycleFilter = 'all'; 
+            window.activeDetailCategoryFilter = 'all'; 
+            
+            document.querySelectorAll('.cycle-filter-tab').forEach(t => t.className = t.innerText === '전체' ? 'cycle-filter-tab active bg-blue-600 text-white text-[10px] md:text-[11px] font-extrabold px-2.5 md:px-3 py-1.5 rounded-lg transition-all duration-200 flex-1 sm:flex-none' : 'cycle-filter-tab text-slate-600 text-[10px] md:text-[11px] font-extrabold px-2.5 md:px-3 py-1.5 rounded-lg transition-all duration-200 flex-1 sm:flex-none');
+
+            window.showPanel('detail');
+            document.getElementById('headerTitle').innerText = name + ' 상세 정밀 분석';
+            document.getElementById('detailLineTitle').innerText = name + ' 상세 점검 항목';
+            
+            const catSelect = document.getElementById('detailCategoryFilter');
+            if (catSelect) {
+                let cats = [];
+                if(subItemMapInsp[name]) cats = Object.keys(subItemMapInsp[name]);
+                else cats = Object.keys(subItemMapInsp['CRM']);
+                
+                let html = '<option value="all">설비명 (전체) ▼</option>';
+                cats.forEach(c => { html += `<option value="${c}">${c}</option>`; });
+                catSelect.innerHTML = html;
+                catSelect.value = 'all';
+            }
+            
+            document.querySelectorAll('.line-nav').forEach(item => {
+                if(item.innerText.includes(name)) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+
+            setTimeout(() => {
+                window.renderDetailTable();
+                window.renderInspReport();
+            }, 50); 
+        }
+
+        window.syncDateData = function(val) { 
+            window.currentTargetDate = val; 
+            window.updateAllLineScores(); 
+            window.renderSummaryGrid(); 
+            if (document.getElementById('panel-detail').classList.contains('active')) {
+                window.renderDetailTable();
+                window.renderInspReport();
+            }
+            if (document.getElementById('panel-analysis').classList.contains('active')) {
+                window.renderFaultAnalysis();
+                window.renderAnalysisDetailList();
+            }
+        }
+
+        window.filterDetailByCategory = function(cat) {
+            window.activeDetailCategoryFilter = cat;
+            window.currentDetailTablePage = 0; 
+            window.renderDetailTable();
+        }
+
+        window.renderDetailTable = function() {
+            const tbody = document.getElementById('detailTableBody');
+            tbody.innerHTML = '';
             
             let filteredRecords = window.systemRecords.filter(r => r.recordType === 'inspection' && r.line === window.activeLine);
             
@@ -1157,6 +1507,7 @@
                 const remarkBtnText = remark ? '보기/수정' : '작성';
                 const remarkBtnClass = remark ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
                 
+                // ★ 폰트 사이즈 업그레이드 text-[10px] md:text-[11px]
                 const partTypeBadge = r.partType === '전기' 
                     ? '<span class="bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded text-[10px] md:text-[11px] font-bold inline-block w-[36px] text-center">전기</span>' 
                     : '<span class="bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] md:text-[11px] font-bold inline-block w-[36px] text-center">기계</span>';
@@ -1189,6 +1540,7 @@
                     `;
                 }
 
+                // ★ 기존 text-[11px] 였던 것을 text-xs md:text-sm 로 폰트 사이즈 키움
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 text-xs md:text-sm font-medium text-slate-700">
                         <td class="py-2.5 px-2 text-center text-slate-400 whitespace-nowrap">${idx + 1}</td>
@@ -1243,15 +1595,17 @@
             window.renderDetailTable();
         }
 
+        // ★ 신규: 양호/불량 분리 로직
         window.handleInspectionResult = function(id, type) {
             if (type === 'good') {
                 window.completeInspectionRecord(id, '양호');
             } else if (type === 'bad') {
-                window.pendingInspectionResult = true; 
+                window.pendingInspectionResult = true; // 불량 처리 중 플래그 켜기
                 window.openRemarkModal(id);
             }
         }
 
+        // ★ 신규: 공통 실적 완료 처리 함수 (다음 주기 생성 포함)
         window.completeInspectionRecord = async function(id, autoRemark = '') {
             const record = window.systemRecords.find(r => r.id === id);
             if (!record) return;
@@ -1260,6 +1614,7 @@
                 let nextRecord = null;
                 let newDateStr = window.currentTargetDate;
                 
+                // 기존 코멘트 유지하되 autoRemark가 있으면 병합
                 let finalRemark = record.remark;
                 if (!finalRemark && autoRemark) finalRemark = autoRemark;
                 
@@ -1317,6 +1672,7 @@
             }
         }
 
+        // ★ 기존의 toggle은 이제 '실적 취소' 전용으로 사용
         window.cancelInspectionStatus = async function(id) {
             const record = window.systemRecords.find(r => r.id === id);
             if (!record) return;
@@ -1344,6 +1700,7 @@
             window.currentRemarkId = id;
             document.getElementById('remarkModalSubItem').innerText = `[${record.line}] ${record.subItem}`;
             
+            // ★ 불량 클릭 시 필수 입력 모드로 UI 변경
             const titleEl = document.getElementById('remarkModalTitle');
             const textArea = document.getElementById('remarkArea');
             if (window.pendingInspectionResult) {
@@ -1362,13 +1719,14 @@
         window.closeRemarkModal = function() {
             document.getElementById('remarkModal').classList.add('hidden');
             window.currentRemarkId = null;
-            window.pendingInspectionResult = false; 
+            window.pendingInspectionResult = false; // 플래그 초기화
         }
 
         window.saveRemark = async function() {
             if(!window.currentRemarkId) return;
             const remarkText = document.getElementById('remarkArea').value.trim();
             
+            // ★ 불량 시 빈칸 거부 로직
             if (window.pendingInspectionResult && remarkText.replace(/불량 사유: |조치 예정: |\n/g, '').trim().length < 2) {
                 return window.showCustomAlert("불량 판정 시 상세 사유를 반드시 입력해야 합니다.", "danger");
             }
@@ -1386,6 +1744,7 @@
                 
                 window.closeRemarkModal();
                 
+                // ★ 불량 모드였다면 여기서 완료(실적 등록) 트리거
                 if (window.pendingInspectionResult) {
                     window.completeInspectionRecord(window.currentRemarkId, remarkText);
                     window.pendingInspectionResult = false;
@@ -1413,17 +1772,19 @@
             window.renderInspReport();
         }
 
+        // ★ 개선된 인쇄 기능 (점검 현황 리포트만 출력)
         window.printInspReport = function() {
             window.isPrintingInspAll = true;
+            // 인쇄용 클래스 추가하여 상단 리스트(detail-top-section)를 숨김
             document.body.classList.add('print-report-only'); 
-            window.renderInspReport(); 
+            window.renderInspReport(); // 제한 없이 한 번에 다 그림
             
             setTimeout(() => {
-                window.print(); 
-                window.isPrintingInspAll = false; 
+                window.print(); // 프린트 창 띄움
+                window.isPrintingInspAll = false; // 끝나면 다시 원래 상태로 복구
                 document.body.classList.remove('print-report-only'); 
                 window.renderInspReport();
-            }, 300); 
+            }, 300); // 렌더링될 시간(0.3초) 대기
         }
 
         window.renderInspReport = function() {
@@ -1456,6 +1817,7 @@
                 return;
             }
 
+            // ★ 인쇄 모드일 경우 페이지 제한을 9999개로 풀어서 한 번에 출력
             const itemsPerPage = window.isPrintingInspAll ? 9999 : 15; 
             const totalPages = Math.ceil(periodLogs.length / itemsPerPage);
             if(window.currentReportTablePage >= totalPages && totalPages > 0) window.currentReportTablePage = 0;
@@ -1502,6 +1864,7 @@
             container.innerHTML = html;
 
             let paginationHtml = '';
+            // ★ 인쇄 모드 중일 때는 페이지네이션 버튼을 그리지 않음
             if (totalPages > 1 && !window.isPrintingInspAll) {
                 paginationHtml = `
                     <div class="flex justify-center mt-4 gap-2 no-print">
@@ -2175,6 +2538,7 @@
 
             try {
                 if (window.isFirebaseActive && window.firebaseHandler) {
+                    // 1. 삭제된 데이터 처리
                     const deleted = window.systemRecords.filter(orig => !window.tempRecords.some(temp => temp.id === orig.id));
                     
                     if (deleted.length > 0) {
@@ -2182,6 +2546,7 @@
                         await Promise.all(deletePromises);
                     }
 
+                    // 2. ★ 최적화: 내용이 수정되거나 추가된 데이터만 솎아내기
                     const isModified = (oldObj, newObj) => {
                         const keysToCheck = ['recordType', 'line', 'category', 'subItem', 'type', 'partType', 'cycle', 'standard', 'date', 'status', 'desc', 'remark', 'fileUrl'];
                         return keysToCheck.some(key => oldObj[key] !== newObj[key]);
@@ -2193,6 +2558,7 @@
                         return isModified(orig, temp); // 값이 하나라도 다르면 수정된 항목
                     });
 
+                    // 3. 변경된 항목만 클라우드에 전송
                     if (changedRecords.length > 0) {
                         const sanitizedChangedRecords = changedRecords.map(r => sanitizeRecord(r));
                         
@@ -2298,6 +2664,7 @@
             reader.readAsBinaryString(file);
         }
 
+        // ★ 신규: 초고속 병렬 데이터 전송 엔진 탑재
         window.applyExcelDataToSystem = async function() {
             if(window.parsedExcelData.length === 0) return;
             
@@ -2338,6 +2705,7 @@
             else window.showCustomAlert('고장 양식: A열(라인명), B열(고장부류), C열(상세항목), D열(발생일자), E열(조치내용), F열:관련문서URL(선택)', 'info'); 
         }
 
+        // ★ 신규 추가: 사용자 지정 날짜 관련 업데이트 함수들
         window.updateCustomSummary = function() {
             const sDate = document.getElementById('sumStartDate').value;
             const eDate = document.getElementById('sumEndDate').value;
