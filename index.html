@@ -31,7 +31,14 @@
 
         /* 반응형 사이드바 제어를 위한 스타일 개선 및 스크롤바 숨김 */
         #sidebar { transition: transform 0.3s ease-in-out; z-index: 50; -ms-overflow-style: none; scrollbar-width: none; }
-        #sidebar::-webkit-scrollbar { display: none; }
+        #sidebar::-webkit-scrollbar,
+#sidebar *::-webkit-scrollbar { 
+    display: none; 
+}
+#sidebar, #sidebar * {
+    -ms-overflow-style: none; /* IE, Edge */
+    scrollbar-width: none; /* Firefox */
+}
         .nav-group { color: #64748b; font-size: 11px; font-weight: 700; padding: 24px 24px 8px; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #1e293b; margin-top: 10px; }
         .nav-item { display: flex; align-items: center; padding: 14px 24px; color: #94a3b8; font-size: 14px; cursor: pointer; transition: 0.2s; }
         .nav-item:hover { background: #1e293b; color: white; }
