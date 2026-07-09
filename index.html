@@ -195,7 +195,7 @@
             </div>
             <div class="flex items-center text-xs md:text-sm text-slate-500 ml-2">
                 <div id="auth-status" class="flex items-center whitespace-nowrap">
-                    <span class="w-2 h-2 rounded-full bg-slate-300 mr-1.5 md:mr-2 animate-pulse"></span> 대기중...
+                    <span class="w-2 h-2 rounded-full bg-slate-300 mr-1.5 md:mr-2 animate-pulse"></span>
                 </div>
             </div>
         </header>
@@ -304,34 +304,50 @@
                         </div>
                     </div>
                     
-                    <!-- 실시간 미니 테이블 (대기 예방점검 & 최근 고장실적) -->
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
-                        <!-- 누락/대기 중인 예방점검 -->
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[300px]">
-                            <h4 class="text-sm md:text-base font-bold text-slate-800 mb-3 flex items-center justify-between">
-                                <span class="flex items-center"><i data-lucide="clipboard-list" class="w-5 h-5 mr-2 text-blue-500"></i> 대기/지연 중인 예방점검</span>
-                                <button onclick="goToPMListPending()" class="text-xs text-slate-500 hover:text-blue-600 transition">전체보기 &rarr;</button>
+                    <!-- 실시간 미니 테이블 (대기/지연 분리 & 최근 고장실적) -->
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
+                        <!-- 1. 당주기 대기 목록 -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[350px]">
+                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+                                <span class="flex items-center"><i data-lucide="calendar-clock" class="w-4 h-4 mr-2 text-blue-500"></i> 당주기 대기 목록</span>
+                                <button onclick="goToPMListPending()" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition">전체보기 &rarr;</button>
                             </h4>
                             <div class="flex-1 overflow-auto custom-scroll border border-slate-100 rounded-lg">
-                                <table class="w-full text-left text-xs whitespace-nowrap min-w-[500px]">
-                                    <thead class="bg-slate-50 sticky top-0 text-slate-600 shadow-sm">
-                                        <tr><th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th><th class="py-2 px-3 font-bold border-b border-slate-200">작업내용</th><th class="py-2 px-2 font-bold border-b border-slate-200 text-center">주기</th><th class="py-2 px-2 font-bold border-b border-slate-200 text-center">예정일</th><th class="py-2 px-2 font-bold border-b border-slate-200 text-center">상태</th></tr>
+                                <table class="w-full text-left text-xs whitespace-nowrap min-w-[400px]">
+                                    <thead class="bg-slate-50 sticky top-0 text-slate-600 shadow-sm z-10">
+                                        <tr><th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th><th class="py-2 px-3 font-bold border-b border-slate-200">작업내용</th><th class="py-2 px-2 font-bold border-b border-slate-200 text-center">예정일</th></tr>
                                     </thead>
-                                    <tbody id="dash-mini-pm-body" class="divide-y divide-slate-100 bg-white"></tbody>
+                                    <tbody id="dash-mini-pm-pending-body" class="divide-y divide-slate-100 bg-white"></tbody>
                                 </table>
                             </div>
                         </div>
 
-                        <!-- 최근 고장 실적 -->
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[300px]">
-                            <h4 class="text-sm md:text-base font-bold text-slate-800 mb-3 flex items-center justify-between">
-                                <span class="flex items-center"><i data-lucide="alert-triangle" class="w-5 h-5 mr-2 text-red-500"></i> 최근 고장 실적 내역</span>
-                                <button onclick="goToBDList()" class="text-xs text-slate-500 hover:text-red-600 transition">전체보기 &rarr;</button>
+                        <!-- 2. 지연 목록 -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[350px]">
+                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+                                <span class="flex items-center"><i data-lucide="alert-circle" class="w-4 h-4 mr-2 text-red-500"></i> 점검 지연 목록</span>
+                                <button onclick="goToPMListPending()" class="text-[10px] text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition">전체보기 &rarr;</button>
+                            </h4>
+                            <div class="flex-1 overflow-auto custom-scroll border border-red-50 rounded-lg">
+                                <table class="w-full text-left text-xs whitespace-nowrap min-w-[400px]">
+                                    <thead class="bg-red-50 sticky top-0 text-red-600 shadow-sm z-10">
+                                        <tr><th class="py-2 px-3 font-bold border-b border-red-100">설비명</th><th class="py-2 px-3 font-bold border-b border-red-100">작업내용</th><th class="py-2 px-2 font-bold border-b border-red-100 text-center">예정일</th></tr>
+                                    </thead>
+                                    <tbody id="dash-mini-pm-overdue-body" class="divide-y divide-red-50 bg-white"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 3. 최근 고장 실적 -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[350px]">
+                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+                                <span class="flex items-center"><i data-lucide="activity" class="w-4 h-4 mr-2 text-indigo-500"></i> 최근 고장 실적</span>
+                                <button onclick="goToBDList()" class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-1 rounded hover:bg-indigo-100 transition">전체보기 &rarr;</button>
                             </h4>
                             <div class="flex-1 overflow-auto custom-scroll border border-slate-100 rounded-lg">
-                                <table class="w-full text-left text-xs whitespace-nowrap min-w-[500px]">
-                                    <thead class="bg-slate-50 sticky top-0 text-slate-600 shadow-sm">
-                                        <tr><th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th><th class="py-2 px-3 font-bold border-b border-slate-200">고장내용</th><th class="py-2 px-2 font-bold border-b border-slate-200 text-center">발생일시</th><th class="py-2 px-2 font-bold border-b border-slate-200 text-center">조치시간</th></tr>
+                                <table class="w-full text-left text-xs whitespace-nowrap min-w-[400px]">
+                                    <thead class="bg-slate-50 sticky top-0 text-slate-600 shadow-sm z-10">
+                                        <tr><th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th><th class="py-2 px-3 font-bold border-b border-slate-200">내용</th><th class="py-2 px-2 font-bold border-b border-slate-200 text-center">발생일</th></tr>
                                     </thead>
                                     <tbody id="dash-mini-bd-body" class="divide-y divide-slate-100 bg-white"></tbody>
                                 </table>
@@ -343,13 +359,18 @@
             </div>
 
             <!-- VIEW: PM LIST -->
-            <div id="view-pm-list" class="view-section hidden h-full flex-col gap-4 min-w-0 pb-4">
-                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[55%] min-h-[300px] min-w-0">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 shrink-0 gap-2">
+            <div id="view-pm-list" class="view-section hidden h-full flex-col gap-6 min-w-0 pb-4">
+                
+                <!-- 상단: 대기중인 예방점검 리스트 -->
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-2 border-b border-slate-100 shrink-0 gap-3">
                         <h3 class="text-base md:text-lg font-bold text-brand-800 flex items-center" id="pm-list-header-title">
                             <i data-lucide="list" class="w-5 h-5 mr-2 text-blue-500"></i> 예방점검 리스트
                         </h3>
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                            <button onclick="openPMMasterModal()" class="flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm mr-2">
+                                <i data-lucide="database" class="w-3.5 h-3.5 mr-1.5"></i> 일괄 관리
+                            </button>
                             <select id="pm-filter-line" onchange="pmListPage=1; updatePMFilterEquip(); debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
                                 <option value="ALL">전체 라인</option>
                             </select>
@@ -378,18 +399,18 @@
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-10">순번</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">라인</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">구분</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">주기</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[120px]">점검기준</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">예정일</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">상태</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">특이사항</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">실적등록</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">라인</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">설비명</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">구분</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">주기</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[120px]">점검기준</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">예정일</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">상태</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">특이사항</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">실적등록</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
                                 </tr>
                             </thead>
                             <tbody id="pm-list-body" class="divide-y divide-slate-200 text-slate-700"></tbody>
@@ -398,8 +419,9 @@
                     <div id="pm-list-pagination"></div>
                 </div>
 
-                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[45%] min-h-[250px] min-w-0">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 shrink-0 gap-2">
+                <!-- 하단: 예방점검 실적 이력 (전체) -->
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-2 border-b border-slate-100 shrink-0 gap-3">
                         <div class="flex items-center">
                             <h3 class="text-sm md:text-base font-bold text-slate-800 flex items-center">
                                 <i data-lucide="history" class="w-4 h-4 mr-1.5 text-slate-500"></i> 예방점검 실적 이력 (전체)
@@ -407,15 +429,15 @@
                             <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="ml-3 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-0.5 rounded hidden transition">필터 해제</button>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
-                            <select id="pm-history-filter-period" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <select id="pm-history-filter-period" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">전체 기간</option>
                                 <option value="TODAY">오늘</option>
                                 <option value="WEEK">이번 주</option>
                                 <option value="MONTH">이번 달</option>
                             </select>
-                            <input type="text" id="pm-history-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="라인, 설비, 내용 검색..." class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none w-32 sm:w-48 min-w-0">
-                            <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1 rounded transition shadow-sm flex items-center">
-                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 출력
+                            <input type="text" id="pm-history-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="라인, 설비, 내용 검색..." class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none w-32 sm:w-48 min-w-0">
+                            <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center">
+                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
                             </button>
                         </div>
                     </div>
@@ -423,12 +445,12 @@
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200">등록일시</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">라인</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[200px]">작업 세부사항</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">결과</th>
-                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-32">실적 등록일시</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-20">라인</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-48">설비명</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[200px]">작업 세부사항</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-24">결과</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
                                 </tr>
                             </thead>
                             <tbody id="pm-history-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
@@ -447,9 +469,6 @@
                             <h3 class="text-base md:text-lg font-bold text-slate-800 flex items-center">
                                 <i data-lucide="edit" class="w-5 h-5 mr-2 text-slate-500"></i> 수동 등록 (신규 예방점검)
                             </h3>
-                            <button onclick="openPMMasterModal()" class="flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition shadow-sm border border-blue-200">
-                                <i data-lucide="database" class="w-4 h-4 mr-1.5"></i> 전체 데이터 일괄 관리
-                            </button>
                         </div>
                         <form id="form-pm" onsubmit="handlePMSubmit(event)" class="space-y-4 md:space-y-5 flex-1">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -497,7 +516,7 @@
                             </div>
                             <p class="text-xs text-blue-600 bg-blue-50 p-2 rounded flex items-start sm:items-center mt-auto mb-4">
                                 <i data-lucide="info" class="w-4 h-4 mr-1 shrink-0 mt-0.5 sm:mt-0"></i> 
-                                <span>신규 등록 시 '다음 점검 예정일'은 오늘 날짜로 자동 등록되며, 이후 실적 처리 시 주기에 맞게 재생성됩니다.</span>
+                                <span>신규 등록 시 '다음 점검 예정일'은 해당 주기의 종료일로 자동 계산됩니다.</span>
                             </p>
                             <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-md transition text-sm shadow-sm">점검 항목 생성</button>
                         </form>
@@ -561,9 +580,7 @@
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">라인</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">설비명</th>
                                     <th class="py-2.5 px-3 font-bold border-b border-slate-200">구분</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">대분류</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">중분류</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">소분류</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">분류</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">발생일시</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center">조치시간</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200 min-w-[250px]">고장/조치내용</th>
@@ -591,10 +608,9 @@
                                     <select id="bd-line" required onchange="updateEquipments('bd')" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"></select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">설비명</label>
-                                    <select id="bd-equip" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                                        <option value="">라인을 먼저 선택하세요</option>
-                                    </select>
+                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">설비명 (직접입력 가능)</label>
+                                    <input list="bd-equip-list" id="bd-equip" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="설비명을 선택하거나 입력하세요">
+                                    <datalist id="bd-equip-list"></datalist>
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
@@ -962,7 +978,6 @@
             };
         }
 
-        // 글로벌 함수들을 디바운스로 선언
         window.debouncedRenderPMList = debounce(() => renderPMList(), 150);
         window.debouncedRenderBDList = debounce(() => renderBDList(), 150);
         window.debouncedRenderPMHistory = debounce(() => renderPMHistory(), 150);
@@ -982,7 +997,6 @@
             `;
         }
 
-        // Pagination Handlers
         window.changePMListPage = (page) => { pmListPage = page; window.debouncedRenderPMList(); };
         window.changePMHistPage = (page) => { pmHistPage = page; window.debouncedRenderPMHistory(); };
         window.changeBDListPage = (page) => { bdListPage = page; window.debouncedRenderBDList(); };
@@ -994,15 +1008,72 @@
         initSidebarLines();
         initCategorySelects();
 
-        // 엑셀 날짜 변환 (YYMMDDHHmm 커스텀 변환)
+        function getLocalTodayString() {
+            const d = new Date();
+            const offset = d.getTimezoneOffset() * 60000;
+            return (new Date(d - offset)).toISOString().split('T')[0];
+        }
+
+        // 1. 캘린더 기반 '점검 예정일' 계산 로직
+        function calculatePeriodEndDate(baseDateStr, cycleType, offset = 0) {
+            let d = new Date(baseDateStr);
+            if (isNaN(d.getTime())) d = new Date();
+
+            let y = d.getFullYear();
+            let m = d.getMonth();
+            let date = d.getDate();
+
+            let resultDate;
+            if (cycleType === '일별') {
+                resultDate = new Date(y, m, date + offset);
+            } 
+            else if (cycleType === '주별') {
+                let day = d.getDay();
+                // 0: Sun, 1: Mon, ..., 6: Sat
+                // Calculate days to next Saturday
+                let toSaturday = 6 - day;
+                resultDate = new Date(y, m, date + toSaturday + (offset * 7));
+            }
+            else if (cycleType === '월별') {
+                // Last day of the target month
+                resultDate = new Date(y, m + 1 + offset, 0);
+            }
+            else if (cycleType === '분기별') {
+                let currentQuarter = Math.floor(m / 3);
+                let targetQuarter = currentQuarter + offset;
+                let lastMonth = targetQuarter * 3 + 2;
+                resultDate = new Date(y, lastMonth + 1, 0);
+            }
+            else if (cycleType === '연별') {
+                resultDate = new Date(y + offset, 11, 31);
+            } else {
+                resultDate = d;
+            }
+
+            // Timezone offset adjustment to avoid returning wrong ISO string date
+            const offsetMs = resultDate.getTimezoneOffset() * 60000;
+            return (new Date(resultDate.getTime() - offsetMs)).toISOString().split('T')[0];
+        }
+
+        // 4. 고장 실적 '주/야간/주말' 태깅 로직
+        function getShiftType(datetimeStr) {
+            if (!datetimeStr) return '주간';
+            const d = new Date(datetimeStr);
+            const day = d.getDay();
+            const hour = d.getHours();
+            
+            if (day === 0 || day === 6) return '주말';
+            if (hour >= 21 || hour < 7) return '야간';
+            return '주간';
+        }
+
+        // 5. 엑셀 커스텀 날짜 파싱 (YYMMDDHHmm)
         function parseCustomDateString(val) {
             if(!val) return '';
             let s = String(val).trim();
-            // Custom format check: exactly 10 digits (YYMMDDHHmm)
             if (/^\d{10}$/.test(s)) {
                 return `20${s.substring(0,2)}-${s.substring(2,4)}-${s.substring(4,6)}T${s.substring(6,8)}:${s.substring(8,10)}`;
             }
-            // Fallback to original excel date parsing if it's not a 10 digit string
             if (typeof val === 'number') {
                 const dateObj = new Date((val - 25569) * 86400 * 1000);
                 const offset = dateObj.getTimezoneOffset() * 60000;
@@ -1014,7 +1085,6 @@
             return s.slice(0, 16);
         }
 
-        // 주기 텍스트 강제 정규화 함수
         function normalizeCycle(val) {
             let s = String(val || '').trim().toLowerCase();
             if(s.includes('일') || s.includes('daily')) return '일별';
@@ -1024,7 +1094,6 @@
             return '월별'; 
         }
 
-        // DB 설비명 동적 추출 로직
         function getDynamicEquipments(line) {
             let equips = new Set();
             if (EQUIPMENT_MAP[line]) {
@@ -1039,7 +1108,6 @@
             return Array.from(equips).sort();
         }
 
-        // Audit Log 기록 함수
         async function logEditHistory(type, line, equip, details) {
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history'), {
@@ -1063,7 +1131,6 @@
             switchTab('bd-list');
         };
 
-        // 모바일 사이드바 토글
         window.toggleSidebar = () => {
             const sidebar = document.getElementById('main-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -1081,7 +1148,6 @@
             }
         };
 
-        // 데스크탑 사이드바 축소 
         window.toggleDesktopSidebar = () => {
             const sidebar = document.getElementById('main-sidebar');
             sidebar.classList.toggle('is-collapsed');
@@ -1122,12 +1188,22 @@
             document.getElementById('pm-master-filter-line').innerHTML = pmFilterLine; 
         }
 
+        // Breakdown Equipment Input Update
         window.updateEquipments = (formType) => {
             const lineVal = document.getElementById(`${formType}-line`).value;
-            const equipSel = document.getElementById(`${formType}-equip`);
-            equipSel.innerHTML = '<option value="">설비 선택</option>';
-            if(lineVal) {
-                getDynamicEquipments(lineVal).forEach(eq => equipSel.innerHTML += `<option value="${eq}">${eq}</option>`);
+            
+            if (formType === 'bd') {
+                const equipList = document.getElementById('bd-equip-list');
+                equipList.innerHTML = '';
+                if(lineVal) {
+                    getDynamicEquipments(lineVal).forEach(eq => equipList.innerHTML += `<option value="${eq}">`);
+                }
+            } else {
+                const equipSel = document.getElementById(`${formType}-equip`);
+                equipSel.innerHTML = '<option value="">설비 선택</option>';
+                if(lineVal) {
+                    getDynamicEquipments(lineVal).forEach(eq => equipSel.innerHTML += `<option value="${eq}">${eq}</option>`);
+                }
             }
         };
 
@@ -1222,7 +1298,7 @@
             setTimeout(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
         };
 
-        // UI Asynchronous Switching (Zero-Lag)
+        // 3. UI Asynchronous Switching (Zero-Lag)
         window.switchTab = (tabId) => {
             currentTabId = tabId;
             
@@ -1255,7 +1331,6 @@
                     } else if (tabId === 'edit-history') {
                         renderEditHistory();
                     } else if (tabId === 'pm-list') {
-                        // 예방점검 리스트 탭 진입 시 전역 상태에 상관없이 전체 목록 조회 초기화
                         const pmLineEl = document.getElementById('pm-filter-line');
                         if (pmLineEl) {
                             pmLineEl.value = 'ALL';
@@ -1283,8 +1358,15 @@
                 document.getElementById(`nav-line-${line}`)?.classList.add('bg-brand-900', 'text-blue-400', 'border-blue-500', 'font-bold');
             }
             
-            // 대시보드 뷰로 강제 이동 (라우팅 분리)
+            const pmLineEl = document.getElementById('pm-filter-line');
+            if (pmLineEl) { pmLineEl.value = line; window.updatePMFilterEquip(); }
+            if (document.getElementById('bd-filter-line')) document.getElementById('bd-filter-line').value = line;
+
+            updatePageTitle();
+            closeSidebarIfMobile();
+            
             switchTab('dashboard'); 
+            window.debouncedApplyFilterAndRender();
         };
 
         function toggleDashboardViews() {
@@ -1318,7 +1400,7 @@
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
-                document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 md:mr-2"></span> 연동됨`;
+                document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 md:mr-2"></span>`;
                 loadFirestoreData();
             }
         });
@@ -1353,45 +1435,52 @@
             });
         }
 
-        function getLocalTodayString() {
-            const d = new Date();
-            const offset = d.getTimezoneOffset() * 60000;
-            return (new Date(d - offset)).toISOString().split('T')[0];
-        }
-
         // 라인별 상세 대시보드 미니 테이블 렌더링
         window.renderDashboardMiniTables = (linePMData, lineBDData) => {
             const todayStr = getLocalTodayString();
 
-            // 1. Pending PMs
-            const pendingPMs = linePMData.filter(d => d.status !== '점검')
+            const pendingPMs = linePMData.filter(d => d.status !== '점검' && d.nextCheckDate >= todayStr)
+                                         .sort((a,b) => new Date(a.nextCheckDate) - new Date(b.nextCheckDate));
+            const overduePMs = linePMData.filter(d => d.status !== '점검' && d.nextCheckDate < todayStr)
                                          .sort((a,b) => new Date(a.nextCheckDate) - new Date(b.nextCheckDate));
             
-            let pmHtml = '';
+            let pmPendingHtml = '';
             if(pendingPMs.length === 0) {
-                pmHtml = '<tr><td colspan="5" class="text-center py-4 text-slate-400">대기중인 항목이 없습니다.</td></tr>';
+                pmPendingHtml = '<tr><td colspan="3" class="text-center py-4 text-slate-400">당주기 대기중인 항목이 없습니다.</td></tr>';
             } else {
-                pendingPMs.forEach(d => {
-                    const isOverdue = d.nextCheckDate < todayStr;
-                    const badge = isOverdue ? `<span class="text-red-500 font-bold px-1.5 py-0.5 rounded bg-red-50">지연</span>` : `<span class="text-slate-500 font-bold">대기</span>`;
-                    pmHtml += `
-                        <tr class="hover:bg-slate-50 border-b border-slate-50 transition-colors">
+                pendingPMs.slice(0, 15).forEach(d => {
+                    pmPendingHtml += `
+                        <tr class="hover:bg-blue-50 border-b border-slate-50 transition-colors">
                             <td class="py-1.5 px-3 font-bold text-slate-700 max-w-[100px] truncate" title="${d.equipmentName}">${d.equipmentName}</td>
                             <td class="py-1.5 px-3 text-slate-600 max-w-[150px] truncate" title="${d.taskDetails}">${d.taskDetails}</td>
-                            <td class="py-1.5 px-2 text-blue-600 text-center font-bold">${d.cycleType}</td>
-                            <td class="py-1.5 px-2 text-center ${isOverdue ? 'text-red-500 font-bold' : 'text-slate-700'}">${d.nextCheckDate}</td>
-                            <td class="py-1.5 px-2 text-center">${badge}</td>
+                            <td class="py-1.5 px-2 text-center text-slate-700 font-medium">${d.nextCheckDate}</td>
                         </tr>
                     `;
                 });
             }
-            document.getElementById('dash-mini-pm-body').innerHTML = pmHtml;
+            document.getElementById('dash-mini-pm-pending-body').innerHTML = pmPendingHtml;
+
+            let pmOverdueHtml = '';
+            if(overduePMs.length === 0) {
+                pmOverdueHtml = '<tr><td colspan="3" class="text-center py-4 text-slate-400">지연된 항목이 없습니다.</td></tr>';
+            } else {
+                overduePMs.slice(0, 15).forEach(d => {
+                    pmOverdueHtml += `
+                        <tr class="hover:bg-red-100 border-b border-red-50 transition-colors">
+                            <td class="py-1.5 px-3 font-bold text-red-800 max-w-[100px] truncate" title="${d.equipmentName}">${d.equipmentName}</td>
+                            <td class="py-1.5 px-3 text-red-700 max-w-[150px] truncate" title="${d.taskDetails}">${d.taskDetails}</td>
+                            <td class="py-1.5 px-2 text-center text-red-600 font-bold">${d.nextCheckDate}</td>
+                        </tr>
+                    `;
+                });
+            }
+            document.getElementById('dash-mini-pm-overdue-body').innerHTML = pmOverdueHtml;
 
             // 2. Recent BDs
-            const recentBDs = lineBDData.slice(0, 20);
+            const recentBDs = lineBDData.slice(0, 15);
             let bdHtml = '';
             if(recentBDs.length === 0) {
-                bdHtml = '<tr><td colspan="4" class="text-center py-4 text-slate-400">최근 고장 내역이 없습니다.</td></tr>';
+                bdHtml = '<tr><td colspan="3" class="text-center py-4 text-slate-400">최근 고장 내역이 없습니다.</td></tr>';
             } else {
                 recentBDs.forEach(d => {
                     const startStr = (d.startTime||'').replace('T', ' ');
@@ -1400,7 +1489,6 @@
                             <td class="py-1.5 px-3 font-bold text-slate-700 max-w-[100px] truncate" title="${d.equipmentName}">${d.equipmentName}</td>
                             <td class="py-1.5 px-3 text-slate-600 max-w-[150px] truncate" title="${d.content}">${d.content}</td>
                             <td class="py-1.5 px-2 text-center text-slate-500">${startStr}</td>
-                            <td class="py-1.5 px-2 text-center text-red-500 font-bold">${d.durationMinutes}분</td>
                         </tr>
                     `;
                 });
@@ -1409,9 +1497,10 @@
         };
 
         function applyFilterAndRender() {
-            // 대시보드는 글로벌 필터(currentLineFilter)의 영향을 받음
             const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
             const dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+
+            window.updatePMFilterEquip();
 
             const activePMs = dashboardPMData.filter(d => d.status !== '점검');
             document.getElementById('kpi-pm-total').innerText = activePMs.length.toLocaleString();
@@ -1433,7 +1522,6 @@
                 document.getElementById('kpi-avg-downtime').innerText = Math.round(totalMins / dashboardBDData.length).toLocaleString();
             } else document.getElementById('kpi-avg-downtime').innerText = '0';
 
-            // 각 탭이 켜져있을 때만 렌더링 호출하여 부하 최소화
             if(currentTabId === 'pm-list') {
                 window.debouncedRenderPMList();
                 window.debouncedRenderPMHistory();
@@ -1456,7 +1544,6 @@
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => document.getElementById('pm-master-edit-modal-content').classList.remove('scale-95'), 10);
             
-            // UI Blocking 방지용 Async 호출
             setTimeout(() => {
                 window.tempMasterPMData = JSON.parse(JSON.stringify(rawPMData));
                 window.deletedPMIds = [];
@@ -1541,7 +1628,6 @@
                 return; 
             }
 
-            // Pagination Logic
             const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
             if (pmMasterPage > totalPages) pmMasterPage = Math.max(1, totalPages);
             const start = (pmMasterPage - 1) * ITEMS_PER_PAGE;
@@ -1607,7 +1693,6 @@
             document.getElementById('loadingOverlay').classList.add('flex');
 
             try {
-                // Find modified records
                 const modified = window.tempMasterPMData.filter(temp => {
                     const orig = rawPMData.find(r => r.id === temp.id);
                     if(!orig) return true; 
@@ -1621,14 +1706,13 @@
                 let batch = writeBatch(db);
 
                 const commitBatchIfNeeded = async () => {
-                    if (opsCount >= 490) { // Keep safe under 500 limit
+                    if (opsCount >= 490) { 
                         await batch.commit();
                         batch = writeBatch(db);
                         opsCount = 0;
                     }
                 };
 
-                // Apply Updates
                 for(const m of modified) {
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', m.id);
                     batch.update(docRef, {
@@ -1643,7 +1727,6 @@
                     opsCount++;
                     await commitBatchIfNeeded();
 
-                    // Audit Log (Add manually to avoid batch limits, or add to batch)
                     const histRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history'));
                     batch.set(histRef, {
                         type: '예방점검 (마스터 일괄)',
@@ -1656,7 +1739,6 @@
                     await commitBatchIfNeeded();
                 }
 
-                // Apply Deletions
                 for(const delId of window.deletedPMIds) {
                     const orig = rawPMData.find(r => r.id === delId);
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', delId);
@@ -1801,7 +1883,8 @@
                 content: document.getElementById('edit-bd-content').value.trim(),
                 startTime: startStr,
                 endTime: endStr,
-                durationMinutes: durationMinutes
+                durationMinutes: durationMinutes,
+                shiftType: getShiftType(startStr) // Update shift type
             };
 
             let diffs = [];
@@ -1872,16 +1955,17 @@
             btn.disabled = true;
             btn.innerText = "등록 중...";
 
+            const cycleCode = normalizeCycle(document.getElementById('pm-cycle').value);
             const data = {
                 line: document.getElementById('pm-line').value,
                 equipmentName: document.getElementById('pm-equip').value,
                 category: document.getElementById('pm-category').value,
-                cycleType: normalizeCycle(document.getElementById('pm-cycle').value),
+                cycleType: cycleCode,
                 taskDetails: document.getElementById('pm-details').value.trim(),
                 criteria: document.getElementById('pm-criteria').value.trim(),
                 status: '미점검',
                 remarks: '',
-                nextCheckDate: getLocalTodayString(),
+                nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), cycleCode, 0),
                 createdAt: serverTimestamp()
             };
 
@@ -1905,13 +1989,13 @@
 
             let currentList = rawPMData;
             
-            // 로컬 필터 (전역 상태 currentLineFilter 무시)
             if(fLine !== 'ALL') currentList = currentList.filter(d => d.line === fLine);
             if(fCat !== 'ALL') currentList = currentList.filter(d => d.category === fCat);
             if(fCycle !== 'ALL') currentList = currentList.filter(d => normalizeCycle(d.cycleType) === fCycle);
             if(fEquip !== 'ALL') currentList = currentList.filter(d => d.equipmentName === fEquip);
             
-            // 상태(진행중/지연) 필터
+            const todayStr = getLocalTodayString();
+
             if(fStatus === 'PENDING') currentList = currentList.filter(d => d.status !== '점검');
             
             if(kw) {
@@ -1935,13 +2019,11 @@
                 return; 
             }
 
-            // Pagination Logic
             const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
             if (pmListPage > totalPages) pmListPage = Math.max(1, totalPages);
             const start = (pmListPage - 1) * ITEMS_PER_PAGE;
             const paginatedList = currentList.slice(start, start + ITEMS_PER_PAGE);
 
-            const todayStr = getLocalTodayString();
             let html = '';
             
             paginatedList.forEach((item, index) => {
@@ -2011,18 +2093,6 @@
             } catch(e) { showToast('저장 실패', 'error'); }
         };
 
-        function getNextDateString(cycleType) {
-            const d = new Date();
-            const normCycle = normalizeCycle(cycleType);
-            if(normCycle === '일별') d.setDate(d.getDate() + 1);
-            else if(normCycle === '주별') d.setDate(d.getDate() + 7);
-            else if(normCycle === '월별') d.setMonth(d.getMonth() + 1);
-            else if(normCycle === '분기별') d.setMonth(d.getMonth() + 3);
-            else if(normCycle === '연별') d.setFullYear(d.getFullYear() + 1);
-            const offset = d.getTimezoneOffset() * 60000;
-            return (new Date(d - offset)).toISOString().split('T')[0];
-        }
-
         window.handlePMResult = async (taskId, resultType) => {
             if(!currentUser) return;
             const task = rawPMData.find(t => t.id === taskId);
@@ -2036,10 +2106,11 @@
             batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', taskId), { status: '점검' });
 
             // 양호/불량 상관없이 자동으로 다음 주기 항목 생성 (Auto-regeneration)
+            // 기준일은 오늘(등록하는 날)을 기점으로 +1 Offset
             batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks')), {
                 line: task.line, equipmentName: task.equipmentName, category: task.category,
                 cycleType: normalizeCycle(task.cycleType), taskDetails: task.taskDetails, criteria: task.criteria,
-                status: '미점검', remarks: '', nextCheckDate: getNextDateString(task.cycleType), createdAt: serverTimestamp()
+                status: '미점검', remarks: '', nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), task.cycleType, 1), createdAt: serverTimestamp()
             });
 
             try { await batch.commit(); showToast(`[${resultType}] 실적이 등록되었습니다.`); } 
@@ -2176,7 +2247,7 @@
                     category: document.getElementById('bd-category').value, mainCategory: document.getElementById('bd-main-cat').value, 
                     subCategory: document.getElementById('bd-sub-cat').value, detailCategory: document.getElementById('bd-detail-cat').value,
                     content: document.getElementById('bd-content').value.trim(), startTime: startStr, endTime: endStr,
-                    durationMinutes, createdAt: serverTimestamp()
+                    durationMinutes, shiftType: getShiftType(startStr), createdAt: serverTimestamp()
                 });
                 showToast("고장 실적이 등록되었습니다."); e.target.reset();
                 document.getElementById('bd-equip').innerHTML = '<option value="">라인을 먼저 선택하세요</option>';
@@ -2228,6 +2299,11 @@
             paginatedList.forEach(item => {
                 const startStr = (item.startTime||'').replace('T', ' ');
                 const durStr = item.durationMinutes >= 60 ? `${Math.floor(item.durationMinutes/60)}시간 ${item.durationMinutes%60}분` : `${item.durationMinutes}분`;
+                
+                const shiftBadge = item.shiftType === '주말' ? '<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold mt-1 inline-block">주말</span>' : 
+                                   item.shiftType === '야간' ? '<span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold mt-1 inline-block">야간</span>' : 
+                                   '<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold mt-1 inline-block">주간</span>';
+
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
                         <td class="py-2.5 px-4 font-bold text-brand-600">${item.line || '-'}</td>
@@ -2236,7 +2312,7 @@
                         <td class="py-2.5 px-3 text-slate-600">${item.mainCategory}</td>
                         <td class="py-2.5 px-3 text-slate-600">${item.subCategory}</td>
                         <td class="py-2.5 px-3 text-slate-600">${item.detailCategory}</td>
-                        <td class="py-2.5 px-4">${startStr}</td>
+                        <td class="py-2.5 px-4">${startStr}<br>${shiftBadge}</td>
                         <td class="py-2.5 px-4 text-center text-red-500 font-bold">${durStr}</td>
                         <td class="py-2.5 px-4 min-w-[250px] whitespace-normal leading-snug break-words text-slate-700">${item.content}</td>
                         <td class="py-2.5 px-4 text-center">
@@ -2274,7 +2350,6 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            // 로딩 오버레이를 띄운 후 비동기로 파일 파싱 시작 (UI 블로킹 방지)
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('loadingOverlay').classList.add('flex');
 
@@ -2325,7 +2400,7 @@
                                         criteria: criteria, 
                                         status: '미점검', 
                                         remarks: '', 
-                                        nextCheckDate: getLocalTodayString(), 
+                                        nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), cycleCode, 0), 
                                         createdAt: serverTimestamp()
                                     });
                                 } else {
@@ -2334,7 +2409,6 @@
 
                                     if (!equipName || !content) continue;
 
-                                    // 커스텀 10자리 (YYMMDDHHmm) 변환 로직
                                     const startStr = parseCustomDateString(row[6]);
                                     const endStr = parseCustomDateString(row[7]);
 
@@ -2356,7 +2430,8 @@
                                         content: content, 
                                         startTime: startStr, 
                                         endTime: endStr, 
-                                        durationMinutes: dur, 
+                                        durationMinutes: dur,
+                                        shiftType: getShiftType(startStr), 
                                         createdAt: serverTimestamp()
                                     });
                                 }
