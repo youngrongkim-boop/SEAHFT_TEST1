@@ -142,7 +142,7 @@
         </div>
         
         <nav class="flex-1 py-4 overflow-y-auto hide-scroll overflow-x-hidden">
-            <button onclick="setGlobalLine('ALL'); switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent" title="종합현황 대시보드">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent" title="종합현황 대시보드">
                 <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">종합현황 대시보드</span>
             </button>
 
@@ -309,33 +309,33 @@
 
             <!-- VIEW: PM LIST -->
             <div id="view-pm-list" class="view-section hidden h-full flex-col gap-4 min-w-0 pb-4">
-                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col flex-1 min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[55%] min-h-[300px] min-w-0">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 shrink-0 gap-2">
                         <h3 class="text-base md:text-lg font-bold text-brand-800 flex items-center" id="pm-list-header-title">
                             <i data-lucide="list" class="w-5 h-5 mr-2 text-blue-500"></i> 예방점검 리스트
                         </h3>
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
-                            <select id="pm-filter-line" onchange="pmListPage=1; updatePMFilterEquip(); debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
+                            <select id="pm-filter-line" onchange="updatePMFilterEquip(); debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
                                 <option value="ALL">전체 라인</option>
                             </select>
-                            <select id="pm-filter-equip" onchange="pmListPage=1; debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[90px]">
+                            <select id="pm-filter-equip" onchange="debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[90px]">
                                 <option value="ALL">모든 설비</option>
                             </select>
-                            <select id="pm-filter-category" onchange="pmListPage=1; debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <select id="pm-filter-category" onchange="debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">구분: 전체</option>
                                 <option value="전기">전기</option>
                                 <option value="기계">기계</option>
                             </select>
-                            <select id="pm-filter-cycle" onchange="pmListPage=1; debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <select id="pm-filter-cycle" onchange="debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">주기: 전체</option>
                                 <option value="일별">일별</option><option value="주별">주별</option><option value="월별">월별</option><option value="분기별">분기별</option><option value="연별">연별</option>
                             </select>
-                            <input type="text" id="pm-search-keyword" onkeyup="pmListPage=1; debouncedRenderPMList()" placeholder="작업내용, 기준 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                            <input type="text" id="pm-search-keyword" onkeyup="debouncedRenderPMList()" placeholder="작업내용, 기준 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-list-count">총 0건</span>
                         </div>
                     </div>
                     
-                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded w-full custom-scroll relative">
+                    <div class="flex-1 overflow-x-auto overflow-y-auto border border-slate-200 rounded w-full custom-scroll">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -356,60 +356,43 @@
                             <tbody id="pm-list-body" class="divide-y divide-slate-200 text-slate-700"></tbody>
                         </table>
                     </div>
-                    <div id="pm-list-pagination"></div>
                 </div>
-            </div>
 
-            <!-- VIEW: BD LIST -->
-            <div id="view-bd-list" class="view-section hidden h-full flex-col min-w-0">
-                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
-                    <div class="flex flex-col gap-3 md:gap-4 mb-4 pb-4 border-b border-slate-100 shrink-0">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-base md:text-lg font-bold text-slate-800 flex items-center">
-                                <i data-lucide="activity" class="w-4 h-4 md:w-5 md:h-5 mr-2 text-slate-500"></i> 고장 실적 현황 리스트
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[45%] min-h-[250px] min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 shrink-0 gap-2">
+                        <div class="flex items-center">
+                            <h3 class="text-sm md:text-base font-bold text-slate-800 flex items-center">
+                                <i data-lucide="history" class="w-4 h-4 mr-1.5 text-slate-500"></i> 예방점검 실적 이력
                             </h3>
-                            <span class="text-xs md:text-sm font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="bd-list-count">총 0건</span>
+                            <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="ml-3 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-0.5 rounded hidden transition">필터 해제</button>
                         </div>
-                        
-                        <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
-                            <span class="text-[11px] md:text-xs font-bold text-slate-500 ml-1 mr-1 md:mr-2"><i data-lucide="filter" class="w-3.5 h-3.5 inline"></i> 필터:</span>
-                            <select id="bd-filter-line" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium min-w-[70px]">
-                                <option value="ALL">전체 라인</option>
+                        <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
+                            <select id="pm-history-filter-period" onchange="debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">전체 기간</option>
+                                <option value="TODAY">오늘</option>
+                                <option value="WEEK">이번 주</option>
+                                <option value="MONTH">이번 달</option>
                             </select>
-                            <select id="bd-filter-category" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
-                                <option value="ALL">전/기 구분</option><option value="기계">기계</option><option value="전기">전기</option>
-                            </select>
-                            <select id="bd-filter-main" onchange="bdListPage=1; updateSubFilterBD(); debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
-                                <option value="ALL">대분류 전체</option>
-                            </select>
-                            <select id="bd-filter-sub" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
-                                <option value="ALL">중분류 전체</option>
-                            </select>
-                            <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
-                            <input type="text" id="bd-search-keyword" onkeyup="bdListPage=1; debouncedRenderBDList()" placeholder="설비, 조치내용 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                            <input type="text" id="pm-history-search" onkeyup="debouncedRenderPMHistory()" placeholder="설비, 내용 검색..." class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none w-28 sm:w-40 min-w-0">
+                            <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1 rounded transition shadow-sm flex items-center">
+                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 출력
+                            </button>
                         </div>
                     </div>
-
-                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded-lg w-full custom-scroll relative">
-                        <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
+                    <div class="flex-1 overflow-x-auto overflow-y-auto border border-slate-200 rounded w-full custom-scroll">
+                        <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">라인</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">설비명</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">구분</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">대분류</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">중분류</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">소분류</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">발생일시</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center">조치시간</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 min-w-[250px]">고장/조치내용</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200">등록일시</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[200px]">작업 세부사항</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">결과</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
                                 </tr>
                             </thead>
-                            <tbody id="bd-list-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                            <tbody id="pm-history-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
                         </table>
                     </div>
-                    <div id="bd-list-pagination"></div>
                 </div>
             </div>
 
@@ -499,7 +482,59 @@
                 </div>
             </div>
 
-            <!-- VIEW: BD REGISTRATION -->
+            <!-- VIEW: BD LIST -->
+            <div id="view-bd-list" class="view-section hidden h-full flex-col min-w-0">
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
+                    <div class="flex flex-col gap-3 md:gap-4 mb-4 pb-4 border-b border-slate-100 shrink-0">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base md:text-lg font-bold text-slate-800 flex items-center">
+                                <i data-lucide="activity" class="w-4 h-4 md:w-5 md:h-5 mr-2 text-slate-500"></i> 고장 실적 현황 리스트
+                            </h3>
+                            <span class="text-xs md:text-sm font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="bd-list-count">총 0건</span>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <span class="text-[11px] md:text-xs font-bold text-slate-500 ml-1 mr-1 md:mr-2"><i data-lucide="filter" class="w-3.5 h-3.5 inline"></i> 필터:</span>
+                            <select id="bd-filter-line" onchange="debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium min-w-[70px]">
+                                <option value="ALL">전체 라인</option>
+                            </select>
+                            <select id="bd-filter-category" onchange="debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">전/기 구분</option><option value="기계">기계</option><option value="전기">전기</option>
+                            </select>
+                            <select id="bd-filter-main" onchange="updateSubFilterBD(); debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">대분류 전체</option>
+                            </select>
+                            <select id="bd-filter-sub" onchange="debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">중분류 전체</option>
+                            </select>
+                            <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
+                            <input type="text" id="bd-search-keyword" onkeyup="debouncedRenderBDList()" placeholder="설비, 조치내용 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-x-auto overflow-y-auto border border-slate-200 rounded-lg w-full custom-scroll">
+                        <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
+                            <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">라인</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">설비명</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">구분</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">대분류</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">중분류</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">소분류</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">발생일시</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center">조치시간</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 min-w-[250px]">고장/조치내용</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bd-list-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: BREAKDOWN REGISTRATION -->
             <div id="view-bd-reg" class="view-section hidden space-y-4 md:space-y-6 flex-col min-w-0">
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
                     <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-100">
@@ -587,7 +622,7 @@
                         </h3>
                         <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="history-list-count">총 0건</span>
                     </div>
-                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded w-full custom-scroll relative">
+                    <div class="flex-1 overflow-x-auto overflow-y-auto border border-slate-200 rounded w-full custom-scroll">
                         <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -600,7 +635,6 @@
                             <tbody id="edit-history-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
                         </table>
                     </div>
-                    <div id="edit-history-pagination"></div>
                 </div>
             </div>
 
@@ -619,27 +653,27 @@
             <div class="px-6 py-3 border-b border-slate-200 bg-white flex flex-wrap gap-2 items-center justify-between shrink-0">
                 <div class="flex flex-wrap gap-2 items-center">
                     <span class="text-xs font-bold text-slate-500 mr-1"><i data-lucide="filter" class="w-4 h-4 inline"></i> 필터:</span>
-                    <select id="pm-master-filter-line" onchange="pmMasterPage=1; debouncedRenderPMMasterTable()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 focus:ring-1 focus:ring-blue-500 outline-none w-28">
+                    <select id="pm-master-filter-line" onchange="renderPMMasterTable()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 focus:ring-1 focus:ring-blue-500 outline-none w-28">
                         <option value="ALL">전체 라인</option>
                     </select>
-                    <select id="pm-master-filter-category" onchange="pmMasterPage=1; debouncedRenderPMMasterTable()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 focus:ring-1 focus:ring-blue-500 outline-none w-24">
+                    <select id="pm-master-filter-category" onchange="renderPMMasterTable()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 focus:ring-1 focus:ring-blue-500 outline-none w-24">
                         <option value="ALL">전/기 구분</option>
                         <option value="기계">기계</option>
                         <option value="전기">전기</option>
                     </select>
-                    <input type="text" id="pm-master-keyword" onkeyup="pmMasterPage=1; debouncedRenderPMMasterTable()" placeholder="키워드 검색..." class="border border-slate-300 rounded-md px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-blue-500 outline-none w-48">
+                    <input type="text" id="pm-master-keyword" onkeyup="debouncedRenderPMMasterTable()" placeholder="키워드 검색..." class="border border-slate-300 rounded-md px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-blue-500 outline-none w-48">
                     <span class="text-xs font-bold text-slate-500 ml-2" id="pm-master-count">총 0건</span>
                 </div>
                 <div>
                     <button onclick="bulkDeletePMMaster()" class="flex items-center px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-xs font-bold transition shadow-sm">
-                        <i data-lucide="trash-2" class="w-4 h-4 mr-1.5"></i> 현재 화면 데이터 일괄 삭제
+                        <i data-lucide="trash-2" class="w-4 h-4 mr-1.5"></i> 화면의 목록 일괄 삭제
                     </button>
                 </div>
             </div>
 
             <!-- Table Container -->
-            <div class="flex-1 overflow-auto custom-scroll bg-slate-50/50 flex flex-col relative">
-                <table class="w-full text-left text-xs whitespace-nowrap bg-white border-b border-slate-200 shadow-sm">
+            <div class="flex-1 overflow-auto custom-scroll bg-slate-50/50 p-4">
+                <table class="w-full text-left text-xs whitespace-nowrap bg-white border border-slate-200 rounded-lg shadow-sm">
                     <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                         <tr>
                             <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-12">No</th>
@@ -657,7 +691,6 @@
                         <!-- JS Render -->
                     </tbody>
                 </table>
-                <div id="pm-master-pagination" class="mt-auto sticky bottom-0"></div>
             </div>
 
             <!-- Footer -->
@@ -862,14 +895,6 @@
         let activeRemarksTaskId = null;
         let selectedHistoryTaskId = null;
 
-        // Pagination State
-        const ITEMS_PER_PAGE = 20;
-        let pmListPage = 1;
-        let pmHistPage = 1;
-        let bdListPage = 1;
-        let editHistPage = 1;
-        let pmMasterPage = 1;
-
         // Master Edit Mode State
         window.tempMasterPMData = [];
         window.deletedPMIds = [];
@@ -890,25 +915,6 @@
         window.debouncedApplyFilterAndRender = debounce(() => applyFilterAndRender(), 200);
         window.debouncedRenderCharts = debounce((dbData, pmData) => renderCharts(dbData, pmData), 250);
         window.debouncedRenderPMMasterTable = debounce(() => renderPMMasterTable(), 150);
-
-        // Pagination Helper
-        function getPaginationHTML(currentPage, totalPages, functionPrefix) {
-            if (totalPages <= 1) return '';
-            return `
-                <div class="flex justify-center items-center py-3 gap-2 bg-white border-t border-slate-200 sticky bottom-0 w-full mt-auto shrink-0 z-10">
-                    <button onclick="${functionPrefix}(${currentPage - 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs font-bold transition disabled:opacity-50" ${currentPage <= 1 ? 'disabled' : ''}>◀ 이전</button>
-                    <span class="text-xs font-bold text-slate-600 px-3">${currentPage} / ${totalPages}</span>
-                    <button onclick="${functionPrefix}(${currentPage + 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs font-bold transition disabled:opacity-50" ${currentPage >= totalPages ? 'disabled' : ''}>다음 ▶</button>
-                </div>
-            `;
-        }
-
-        // Pagination Handlers
-        window.changePMListPage = (page) => { pmListPage = page; window.debouncedRenderPMList(); };
-        window.changePMHistPage = (page) => { pmHistPage = page; window.debouncedRenderPMHistory(); };
-        window.changeBDListPage = (page) => { bdListPage = page; window.debouncedRenderBDList(); };
-        window.changeEditHistPage = (page) => { editHistPage = page; renderEditHistory(); };
-        window.changePMMasterPage = (page) => { pmMasterPage = page; window.debouncedRenderPMMasterTable(); };
 
         // Init
         lucide.createIcons();
@@ -1127,7 +1133,6 @@
             setTimeout(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
         };
 
-        // UI Asynchronous Switching
         window.switchTab = (tabId) => {
             currentTabId = tabId;
             document.querySelectorAll('.nav-btn').forEach(el => { el.classList.remove('bg-brand-900', 'text-blue-400', 'border-blue-500', 'font-bold'); el.classList.add('hover:bg-brand-700', 'border-transparent', 'text-slate-300'); });
@@ -1152,21 +1157,16 @@
             updatePageTitle();
             closeSidebarIfMobile();
             
-            // Asynchronous rendering to prevent UI freeze
-            setTimeout(() => {
-                if(tabId === 'dashboard') {
-                    toggleDashboardViews();
-                    const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
-                    const dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
-                    window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
-                } else if (tabId === 'edit-history') {
-                    renderEditHistory();
-                } else if (tabId === 'pm-list') {
-                    window.debouncedRenderPMList();
-                } else if (tabId === 'bd-list') {
-                    window.debouncedRenderBDList();
-                }
-            }, 10);
+            if(tabId === 'dashboard') {
+                toggleDashboardViews();
+                const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
+                const dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+                window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
+            } else if (tabId === 'edit-history') {
+                renderEditHistory();
+            } else if (tabId === 'pm-list') {
+                window.debouncedRenderPMList();
+            }
         };
 
         window.setGlobalLine = (line) => {
@@ -1288,7 +1288,6 @@
             } else document.getElementById('kpi-avg-downtime').innerText = '0';
 
             if(currentTabId === 'pm-list') window.debouncedRenderPMList();
-            if(currentTabId === 'bd-list') window.debouncedRenderBDList();
             if(currentTabId === 'dashboard') {
                 toggleDashboardViews();
                 window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
@@ -1299,23 +1298,19 @@
         // PM Master Edit Mode (일괄 관리)
         // ==========================================
         window.openPMMasterModal = () => {
+            window.tempMasterPMData = JSON.parse(JSON.stringify(rawPMData));
+            window.deletedPMIds = [];
+            
+            document.getElementById('pm-master-filter-line').value = 'ALL';
+            document.getElementById('pm-master-filter-category').value = 'ALL';
+            document.getElementById('pm-master-keyword').value = '';
+            
+            window.renderPMMasterTable();
+            
             const modal = document.getElementById('pm-master-edit-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => document.getElementById('pm-master-edit-modal-content').classList.remove('scale-95'), 10);
-            
-            // UI Blocking 방지용 Async 호출
-            setTimeout(() => {
-                window.tempMasterPMData = JSON.parse(JSON.stringify(rawPMData));
-                window.deletedPMIds = [];
-                pmMasterPage = 1;
-                
-                document.getElementById('pm-master-filter-line').value = 'ALL';
-                document.getElementById('pm-master-filter-category').value = 'ALL';
-                document.getElementById('pm-master-keyword').value = '';
-                
-                renderPMMasterTable();
-                lucide.createIcons({root: modal});
-            }, 50);
+            lucide.createIcons({root: modal});
         };
 
         window.closePMMasterModal = () => {
@@ -1333,11 +1328,11 @@
         window.deletePMMasterRow = (id) => {
             window.deletedPMIds.push(id);
             window.tempMasterPMData = window.tempMasterPMData.filter(d => d.id !== id);
-            renderPMMasterTable();
+            window.renderPMMasterTable();
         };
 
         window.bulkDeletePMMaster = () => {
-            if(!confirm("현재 필터링되어 화면에 보이는 목록 전체를 삭제하시겠습니까?\n(하단의 일괄 저장 버튼을 눌러야 최종 반영됩니다.)")) return;
+            if(!confirm("현재 화면에 필터링된 목록을 모두 삭제하시겠습니까?\n(일괄 저장 시 최종 반영됩니다)")) return;
 
             const fLine = document.getElementById('pm-master-filter-line').value;
             const fCat = document.getElementById('pm-master-filter-category').value;
@@ -1358,8 +1353,7 @@
             window.deletedPMIds.push(...idsToDelete);
             window.tempMasterPMData = window.tempMasterPMData.filter(d => !idsToDelete.includes(d.id));
 
-            pmMasterPage = 1;
-            renderPMMasterTable();
+            window.renderPMMasterTable();
         };
 
         window.renderPMMasterTable = () => {
@@ -1380,30 +1374,23 @@
                 );
             }
 
-            document.getElementById('pm-master-count').innerText = `총 ${list.length}건`;
+            document.getElementById('pm-master-count').innerText = `현재 표시: ${list.length}건`;
 
             if(list.length === 0) { 
                 tbody.innerHTML = `<tr><td colspan="9" class="py-12 text-center text-slate-400 text-sm font-bold bg-white">데이터가 없습니다.</td></tr>`; 
-                document.getElementById('pm-master-pagination').innerHTML = '';
                 return; 
             }
-
-            // Pagination Logic
-            const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
-            if (pmMasterPage > totalPages) pmMasterPage = Math.max(1, totalPages);
-            const start = (pmMasterPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = list.slice(start, start + ITEMS_PER_PAGE);
 
             let html = '';
             let lineOptions = LINES.map(l => `<option value="${l}">${l}</option>`).join('');
             
-            paginatedList.forEach((item, index) => {
-                const absIndex = start + index + 1;
+            list.forEach((item, index) => {
+                // Determine line selected
                 const currLineOpt = lineOptions.replace(`value="${item.line}"`, `value="${item.line}" selected`);
 
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 bg-white">
-                        <td class="py-1.5 px-3 text-center text-slate-400 font-bold">${absIndex}</td>
+                        <td class="py-1.5 px-3 text-center text-slate-400 font-bold">${index + 1}</td>
                         <td class="py-1.5 px-2">
                             <select class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 font-bold text-slate-700" onchange="updateTempPMData('${item.id}', 'line', this.value)">
                                 ${currLineOpt}
@@ -1443,7 +1430,6 @@
                 `;
             });
             tbody.innerHTML = html;
-            document.getElementById('pm-master-pagination').innerHTML = getPaginationHTML(pmMasterPage, totalPages, 'window.changePMMasterPage');
         };
 
         window.savePMMaster = async () => {
@@ -1457,7 +1443,7 @@
                 // Find modified records
                 const modified = window.tempMasterPMData.filter(temp => {
                     const orig = rawPMData.find(r => r.id === temp.id);
-                    if(!orig) return true; 
+                    if(!orig) return true; // Newly added? (Not implemented in UI, but safe guard)
                     return orig.line !== temp.line || orig.equipmentName !== temp.equipmentName ||
                            orig.category !== temp.category || orig.cycleType !== temp.cycleType ||
                            orig.taskDetails !== temp.taskDetails || orig.criteria !== temp.criteria ||
@@ -1675,17 +1661,11 @@
 
             if(rawEditHistoryData.length === 0) { 
                 tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">수정 이력이 없습니다.</td></tr>`; 
-                document.getElementById('edit-history-pagination').innerHTML = '';
                 return; 
             }
 
-            const totalPages = Math.ceil(rawEditHistoryData.length / ITEMS_PER_PAGE);
-            if (editHistPage > totalPages) editHistPage = Math.max(1, totalPages);
-            const start = (editHistPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = rawEditHistoryData.slice(start, start + ITEMS_PER_PAGE);
-
             let html = '';
-            paginatedList.forEach(item => {
+            rawEditHistoryData.slice(0, 100).forEach(item => {
                 let dateStr = '-';
                 if(item.createdAt && item.createdAt.seconds) {
                     const d = new Date(item.createdAt.seconds * 1000);
@@ -1706,7 +1686,6 @@
                 `;
             });
             tbody.innerHTML = html;
-            document.getElementById('edit-history-pagination').innerHTML = getPaginationHTML(editHistPage, totalPages, 'window.changeEditHistPage');
         };
 
         // ==========================================
@@ -1771,23 +1750,12 @@
             });
 
             document.getElementById('pm-list-count').innerText = `총 ${currentList.length}건`;
-            if(currentList.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검항목이 없습니다.</td></tr>`; 
-                document.getElementById('pm-list-pagination').innerHTML = '';
-                return; 
-            }
-
-            // Pagination Logic
-            const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
-            if (pmListPage > totalPages) pmListPage = Math.max(1, totalPages);
-            const start = (pmListPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = currentList.slice(start, start + ITEMS_PER_PAGE);
+            if(currentList.length === 0) { tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검항목이 없습니다.</td></tr>`; return; }
 
             const todayStr = getLocalTodayString();
             let html = '';
             
-            paginatedList.forEach((item, index) => {
-                const absIndex = start + index + 1;
+            currentList.forEach((item, index) => {
                 const isDone = item.status === '점검';
                 const isOverdue = !isDone && item.nextCheckDate < todayStr;
                 
@@ -1811,7 +1779,7 @@
 
                 html += `
                     <tr class="${rowColor} ${highlight} transition-colors border-b border-slate-100">
-                        <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
+                        <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${index + 1}</td>
                         <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line}</td>
                         <td class="py-2.5 px-3 font-bold ${isOverdue && !isDone ? 'text-red-700' : 'text-slate-800'}">${item.equipmentName}</td>
                         <td class="py-2.5 px-2 text-center text-slate-600">${item.category}</td>
@@ -1829,7 +1797,6 @@
                 `;
             });
             tbody.innerHTML = html;
-            document.getElementById('pm-list-pagination').innerHTML = getPaginationHTML(pmListPage, totalPages, 'window.changePMListPage');
             lucide.createIcons({root: tbody});
         };
 
@@ -1892,7 +1859,6 @@
         window.clearHistorySelection = () => {
             selectedHistoryTaskId = null;
             document.getElementById('btn-clear-history-filter').classList.add('hidden');
-            pmListPage = 1; pmHistPage = 1;
             window.debouncedRenderPMList(); window.debouncedRenderPMHistory();
         };
         
@@ -1935,19 +1901,10 @@
             const tbody = document.getElementById('pm-history-body');
             const list = getFilteredPMHistory();
 
-            if(list.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 bg-white text-xs md:text-sm">해당 이력이 없습니다.</td></tr>`; 
-                document.getElementById('pm-history-pagination').innerHTML = '';
-                return; 
-            }
-
-            const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
-            if (pmHistPage > totalPages) pmHistPage = Math.max(1, totalPages);
-            const start = (pmHistPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = list.slice(start, start + ITEMS_PER_PAGE);
+            if(list.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 bg-white text-xs md:text-sm">해당 이력이 없습니다.</td></tr>`; return; }
 
             let html = '';
-            paginatedList.forEach(item => {
+            list.slice(0, 50).forEach(item => {
                 let dateStr = '-';
                 if(item.checkedAt && item.checkedAt.seconds) {
                     const d = new Date(item.checkedAt.seconds * 1000);
@@ -1955,7 +1912,7 @@
                 }
                 const resBadge = item.result === '양호' ? `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">양호</span>` : `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">불량</span>`;
                 html += `
-                    <tr class="bg-white hover:bg-slate-50 transition-colors border-b border-slate-100">
+                    <tr class="bg-white hover:bg-slate-50 transition-colors">
                         <td class="py-2 px-3 font-medium text-slate-500">${dateStr}</td>
                         <td class="py-2 px-3 font-bold text-slate-800">${item.equipmentName}</td>
                         <td class="py-2 px-3 text-slate-700 whitespace-normal min-w-[200px] break-words leading-snug">${item.taskDetails}</td>
@@ -1965,7 +1922,6 @@
                 `;
             });
             tbody.innerHTML = html;
-            document.getElementById('pm-history-pagination').innerHTML = getPaginationHTML(pmHistPage, totalPages, 'window.changePMHistPage');
         };
 
         window.exportPMHistoryToExcel = () => {
@@ -2046,20 +2002,10 @@
 
             document.getElementById('bd-list-count').innerText = `총 ${list.length}건`;
 
-            if(list.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="10" class="py-12 text-center text-slate-400 text-xs md:text-sm">등록된 고장 실적이 없습니다.</td></tr>`; 
-                document.getElementById('bd-list-pagination').innerHTML = '';
-                return; 
-            }
-
-            // Pagination Logic
-            const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
-            if (bdListPage > totalPages) bdListPage = Math.max(1, totalPages);
-            const start = (bdListPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = list.slice(start, start + ITEMS_PER_PAGE);
+            if(list.length === 0) { tbody.innerHTML = `<tr><td colspan="10" class="py-12 text-center text-slate-400 text-xs md:text-sm">등록된 고장 실적이 없습니다.</td></tr>`; return; }
 
             let html = '';
-            paginatedList.forEach(item => {
+            list.forEach(item => {
                 const startStr = (item.startTime||'').replace('T', ' ');
                 const durStr = item.durationMinutes >= 60 ? `${Math.floor(item.durationMinutes/60)}시간 ${item.durationMinutes%60}분` : `${item.durationMinutes}분`;
                 html += `
@@ -2080,7 +2026,6 @@
                 `;
             });
             tbody.innerHTML = html;
-            document.getElementById('bd-list-pagination').innerHTML = getPaginationHTML(bdListPage, totalPages, 'window.changeBDListPage');
             lucide.createIcons({root: tbody});
         };
 
@@ -2108,114 +2053,104 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            // 로딩 오버레이를 띄운 후 비동기로 파일 파싱 시작 (UI 블로킹 방지)
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-            document.getElementById('loadingOverlay').classList.add('flex');
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const workbook = XLSX.read(evt.target.result, {type: 'binary'});
+                    const sheetNames = workbook.SheetNames;
+                    const validLines = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'SSCL'];
+                    
+                    let totalRows = 0;
+                    const batch = writeBatch(db);
+                    let count = 0;
 
-            setTimeout(() => {
-                const reader = new FileReader();
-                reader.onload = async (evt) => {
-                    try {
-                        const workbook = XLSX.read(evt.target.result, {type: 'binary'});
-                        const sheetNames = workbook.SheetNames;
-                        const validLines = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'SSCL'];
+                    for (const sheetName of sheetNames) {
+                        if (count > 490) break; // Firestore batch limit
+
+                        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
+                        if(rows.length <= 1) continue; 
                         
-                        let totalRows = 0;
-                        const batch = writeBatch(db);
-                        let count = 0;
+                        let matchedLine = validLines.find(l => sheetName.toUpperCase().includes(l));
+                        if (!matchedLine) matchedLine = sheetName; 
 
-                        for (const sheetName of sheetNames) {
-                            if (count > 490) break; // Firestore batch limit
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            if (!row || row.length === 0) continue; 
 
-                            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
-                            if(rows.length <= 1) continue; 
+                            if (count > 490) break;
                             
-                            let matchedLine = validLines.find(l => sheetName.toUpperCase().includes(l));
-                            if (!matchedLine) matchedLine = sheetName; 
+                            if (type === 'pm') {
+                                const equipName = String(row[1] || '').trim(); // B
+                                const categoryStr = String(row[2] || '기계').trim(); // C
+                                const taskDetails = String(row[3] || '').trim(); // D
+                                const criteria = String(row[4] || '').trim(); // E
+                                const cycleVal = String(row[5] || '').trim(); // F
 
-                            for (let i = 1; i < rows.length; i++) {
-                                const row = rows[i];
-                                if (!row || row.length === 0) continue; 
+                                if (!equipName || !taskDetails) continue;
 
-                                if (count > 490) break;
-                                
-                                if (type === 'pm') {
-                                    const equipName = String(row[1] || '').trim(); // B: 위치(설비명)
-                                    const categoryStr = String(row[2] || '기계').trim(); // C: 점검분류
-                                    const taskDetails = String(row[3] || '').trim(); // D: 작업세부사항
-                                    const criteria = String(row[4] || '').trim(); // E: 기준값
-                                    const cycleVal = String(row[5] || '').trim(); // F: 주기
+                                const cycleCode = normalizeCycle(cycleVal);
 
-                                    if (!equipName || !taskDetails) continue;
+                                batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks')), {
+                                    line: matchedLine, 
+                                    equipmentName: equipName, 
+                                    category: categoryStr, 
+                                    cycleType: cycleCode,
+                                    taskDetails: taskDetails, 
+                                    criteria: criteria, 
+                                    status: '미점검', 
+                                    remarks: '', 
+                                    nextCheckDate: getLocalTodayString(), 
+                                    createdAt: serverTimestamp()
+                                });
+                            } else {
+                                const equipName = String(row[0] || '').trim();
+                                const content = String(row[5] || '').trim();
 
-                                    const cycleCode = normalizeCycle(cycleVal);
+                                if (!equipName || !content) continue;
 
-                                    batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks')), {
-                                        line: matchedLine, 
-                                        equipmentName: equipName, 
-                                        category: categoryStr, 
-                                        cycleType: cycleCode,
-                                        taskDetails: taskDetails, 
-                                        criteria: criteria, 
-                                        status: '미점검', 
-                                        remarks: '', 
-                                        nextCheckDate: getLocalTodayString(), 
-                                        createdAt: serverTimestamp()
-                                    });
-                                } else {
-                                    const equipName = String(row[0] || '').trim();
-                                    const content = String(row[5] || '').trim();
+                                const startStr = parseExcelDate(row[6]);
+                                const endStr = parseExcelDate(row[7]);
 
-                                    if (!equipName || !content) continue;
-
-                                    const startStr = parseExcelDate(row[6]);
-                                    const endStr = parseExcelDate(row[7]);
-
-                                    let dur = 0;
-                                    if(startStr && endStr) { 
-                                        const s = new Date(startStr);
-                                        const e = new Date(endStr); 
-                                        dur = Math.round((e-s)/60000); 
-                                        if(dur < 0) dur = 0; 
-                                    }
-
-                                    batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs')), {
-                                        line: matchedLine, 
-                                        equipmentName: equipName, 
-                                        category: String(row[1] || '기계').trim(),
-                                        mainCategory: String(row[2] || '').trim(), 
-                                        subCategory: String(row[3] || '').trim(), 
-                                        detailCategory: String(row[4] || '').trim(), 
-                                        content: content, 
-                                        startTime: startStr, 
-                                        endTime: endStr, 
-                                        durationMinutes: dur, 
-                                        createdAt: serverTimestamp()
-                                    });
+                                let dur = 0;
+                                if(startStr && endStr) { 
+                                    const s = new Date(startStr);
+                                    const e = new Date(endStr); 
+                                    dur = Math.round((e-s)/60000); 
+                                    if(dur < 0) dur = 0; 
                                 }
-                                count++;
-                                totalRows++;
-                            }
-                        }
 
-                        if(totalRows === 0) {
-                            showToast("유효한 데이터가 없거나 양식이 맞지 않습니다.", "error");
-                        } else {
-                            showToast(`엑셀 파싱 완료. ${totalRows}건 등록 중...`, "info");
-                            await batch.commit(); 
-                            showToast(`${totalRows}건 일괄 등록 성공!`, "success");
+                                batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs')), {
+                                    line: matchedLine, 
+                                    equipmentName: equipName, 
+                                    category: String(row[1] || '기계').trim(),
+                                    mainCategory: String(row[2] || '').trim(), 
+                                    subCategory: String(row[3] || '').trim(), 
+                                    detailCategory: String(row[4] || '').trim(), 
+                                    content: content, 
+                                    startTime: startStr, 
+                                    endTime: endStr, 
+                                    durationMinutes: dur, 
+                                    createdAt: serverTimestamp()
+                                });
+                            }
+                            count++;
+                            totalRows++;
                         }
-                    } catch(err) { 
-                        console.error(err);
-                        showToast("엑셀 업로드 실패. 양식을 확인하세요.", "error"); 
-                    } finally { 
-                        e.target.value = ''; 
-                        document.getElementById('loadingOverlay').classList.add('hidden');
-                        document.getElementById('loadingOverlay').classList.remove('flex');
                     }
-                };
-                reader.readAsBinaryString(file);
-            }, 50); // 50ms 후 파싱 시작하여 모달이 먼저 그려지도록 유도
+
+                    if(totalRows === 0) return showToast("유효한 데이터가 없거나 양식이 맞지 않습니다.", "error");
+
+                    showToast(`엑셀 파싱 완료. ${totalRows}건 등록 중...`, "info");
+                    await batch.commit(); 
+                    showToast(`${totalRows}건 일괄 등록 성공!`, "success");
+                } catch(err) { 
+                    console.error(err);
+                    showToast("엑셀 업로드 실패. 양식을 확인하세요.", "error"); 
+                } finally { 
+                    e.target.value = ''; 
+                }
+            };
+            reader.readAsBinaryString(file);
         };
 
         // ==========================================
