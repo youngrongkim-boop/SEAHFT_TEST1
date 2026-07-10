@@ -931,7 +931,7 @@
         const appId = 'seah-cm-pdm-appid'; 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        const db = getFirestore(app, "seahft1");
 
         // Constants
         const LINES = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL'];
