@@ -204,7 +204,7 @@
         <div class="flex-1 overflow-y-auto p-4 md:p-6 relative min-w-0 custom-scroll" id="views-container">
             
             <!-- 점검 지연 경고 알림창 -->
-            <div id="overdue-alert" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-6 shadow-sm flex items-start cursor-pointer hover:bg-red-100 transition" onclick="goToPMListPending()">
+            <div id="overdue-alert" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-6 shadow-sm flex items-start cursor-pointer hover:bg-red-100 transition" onclick="goToPMListOverdue()">
                 <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2.5 shrink-0 mt-0.5"></i>
                 <div>
                     <h4 class="font-bold text-sm">예방점검 지연 항목 발생</h4>
@@ -217,9 +217,9 @@
                 
                 <!-- 공통 KPI Cards (Deep Linking Applied) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToPMListPending()" title="대기/지연중인 항목 리스트로 이동">
+                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToPMListPending()" title="대기중인 항목 리스트로 이동">
                         <div>
-                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">진행중/지연 예방점검</p>
+                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">진행중 예방점검</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="kpi-pm-total">0</h3>
                         </div>
                         <div class="p-3 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="clipboard-check" class="w-5 h-5 md:w-6 md:h-6"></i></div>
@@ -309,8 +309,8 @@
                         <!-- 1. 당주기 대기 목록 -->
                         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[350px]">
                             <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
-                                <span class="flex items-center"><i data-lucide="calendar-clock" class="w-4 h-4 mr-2 text-blue-500"></i> 당주기 대기 목록</span>
-                                <button onclick="goToPMListPending()" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition">전체보기 &rarr;</button>
+                                <span class="flex items-center"><i data-lucide="calendar-clock" class="w-4 h-4 mr-2 text-blue-500"></i> 이번주 점검항목</span>
+                                <button onclick="goToPMListThisWeek()" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition">전체보기 &rarr;</button>
                             </h4>
                             <div class="flex-1 overflow-auto custom-scroll border border-slate-100 rounded-lg">
                                 <table class="w-full text-left text-xs whitespace-nowrap min-w-[400px]">
@@ -325,8 +325,8 @@
                         <!-- 2. 지연 목록 -->
                         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[350px]">
                             <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
-                                <span class="flex items-center"><i data-lucide="alert-circle" class="w-4 h-4 mr-2 text-red-500"></i> 점검 지연 목록</span>
-                                <button onclick="goToPMListPending()" class="text-[10px] text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition">전체보기 &rarr;</button>
+                                <span class="flex items-center"><i data-lucide="alert-circle" class="w-4 h-4 mr-2 text-red-500"></i> 점검지연 항목</span>
+                                <button onclick="goToPMListOverdue()" class="text-[10px] text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition">전체보기 &rarr;</button>
                             </h4>
                             <div class="flex-1 overflow-auto custom-scroll border border-red-50 rounded-lg">
                                 <table class="w-full text-left text-xs whitespace-nowrap min-w-[400px]">
@@ -388,29 +388,30 @@
                             </select>
                             <select id="pm-filter-status" onchange="pmListPage=1; debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium text-red-600">
                                 <option value="ALL">상태: 전체</option>
-                                <option value="PENDING">대기/지연</option>
+                                <option value="PENDING">대기중</option>
+                                <option value="OVERDUE">지연됨</option>
                             </select>
                             <input type="text" id="pm-search-keyword" onkeyup="pmListPage=1; debouncedRenderPMList()" placeholder="작업내용, 기준 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-list-count">총 0건</span>
                         </div>
                     </div>
                     
-                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded w-full custom-scroll relative">
+                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded w-full custom-scroll relative max-h-[500px]">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">라인</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">설비명</th>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">구분</th>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">주기</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[120px]">점검기준</th>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">예정일</th>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">상태</th>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center">특이사항</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">실적등록</th>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">라인</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">구분</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">주기</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[120px]">점검기준</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">예정일</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">상태</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">특이사항</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">실적등록</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
                                 </tr>
                             </thead>
                             <tbody id="pm-list-body" class="divide-y divide-slate-200 text-slate-700"></tbody>
@@ -429,19 +430,22 @@
                             <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="ml-3 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-0.5 rounded hidden transition">필터 해제</button>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
+                            <select id="pm-history-filter-line" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
+                                <option value="ALL">전체 라인</option>
+                            </select>
                             <select id="pm-history-filter-period" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">전체 기간</option>
                                 <option value="TODAY">오늘</option>
                                 <option value="WEEK">이번 주</option>
                                 <option value="MONTH">이번 달</option>
                             </select>
-                            <input type="text" id="pm-history-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="라인, 설비, 내용 검색..." class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none w-32 sm:w-48 min-w-0">
+                            <input type="text" id="pm-history-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="설비, 내용 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center">
                                 <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
                             </button>
                         </div>
                     </div>
-                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded w-full custom-scroll relative">
+                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded w-full custom-scroll relative max-h-[500px]">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -451,6 +455,7 @@
                                     <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[200px]">작업 세부사항</th>
                                     <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-24">결과</th>
                                     <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center text-red-500 w-16">삭제</th>
                                 </tr>
                             </thead>
                             <tbody id="pm-history-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
@@ -580,7 +585,9 @@
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">라인</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">설비명</th>
                                     <th class="py-2.5 px-3 font-bold border-b border-slate-200">구분</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">분류</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">대분류</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">중분류</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">소분류</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">발생일시</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center">조치시간</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200 min-w-[250px]">고장/조치내용</th>
@@ -1127,6 +1134,20 @@
             switchTab('pm-list');
         };
 
+        window.goToPMListThisWeek = () => {
+            const pmStatusEl = document.getElementById('pm-filter-status');
+            const pmCycleEl = document.getElementById('pm-filter-cycle');
+            if(pmStatusEl) pmStatusEl.value = 'PENDING';
+            if(pmCycleEl) pmCycleEl.value = '주별';
+            switchTab('pm-list');
+        };
+
+        window.goToPMListOverdue = () => {
+            const pmStatusEl = document.getElementById('pm-filter-status');
+            if(pmStatusEl) pmStatusEl.value = 'OVERDUE';
+            switchTab('pm-list');
+        };
+
         window.goToBDList = () => {
             switchTab('bd-list');
         };
@@ -1186,9 +1207,14 @@
             document.getElementById('pm-filter-line').innerHTML = pmFilterLine;
             document.getElementById('bd-filter-line').innerHTML = pmFilterLine; 
             document.getElementById('pm-master-filter-line').innerHTML = pmFilterLine; 
+            
+            // 실적이력 전용 라인 필터
+            let histLineOptions = '<option value="ALL">전체 라인</option>';
+            LINES.forEach(line => histLineOptions += `<option value="${line}">${line}</option>`);
+            const histLineEl = document.getElementById('pm-history-filter-line');
+            if(histLineEl) histLineEl.innerHTML = histLineOptions;
         }
 
-        // Breakdown Equipment Input Update
         window.updateEquipments = (formType) => {
             const lineVal = document.getElementById(`${formType}-line`).value;
             
@@ -1302,7 +1328,6 @@
         window.switchTab = (tabId) => {
             currentTabId = tabId;
             
-            // 1. UI Toggle ONLY (즉각 반응)
             document.querySelectorAll('.nav-btn').forEach(el => { el.classList.remove('bg-brand-900', 'text-blue-400', 'border-blue-500', 'font-bold'); el.classList.add('hover:bg-brand-700', 'border-transparent', 'text-slate-300'); });
             
             if(tabId !== 'dashboard' || currentLineFilter === 'ALL') {
@@ -1317,7 +1342,6 @@
             updatePageTitle();
             closeSidebarIfMobile();
             
-            // 2. Data Rendering Defer (렌더링 병목 방지)
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     if(tabId === 'dashboard') {
@@ -1336,7 +1360,11 @@
                             pmLineEl.value = 'ALL';
                             window.updatePMFilterEquip();
                         }
+                        const histLineEl = document.getElementById('pm-history-filter-line');
+                        if (histLineEl) histLineEl.value = 'ALL';
+                        
                         pmListPage = 1;
+                        pmHistPage = 1;
                         window.debouncedRenderPMList();
                         window.debouncedRenderPMHistory();
                     } else if (tabId === 'bd-list') {
@@ -1350,7 +1378,6 @@
         window.setGlobalLine = (line) => {
             currentLineFilter = line;
             
-            // UI Toggle ONLY
             document.querySelectorAll('.nav-line').forEach(el => { el.classList.remove('bg-brand-900', 'text-blue-400', 'border-blue-500', 'font-bold'); el.classList.add('text-slate-300', 'border-transparent'); });
             
             if(line !== 'ALL') {
@@ -1884,7 +1911,7 @@
                 startTime: startStr,
                 endTime: endStr,
                 durationMinutes: durationMinutes,
-                shiftType: getShiftType(startStr) // Update shift type
+                shiftType: getShiftType(startStr) 
             };
 
             let diffs = [];
@@ -1902,6 +1929,19 @@
             } catch(e) {
                 console.error(e);
                 showToast("수정 실패", "error");
+            }
+        };
+
+        window.deletePMResultRow = async (id, resultDetails) => {
+            if(!confirm(`이 예방점검 실적 기록을 정말로 삭제하시겠습니까?\n(${resultDetails})`)) return;
+            
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', id);
+                await deleteDoc(docRef);
+                showToast("해당 실적 이력이 정상적으로 삭제되었습니다.", "success");
+            } catch(e) {
+                console.error("Delete Error", e);
+                showToast("삭제 중 오류가 발생했습니다.", "error");
             }
         };
 
@@ -1997,6 +2037,7 @@
             const todayStr = getLocalTodayString();
 
             if(fStatus === 'PENDING') currentList = currentList.filter(d => d.status !== '점검');
+            else if(fStatus === 'OVERDUE') currentList = currentList.filter(d => d.status !== '점검' && d.nextCheckDate < todayStr);
             
             if(kw) {
                 currentList = currentList.filter(d => 
@@ -2127,8 +2168,12 @@
         function getFilteredPMHistory() {
             const kw = document.getElementById('pm-history-search').value.toLowerCase();
             const period = document.getElementById('pm-history-filter-period').value;
+            const fLine = document.getElementById('pm-history-filter-line')?.value || 'ALL';
+
             let list = rawPMResultsData; 
             
+            if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
+
             if (selectedHistoryTaskId) list = list.filter(d => d.taskId === selectedHistoryTaskId);
             if (kw) {
                 list = list.filter(d => 
@@ -2172,7 +2217,7 @@
             const list = getFilteredPMHistory();
 
             if(list.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 bg-white text-xs md:text-sm">해당 이력이 없습니다.</td></tr>`; 
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 bg-white text-xs md:text-sm">해당 이력이 없습니다.</td></tr>`; 
                 document.getElementById('pm-history-pagination').innerHTML = '';
                 return; 
             }
@@ -2198,11 +2243,15 @@
                         <td class="py-2 px-3 text-slate-700 whitespace-normal min-w-[200px] break-words leading-snug">${item.taskDetails}</td>
                         <td class="py-2 px-3 text-center">${resBadge}</td>
                         <td class="py-2 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
+                        <td class="py-2 px-3 text-center">
+                            <button onclick="deletePMResultRow('${item.id}', '${item.equipmentName} - ${item.taskDetails}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
             document.getElementById('pm-history-pagination').innerHTML = getPaginationHTML(pmHistPage, totalPages, 'window.changePMHistPage');
+            lucide.createIcons({root: tbody});
         };
 
         window.exportPMHistoryToExcel = () => {
