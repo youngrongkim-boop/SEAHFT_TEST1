@@ -117,6 +117,19 @@
     </style>
 </head>
 <body class="flex h-screen w-full overflow-hidden text-slate-800 relative">
+    <!-- 로그인 오버레이 (구글 로그인) -->
+    <div id="login-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-[90%] max-w-sm text-center">
+            <h1 class="text-lg font-bold text-slate-800 mb-1">세아씨엠 설비 관리 시스템</h1>
+            <p class="text-sm text-slate-500 mb-6">계속하려면 구글 계정으로 로그인하세요.</p>
+            <button id="google-login-btn" class="w-full flex items-center justify-center gap-2 border border-slate-300 rounded-lg py-2.5 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 3.5 29.5 1.5 24 1.5 11.6 1.5 1.5 11.6 1.5 24S11.6 46.5 24 46.5 46.5 36.4 46.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M4.3 14.7l6.6 4.8C12.7 15.1 18 11.5 24 11.5c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 5.5 29.5 3.5 24 3.5 15.8 3.5 8.7 8.2 4.3 14.7z"/><path fill="#4CAF50" d="M24 46.5c5.2 0 9.9-2 13.5-5.2l-6.2-5.3C29.2 37.5 26.7 38.5 24 38.5c-5.3 0-9.7-2.6-11.3-6.9l-6.5 5C8.5 42.2 15.7 46.5 24 46.5z"/><path fill="#1976D2" d="M46.1 20.5H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.2 5.3c3.9-3.6 6.3-9 6.3-15.3 0-1.2-.1-2.4-.4-3.5z"/></svg>
+                Google로 로그인
+            </button>
+            <p id="login-error" class="hidden text-xs text-red-500 mt-4"></p>
+        </div>
+    </div>
+
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[999] hidden flex-col items-center justify-center">
@@ -915,7 +928,7 @@
     <!-- Firebase & Logic Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, serverTimestamp, doc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // 사용자 실제 API 키 
@@ -1422,26 +1435,47 @@
             }
         }
 
+        const provider = new GoogleAuthProvider();
+
+        const doGoogleLogin = async () => {
+            const errEl = document.getElementById('login-error');
+            errEl.classList.add('hidden');
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("로그인 실패:", error);
+                errEl.textContent = "로그인 실패: " + (error.code || error.message);
+                errEl.classList.remove('hidden');
+            }
+        };
+
         const initAuth = async () => {
+            // 구글 Canvas 환경 호환용(있을 때만). 일반 웹에서는 아래 구글 로그인 사용.
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
                 }
-            } catch (error) { 
+            } catch (error) {
                 console.error("Firebase 연결 에러:", error);
-                document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span> 연결 실패`; 
             }
         };
 
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
-                document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 md:mr-2"></span>`;
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 md:mr-2"></span><span class="hidden md:inline text-slate-500 mr-2">${user.email || ''}</span><button onclick="window.__logout()" title="로그아웃" class="text-slate-400 hover:text-red-500"><i data-lucide="log-out" class="w-4 h-4"></i></button>`;
+                if (window.lucide) lucide.createIcons();
                 loadFirestoreData();
+            } else {
+                currentUser = null;
+                document.getElementById('login-overlay').classList.remove('hidden');
+                document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-300 mr-1.5 md:mr-2"></span>`;
             }
         });
+
+        window.__logout = () => signOut(auth);
+        document.getElementById('google-login-btn').addEventListener('click', doGoogleLogin);
         initAuth();
 
         function loadFirestoreData() {
