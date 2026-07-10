@@ -1,0 +1,16 @@
+# --- Vercel 저장소에는 index.html 만 올립니다 (현재 구조 유지) ---
+
+# Firebase 로컬 설정/캐시 (Vercel 저장소엔 불필요)
+.firebase/
+firebase.json
+.firebaserc
+
+# 에디터 설정
+.vscode/
+
+# 아직 작업 중인 페이지 (완성되면 그때 추가)
+FAULT.html
+REPORT.HTML
+
+# index.html이 사용하지 않는 로컬 이미지
+images/
