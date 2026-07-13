@@ -219,13 +219,14 @@
         <!-- Scrollable Views Area -->
         <div class="flex-1 overflow-y-auto p-4 md:p-6 relative min-w-0 custom-scroll" id="views-container">
             
-            <!-- 점검 지연 경고 알림창 -->
-            <div id="overdue-alert" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-6 shadow-sm flex items-start cursor-pointer hover:bg-red-100 transition" onclick="goToPMListOverdue()">
-                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2.5 shrink-0 mt-0.5"></i>
-                <div>
-                    <h4 class="font-bold text-sm">예방점검 지연 항목 발생</h4>
-                    <p class="text-xs mt-1" id="overdue-alert-msg">점검 예정일이 지난 항목이 있습니다. 클릭하여 확인해 주세요.</p>
+            <!-- 점검 지연 경고 팝업 (우측 상단 플로팅) -->
+            <div id="overdue-alert" class="hidden fixed top-20 right-4 md:right-6 z-40 w-72 max-w-[85vw] bg-red-50 border border-red-200 text-red-800 pl-3 pr-2 py-2.5 rounded-xl shadow-lg flex items-start cursor-pointer hover:bg-red-100 transition" onclick="goToPMListOverdue()">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 mr-2 shrink-0 mt-0.5"></i>
+                <div class="flex-1 min-w-0">
+                    <h4 class="font-bold text-xs">예방점검 지연 항목 발생</h4>
+                    <p class="text-[11px] mt-0.5 leading-snug" id="overdue-alert-msg">점검 예정일이 지난 항목이 있습니다.</p>
                 </div>
+                <button type="button" onclick="event.stopPropagation(); dismissOverdueAlert()" class="ml-1 text-red-400 hover:text-red-600 shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
             </div>
 
             <!-- VIEW: DASHBOARD -->
@@ -421,14 +422,9 @@
 
             <!-- VIEW: 점검 현황판 -->
             <div id="view-check-board" class="view-section hidden h-full flex-col min-w-0 pb-4">
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-3 md:p-4 mb-4 shrink-0">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="calendar-check" class="w-5 h-5 text-brand-600"></i>
-                        <h3 class="text-sm md:text-base font-bold text-slate-800">일일 점검 현황판</h3>
-                        <span id="check-board-date" class="text-xs text-slate-400 ml-1"></span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 mt-1">주기별로 점검이 필요한 항목을 한눈에 확인하고, 바로 실적을 등록할 수 있어요. 라인 탭으로 전체/개별 라인을 전환하세요.</p>
-                    <div id="check-board-line-tabs" class="flex flex-wrap gap-1.5 mt-3"></div>
+                <div class="flex flex-wrap items-center gap-1.5 mb-3 shrink-0">
+                    <div id="check-board-line-tabs" class="flex flex-wrap gap-1.5"></div>
+                    <span id="check-board-date" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
                 </div>
                 <div id="check-board-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
             </div>
@@ -1178,6 +1174,7 @@
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
+        let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
         
         let chartInstances = {};
         let activeRemarksTaskId = null;
@@ -1371,6 +1368,11 @@
             if(pmStatusEl) pmStatusEl.value = 'OVERDUE';
             window.__pmListLineOverride = currentLineFilter; // 현재 선택된 라인으로 필터 유지
             switchTab('pm-list');
+        };
+
+        window.dismissOverdueAlert = () => {
+            overdueAlertDismissed = true;
+            document.getElementById('overdue-alert').classList.add('hidden');
         };
 
         window.goToBDList = () => {
@@ -1892,9 +1894,9 @@
             const overduePMs = activePMs.filter(d => d.nextCheckDate < todayStr);
             const alertEl = document.getElementById('overdue-alert');
             
-            if(overduePMs.length > 0) {
+            if(overduePMs.length > 0 && !overdueAlertDismissed) {
                 alertEl.classList.remove('hidden');
-                document.getElementById('overdue-alert-msg').innerText = `현재 [${currentLineFilter === 'ALL' ? '전체 라인' : currentLineFilter}] 기준, 점검 예정일이 초과된 지연 항목이 총 ${overduePMs.length}건 존재합니다. 클릭하여 확인해 주세요.`;
+                document.getElementById('overdue-alert-msg').innerText = `[${currentLineFilter === 'ALL' ? '전체' : currentLineFilter}] 지연 항목 ${overduePMs.length}건 · 클릭해 확인`;
             } else {
                 alertEl.classList.add('hidden');
             }
