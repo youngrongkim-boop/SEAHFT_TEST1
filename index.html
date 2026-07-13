@@ -297,7 +297,7 @@
                         </div>
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 border-t-4 border-t-indigo-500">
                             <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center">
-                                <i data-lucide="target" class="w-4 h-4 mr-2 text-indigo-500"></i> 분류별 발생 빈도
+                                <i data-lucide="target" class="w-4 h-4 mr-2 text-indigo-500"></i> 중분류별 발생 빈도 <span class="text-[11px] font-normal text-slate-400 ml-1">(색상: 소분류)</span>
                             </h4>
                             <div class="relative h-48 md:h-64"><canvas id="chartLineSubCat"></canvas></div>
                         </div>
@@ -2748,14 +2748,44 @@
                     options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
                 });
 
-                const mainCatCounts = {};
-                dashboardBDData.forEach(d => { const k = d.mainCategory || '미분류'; mainCatCounts[k] = (mainCatCounts[k] || 0) + 1; });
-                const sortedMainCat = Object.entries(mainCatCounts).sort((a,b) => b[1] - a[1]);
+                // 중분류(subCategory)별 발생 빈도 + 각 막대를 소분류(detailCategory)로 누적 구분
+                const midCats = [], detailCats = [], midDetailCounts = {};
+                dashboardBDData.forEach(d => {
+                    const mid = d.subCategory || '미분류';
+                    const det = d.detailCategory || '미분류';
+                    if (!midCats.includes(mid)) midCats.push(mid);
+                    if (!detailCats.includes(det)) detailCats.push(det);
+                    if (!midDetailCounts[mid]) midDetailCounts[mid] = {};
+                    midDetailCounts[mid][det] = (midDetailCounts[mid][det] || 0) + 1;
+                });
+                const midTotal = (m) => Object.values(midDetailCounts[m] || {}).reduce((s, n) => s + n, 0);
+                midCats.sort((a, b) => midTotal(b) - midTotal(a));
+                const catPalette = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#64748b', '#3b82f6', '#ef4444', '#10b981', '#a855f7', '#f97316', '#0ea5e9'];
+                const subCatDatasets = detailCats.map((det, i) => ({
+                    label: det,
+                    data: midCats.map(mid => (midDetailCounts[mid] && midDetailCounts[mid][det]) || 0),
+                    backgroundColor: catPalette[i % catPalette.length],
+                    borderWidth: 0,
+                    borderRadius: 2
+                }));
                 const ctxSubCat = document.getElementById('chartLineSubCat').getContext('2d');
                 chartInstances['line_subCat'] = new Chart(ctxSubCat, {
                     type: 'bar',
-                    data: { labels: sortedMainCat.length > 0 ? sortedMainCat.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: '발생 건수', data: sortedMainCat.length > 0 ? sortedMainCat.map(e => e[1]) : [0], backgroundColor: '#6366f1', borderRadius: 4 }] },
-                    options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw + '건' } } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+                    data: {
+                        labels: midCats.length > 0 ? midCats : ['데이터 없음'],
+                        datasets: subCatDatasets.length > 0 ? subCatDatasets : [{ label: '없음', data: [0], backgroundColor: '#e2e8f0' }]
+                    },
+                    options: {
+                        animation: false, responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
+                            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}건` } }
+                        },
+                        scales: {
+                            x: { stacked: true, grid: { display: false } },
+                            y: { stacked: true, beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }
+                        }
+                    }
                 });
 
                 let elec = 0, mech = 0;
