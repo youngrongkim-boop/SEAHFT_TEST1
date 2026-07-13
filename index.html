@@ -1421,27 +1421,52 @@
         // 5. 엑셀 커스텀 날짜 파싱 (YYMMDDHHmm)
         function parseCustomDateString(val) {
             if(val === null || val === undefined || val === '') return '';
-            let s = String(val).trim();
-            if(!s) return '';
-            // YYMMDDHHmm (10자리 숫자)
-            if (/^\d{10}$/.test(s)) {
-                return `20${s.substring(0,2)}-${s.substring(2,4)}-${s.substring(4,6)}T${s.substring(6,8)}:${s.substring(8,10)}`;
+
+            // 엑셀 날짜형(Date 객체)
+            if (val instanceof Date && !isNaN(val.getTime())) {
+                const off = val.getTimezoneOffset() * 60000;
+                return new Date(val.getTime() - off).toISOString().slice(0, 16);
             }
+
+            const s = String(val).trim();
+            if(!s) return '';
+
+            // 숫자만 뽑아서 자리수로 판별 (구분기호·초 포함 등 다양한 형태 대응)
+            const digits = s.replace(/\D/g, '');
+            if (digits.length === 10) {
+                // YYMMDDHHmm
+                return `20${digits.slice(0,2)}-${digits.slice(2,4)}-${digits.slice(4,6)}T${digits.slice(6,8)}:${digits.slice(8,10)}`;
+            }
+            if (digits.length === 12) {
+                // 20YYMMDDHHmm(YYYYMMDDHHmm) 또는 YYMMDDHHmmss(초 포함)
+                if (digits.slice(0,2) === '20') {
+                    return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}T${digits.slice(8,10)}:${digits.slice(10,12)}`;
+                }
+                return `20${digits.slice(0,2)}-${digits.slice(2,4)}-${digits.slice(4,6)}T${digits.slice(6,8)}:${digits.slice(8,10)}`;
+            }
+            if (digits.length === 14 && digits.slice(0,2) === '20') {
+                // YYYYMMDDHHmmss
+                return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}T${digits.slice(8,10)}:${digits.slice(10,12)}`;
+            }
+            if (digits.length === 8 && digits.slice(0,2) === '20') {
+                // YYYYMMDD (시간 없음)
+                return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}T00:00`;
+            }
+
             // 엑셀 날짜 일련번호(숫자) — 정상 범위(1~100000)일 때만 변환
             if (typeof val === 'number' && isFinite(val) && val > 0 && val < 100000) {
                 const dateObj = new Date(Math.round((val - 25569) * 86400 * 1000));
                 if (isNaN(dateObj.getTime())) return '';
-                const offset = dateObj.getTimezoneOffset() * 60000;
-                const localDate = new Date(dateObj.getTime() - offset);
-                if (isNaN(localDate.getTime())) return '';
-                return localDate.toISOString().slice(0, 16);
+                const off = dateObj.getTimezoneOffset() * 60000;
+                const localDate = new Date(dateObj.getTime() - off);
+                return isNaN(localDate.getTime()) ? '' : localDate.toISOString().slice(0, 16);
             }
-            // 문자열 날짜 추정 (YYYY-MM-DD HH:mm 등)
-            s = s.replace(' ', 'T');
-            if(s.length === 10) s += "T00:00";
-            const parsed = s.slice(0, 16);
-            // 유효한 날짜 형태가 아니면 빈값 처리 (업로드 중단 방지)
-            return isNaN(new Date(parsed).getTime()) ? '' : parsed;
+
+            // 마지막: 문자열 날짜 추정 (2026-07-03 10:30 등)
+            let t = s.replace(' ', 'T');
+            if(t.length === 10) t += "T00:00";
+            t = t.slice(0, 16);
+            return isNaN(new Date(t).getTime()) ? '' : t;
         }
 
         function normalizeCycle(val) {
