@@ -2298,9 +2298,12 @@
             }
         };
 
-        window.deletePMResultRow = async (id, resultDetails) => {
+        window.deletePMResultRow = async (id) => {
+            if(!currentUser) return showToast('인증이 필요합니다.', 'error');
+            const rec = rawPMResultsData.find(r => r.id === id);
+            const resultDetails = rec ? `${rec.equipmentName || ''} - ${rec.taskDetails || ''}` : '';
             if(!confirm(`이 예방점검 실적 기록을 정말로 삭제하시겠습니까?\n(${resultDetails})`)) return;
-            
+
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', id);
                 await deleteDoc(docRef);
@@ -2718,7 +2721,7 @@
                         <td class="py-2 px-3 text-center">${resBadge}</td>
                         <td class="py-2 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
                         <td class="py-2 px-3 text-center">
-                            <button onclick="deletePMResultRow('${item.id}', '${item.equipmentName} - ${item.taskDetails}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
