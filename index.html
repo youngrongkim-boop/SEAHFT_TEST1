@@ -648,9 +648,14 @@
                             <h3 class="text-base md:text-lg font-bold text-slate-800 flex items-center">
                                 <i data-lucide="activity" class="w-4 h-4 md:w-5 md:h-5 mr-2 text-slate-500"></i> 고장 실적 현황 리스트
                             </h3>
-                            <span class="text-xs md:text-sm font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="bd-list-count">총 0건</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="openBDMasterModal()" class="flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                                    <i data-lucide="database" class="w-3.5 h-3.5 mr-1.5"></i> 일괄 관리
+                                </button>
+                                <span class="text-xs md:text-sm font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="bd-list-count">총 0건</span>
+                            </div>
                         </div>
-                        
+
                         <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 ml-1 mr-1 md:mr-2"><i data-lucide="filter" class="w-3.5 h-3.5 inline"></i> 필터:</span>
                             <select id="bd-filter-line" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium min-w-[70px]">
@@ -862,6 +867,66 @@
     </div>
 
     <!-- Master Edit Modal (PM) -->
+    <!-- 고장실적 일괄 관리 모달 -->
+    <div id="bd-master-edit-modal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center z-[110] backdrop-blur-sm p-4 md:p-8">
+        <div class="bg-white rounded-2xl shadow-2xl w-full h-[90vh] flex flex-col overflow-hidden transform scale-95 transition-transform max-w-[1600px]" id="bd-master-edit-modal-content">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
+                <h3 class="text-lg md:text-xl font-bold text-slate-800 flex items-center"><i data-lucide="database" class="w-6 h-6 mr-2 text-red-500"></i> 전체 고장실적 데이터 일괄 관리</h3>
+                <button onclick="closeBDMasterModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="px-6 py-3 border-b border-slate-200 bg-white flex flex-wrap gap-2 items-center justify-between shrink-0">
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-xs font-bold text-slate-500 mr-1"><i data-lucide="filter" class="w-4 h-4 inline"></i> 필터:</span>
+                    <select id="bd-master-filter-line" onchange="bdMasterPage=1; debouncedRenderBDMasterTable()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 focus:ring-1 focus:ring-blue-500 outline-none w-28">
+                        <option value="ALL">전체 라인</option>
+                    </select>
+                    <select id="bd-master-filter-category" onchange="bdMasterPage=1; debouncedRenderBDMasterTable()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 focus:ring-1 focus:ring-blue-500 outline-none w-24">
+                        <option value="ALL">전/기 구분</option>
+                        <option value="기계">기계</option>
+                        <option value="전기">전기</option>
+                    </select>
+                    <input type="text" id="bd-master-keyword" onkeyup="bdMasterPage=1; debouncedRenderBDMasterTable()" placeholder="키워드 검색..." class="border border-slate-300 rounded-md px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-blue-500 outline-none w-48">
+                    <span class="text-xs font-bold text-slate-500 ml-2" id="bd-master-count">총 0건</span>
+                </div>
+                <div>
+                    <button onclick="bulkDeleteBDMaster()" class="flex items-center px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-xs font-bold transition shadow-sm">
+                        <i data-lucide="trash-2" class="w-4 h-4 mr-1.5"></i> 현재 화면 데이터 일괄 삭제
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto custom-scroll bg-slate-50/50 flex flex-col relative">
+                <table class="w-full text-left text-xs whitespace-nowrap bg-white border-b border-slate-200 shadow-sm">
+                    <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
+                        <tr>
+                            <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-12">No</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-24">라인</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-40">설비명</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-20 text-center">구분</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-28">대분류</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-28">중분류</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-28">소분류</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-40">고장명</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 min-w-[160px]">발생원인</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 min-w-[160px]">조치내용</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 min-w-[160px]">방지대책</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-44 text-center">발생일시</th>
+                            <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-44 text-center">완료일시</th>
+                            <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-16 text-red-500">삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bd-master-tbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+                <div id="bd-master-pagination" class="mt-auto sticky bottom-0"></div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-200 bg-white flex justify-end gap-3 shrink-0">
+                <button onclick="closeBDMasterModal()" class="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">취소</button>
+                <button onclick="saveBDMaster()" class="flex items-center px-6 py-2.5 text-sm font-black text-white bg-red-500 hover:bg-red-600 rounded-xl transition shadow-md">
+                    <i data-lucide="save" class="w-5 h-5 mr-2"></i> 변경사항 일괄 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="pm-master-edit-modal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center z-[110] backdrop-blur-sm p-4 md:p-8">
         <div class="bg-white rounded-2xl shadow-2xl w-full h-[90vh] flex flex-col overflow-hidden transform scale-95 transition-transform max-w-[1600px]" id="pm-master-edit-modal-content">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
@@ -1494,8 +1559,9 @@
             LINES.forEach(line => pmFilterLine += `<option value="${line}">${line}</option>`);
             document.getElementById('pm-filter-line').innerHTML = pmFilterLine;
             document.getElementById('bd-filter-line').innerHTML = pmFilterLine; 
-            document.getElementById('pm-master-filter-line').innerHTML = pmFilterLine; 
-            
+            document.getElementById('pm-master-filter-line').innerHTML = pmFilterLine;
+            document.getElementById('bd-master-filter-line').innerHTML = pmFilterLine;
+
             // 실적이력 전용 라인 필터
             let histLineOptions = '<option value="ALL">전체 라인</option>';
             LINES.forEach(line => histLineOptions += `<option value="${line}">${line}</option>`);
@@ -2220,6 +2286,158 @@
 
                 showToast(`성공적으로 저장되었습니다. (수정: ${modified.length}건, 삭제: ${window.deletedPMIds.length}건)`, "success");
                 window.closePMMasterModal();
+            } catch(e) {
+                console.error(e);
+                showToast("저장 중 오류가 발생했습니다.", "error");
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('loadingOverlay').classList.remove('flex');
+            }
+        };
+
+        // ===== 고장실적 일괄 관리 (마스터) =====
+        window.tempMasterBDData = [];
+        window.deletedBDIds = [];
+        let bdMasterPage = 1;
+        window.debouncedRenderBDMasterTable = debounce(() => renderBDMasterTable(), 150);
+        window.changeBDMasterPage = (page) => { bdMasterPage = page; renderBDMasterTable(); };
+
+        window.openBDMasterModal = () => {
+            const modal = document.getElementById('bd-master-edit-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => document.getElementById('bd-master-edit-modal-content').classList.remove('scale-95'), 10);
+            window.tempMasterBDData = JSON.parse(JSON.stringify(rawBDData));
+            window.deletedBDIds = [];
+            bdMasterPage = 1;
+            document.getElementById('bd-master-filter-line').value = 'ALL';
+            document.getElementById('bd-master-filter-category').value = 'ALL';
+            document.getElementById('bd-master-keyword').value = '';
+            renderBDMasterTable();
+            lucide.createIcons({root: modal});
+        };
+        window.closeBDMasterModal = () => {
+            document.getElementById('bd-master-edit-modal-content').classList.add('scale-95');
+            setTimeout(() => { document.getElementById('bd-master-edit-modal').classList.add('hidden'); document.getElementById('bd-master-edit-modal').classList.remove('flex'); }, 150);
+            window.tempMasterBDData = [];
+        };
+        window.updateTempBDData = (id, field, value) => {
+            const item = window.tempMasterBDData.find(d => d.id === id);
+            if(item) item[field] = value;
+        };
+        window.deleteBDMasterRow = (id) => {
+            window.deletedBDIds.push(id);
+            window.tempMasterBDData = window.tempMasterBDData.filter(d => d.id !== id);
+            renderBDMasterTable();
+        };
+        function getBDMasterFiltered() {
+            const fLine = document.getElementById('bd-master-filter-line').value;
+            const fCat = document.getElementById('bd-master-filter-category').value;
+            const kw = document.getElementById('bd-master-keyword').value.toLowerCase();
+            let list = window.tempMasterBDData;
+            if(fLine !== 'ALL') list = list.filter(d => d.line === fLine);
+            if(fCat !== 'ALL') list = list.filter(d => d.category === fCat);
+            if(kw) list = list.filter(d =>
+                (d.equipmentName||'').toLowerCase().includes(kw) ||
+                (d.faultName||'').toLowerCase().includes(kw) ||
+                (d.cause||'').toLowerCase().includes(kw) ||
+                (d.content||'').toLowerCase().includes(kw) ||
+                (d.prevention||'').toLowerCase().includes(kw) ||
+                (d.mainCategory||'').toLowerCase().includes(kw) ||
+                (d.subCategory||'').toLowerCase().includes(kw) ||
+                (d.detailCategory||'').toLowerCase().includes(kw)
+            );
+            return list;
+        }
+        window.bulkDeleteBDMaster = () => {
+            if(!confirm("현재 필터링되어 화면에 보이는 목록 전체를 삭제하시겠습니까?\n(하단의 일괄 저장 버튼을 눌러야 최종 반영됩니다.)")) return;
+            const idsToDelete = getBDMasterFiltered().map(d => d.id);
+            window.deletedBDIds.push(...idsToDelete);
+            window.tempMasterBDData = window.tempMasterBDData.filter(d => !idsToDelete.includes(d.id));
+            bdMasterPage = 1;
+            renderBDMasterTable();
+        };
+        window.renderBDMasterTable = () => {
+            const tbody = document.getElementById('bd-master-tbody');
+            const list = getBDMasterFiltered();
+            document.getElementById('bd-master-count').innerText = `총 ${list.length}건`;
+            if(list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="14" class="py-12 text-center text-slate-400 text-sm font-bold bg-white">데이터가 없습니다.</td></tr>`;
+                document.getElementById('bd-master-pagination').innerHTML = '';
+                return;
+            }
+            const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
+            if (bdMasterPage > totalPages) bdMasterPage = Math.max(1, totalPages);
+            const startIdx = (bdMasterPage - 1) * ITEMS_PER_PAGE;
+            const paginated = list.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+            const lineOptions = LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            const esc = (v) => String(v || '').replace(/"/g, '&quot;');
+            const txt = (item, field) => `<input type="text" value="${esc(item[field])}" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-700" onchange="updateTempBDData('${item.id}','${field}',this.value)">`;
+            let html = '';
+            paginated.forEach((item, index) => {
+                const absIndex = startIdx + index + 1;
+                const currLineOpt = lineOptions.replace(`value="${item.line}"`, `value="${item.line}" selected`);
+                html += `
+                    <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 bg-white">
+                        <td class="py-1.5 px-3 text-center text-slate-400 font-bold">${absIndex}</td>
+                        <td class="py-1.5 px-2"><select class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 font-bold text-slate-700" onchange="updateTempBDData('${item.id}','line',this.value)">${currLineOpt}</select></td>
+                        <td class="py-1.5 px-2">${txt(item,'equipmentName')}</td>
+                        <td class="py-1.5 px-2 text-center"><select class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-600" onchange="updateTempBDData('${item.id}','category',this.value)"><option value="기계" ${item.category==='기계'?'selected':''}>기계</option><option value="전기" ${item.category==='전기'?'selected':''}>전기</option></select></td>
+                        <td class="py-1.5 px-2">${txt(item,'mainCategory')}</td>
+                        <td class="py-1.5 px-2">${txt(item,'subCategory')}</td>
+                        <td class="py-1.5 px-2">${txt(item,'detailCategory')}</td>
+                        <td class="py-1.5 px-2">${txt(item,'faultName')}</td>
+                        <td class="py-1.5 px-2">${txt(item,'cause')}</td>
+                        <td class="py-1.5 px-2">${txt(item,'content')}</td>
+                        <td class="py-1.5 px-2">${txt(item,'prevention')}</td>
+                        <td class="py-1.5 px-2"><input type="datetime-local" value="${item.startTime||''}" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-600" onchange="updateTempBDData('${item.id}','startTime',this.value)"></td>
+                        <td class="py-1.5 px-2"><input type="datetime-local" value="${item.endTime||''}" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-600" onchange="updateTempBDData('${item.id}','endTime',this.value)"></td>
+                        <td class="py-1.5 px-3 text-center"><button onclick="deleteBDMasterRow('${item.id}')" class="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded text-[10px] font-bold transition w-full">삭제</button></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+            document.getElementById('bd-master-pagination').innerHTML = getPaginationHTML(bdMasterPage, totalPages, 'window.changeBDMasterPage');
+        };
+        window.saveBDMaster = async () => {
+            if(!currentUser) return showToast("인증이 필요합니다.", "error");
+            document.getElementById('loadingText').innerText = "데이터 일괄 병합 중...";
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingOverlay').classList.add('flex');
+            try {
+                const fields = ['line','equipmentName','category','mainCategory','subCategory','detailCategory','faultName','cause','content','prevention','startTime','endTime'];
+                const modified = window.tempMasterBDData.filter(temp => {
+                    const orig = rawBDData.find(r => r.id === temp.id);
+                    if(!orig) return true;
+                    return fields.some(f => (orig[f]||'') !== (temp[f]||''));
+                });
+                let opsCount = 0;
+                let batch = writeBatch(db);
+                const commitIfNeeded = async () => { if(opsCount >= 490){ await batch.commit(); batch = writeBatch(db); opsCount = 0; } };
+                for(const m of modified) {
+                    let dur = 0;
+                    if(m.startTime && m.endTime){ const s=new Date(m.startTime), e=new Date(m.endTime); dur=Math.round((e-s)/60000); if(dur<0)dur=0; }
+                    batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', m.id), {
+                        line: m.line, equipmentName: (m.equipmentName||'').trim(), category: m.category,
+                        mainCategory: (m.mainCategory||'').trim(), subCategory: (m.subCategory||'').trim(), detailCategory: (m.detailCategory||'').trim(),
+                        faultName: (m.faultName||'').trim(), cause: (m.cause||'').trim(), content: (m.content||'').trim(), prevention: (m.prevention||'').trim(),
+                        startTime: m.startTime, endTime: m.endTime, durationMinutes: dur, shiftType: getShiftType(m.startTime)
+                    });
+                    opsCount++; await commitIfNeeded();
+                    batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history')), { type: '고장실적 (마스터 일괄)', line: m.line, equipmentName: m.equipmentName, details: '마스터 모드 데이터 수정 적용', createdAt: serverTimestamp() });
+                    opsCount++; await commitIfNeeded();
+                }
+                for(const delId of window.deletedBDIds) {
+                    const orig = rawBDData.find(r => r.id === delId);
+                    batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', delId));
+                    opsCount++; await commitIfNeeded();
+                    if(orig) {
+                        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history')), { type: '고장실적 (삭제)', line: orig.line, equipmentName: orig.equipmentName, details: `항목 영구 삭제 (${orig.faultName || orig.content || ''})`, createdAt: serverTimestamp() });
+                        opsCount++; await commitIfNeeded();
+                    }
+                }
+                if(opsCount > 0) await batch.commit();
+                showToast(`성공적으로 저장되었습니다. (수정: ${modified.length}건, 삭제: ${window.deletedBDIds.length}건)`, "success");
+                window.closeBDMasterModal();
             } catch(e) {
                 console.error(e);
                 showToast("저장 중 오류가 발생했습니다.", "error");
