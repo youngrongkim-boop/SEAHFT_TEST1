@@ -64,6 +64,12 @@
         .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
         .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
 
+        /* 기능 버튼 색을 부드럽게 (너무 쨍한 채도 완화) — 사이드바 내비/토글 제외 */
+        button:not(.nav-btn):not(.nav-line):not(#desktop-sidebar-toggle),
+        label.cursor-pointer {
+            filter: saturate(0.72);
+        }
+
         /* Desktop Sidebar Collapse Styles */
         @media (min-width: 768px) {
             #main-sidebar {
