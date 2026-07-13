@@ -677,15 +677,13 @@
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">라인</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">설비명</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">구분</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">대분류</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">중분류</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">소분류</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">발생일시</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center">조치시간</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 min-w-[250px]">고장/조치내용</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">고장일시</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">고장명</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center">고장시간</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">주간/야간</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">평일/주말</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">반복</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
                                 </tr>
                             </thead>
                             <tbody id="bd-list-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
@@ -753,8 +751,20 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 mb-1.5">조치 사항 (고장 내용)</label>
-                                <textarea id="bd-content" required rows="3" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                                <label class="block text-sm font-bold text-slate-700 mb-1.5">고장명</label>
+                                <input type="text" id="bd-fault-name" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 유압펌프 압력 저하">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-1.5">발생원인</label>
+                                <textarea id="bd-cause" rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="고장 발생 원인"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-1.5">조치내용</label>
+                                <textarea id="bd-content" required rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="조치한 내용"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-1.5">방지대책</label>
+                                <textarea id="bd-prevention" rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="재발 방지 대책"></textarea>
                             </div>
                             <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 space-y-4">
                                 <div>
@@ -1044,6 +1054,17 @@
     </div>
 
     <!-- BD Edit Modal -->
+    <!-- 고장 상세 팝업 -->
+    <div id="bd-detail-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 bg-slate-50">
+                <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="clipboard-list" class="w-5 h-5 mr-2 text-red-500"></i> 고장 상세 내용</h3>
+                <button type="button" onclick="closeBDDetail()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="bd-detail-body" class="p-5 md:p-6 overflow-auto custom-scroll"></div>
+        </div>
+    </div>
+
     <div id="bd-edit-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[110] backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform" id="bd-edit-modal-content">
             <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -1086,8 +1107,20 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">고장/조치 내용</label>
-                        <textarea id="edit-bd-content" rows="3" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none resize-none"></textarea>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">고장명</label>
+                        <input type="text" id="edit-bd-fault" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">발생원인</label>
+                        <textarea id="edit-bd-cause" rows="2" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">조치내용</label>
+                        <textarea id="edit-bd-content" rows="2" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">방지대책</label>
+                        <textarea id="edit-bd-prevention" rows="2" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none resize-none"></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -1298,6 +1331,28 @@
             if (day === 0 || day === 6) return '주말';
             if (hour >= 21 || hour < 7) return '야간';
             return '주간';
+        }
+
+        // 시간대(주간/야간): 21시~다음날 07시 = 야간
+        function getDayNight(datetimeStr) {
+            if (!datetimeStr) return '주간';
+            const h = new Date(datetimeStr).getHours();
+            return (h >= 21 || h < 7) ? '야간' : '주간';
+        }
+        // 요일(평일/주말)
+        function getWeekType(datetimeStr) {
+            if (!datetimeStr) return '평일';
+            const day = new Date(datetimeStr).getDay();
+            return (day === 0 || day === 6) ? '주말' : '평일';
+        }
+        // 반복고장: 설비명 + 대/중/소분류가 모두 동일한 기록들 (발생일시 오름차순)
+        function getRepeatOccurrences(item) {
+            return rawBDData.filter(d =>
+                (d.equipmentName || '') === (item.equipmentName || '') &&
+                (d.mainCategory || '') === (item.mainCategory || '') &&
+                (d.subCategory || '') === (item.subCategory || '') &&
+                (d.detailCategory || '') === (item.detailCategory || '')
+            ).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
         }
 
         // 5. 엑셀 커스텀 날짜 파싱 (YYMMDDHHmm)
@@ -2249,7 +2304,10 @@
             document.getElementById('edit-bd-main').value = item.mainCategory;
             document.getElementById('edit-bd-sub').value = item.subCategory;
             document.getElementById('edit-bd-detail').value = item.detailCategory;
-            document.getElementById('edit-bd-content').value = item.content;
+            document.getElementById('edit-bd-fault').value = item.faultName || '';
+            document.getElementById('edit-bd-cause').value = item.cause || '';
+            document.getElementById('edit-bd-content').value = item.content || '';
+            document.getElementById('edit-bd-prevention').value = item.prevention || '';
             document.getElementById('edit-bd-start').value = item.startTime;
             document.getElementById('edit-bd-end').value = item.endTime;
             
@@ -2283,7 +2341,10 @@
                 mainCategory: document.getElementById('edit-bd-main').value.trim(),
                 subCategory: document.getElementById('edit-bd-sub').value.trim(),
                 detailCategory: document.getElementById('edit-bd-detail').value.trim(),
+                faultName: document.getElementById('edit-bd-fault').value.trim(),
+                cause: document.getElementById('edit-bd-cause').value.trim(),
                 content: document.getElementById('edit-bd-content').value.trim(),
+                prevention: document.getElementById('edit-bd-prevention').value.trim(),
                 startTime: startStr,
                 endTime: endStr,
                 durationMinutes: durationMinutes,
@@ -2780,9 +2841,13 @@
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs'), {
                     line: document.getElementById('bd-line').value, equipmentName: document.getElementById('bd-equip').value,
-                    category: document.getElementById('bd-category').value, mainCategory: document.getElementById('bd-main-cat').value, 
+                    category: document.getElementById('bd-category').value, mainCategory: document.getElementById('bd-main-cat').value,
                     subCategory: document.getElementById('bd-sub-cat').value, detailCategory: document.getElementById('bd-detail-cat').value,
-                    content: document.getElementById('bd-content').value.trim(), startTime: startStr, endTime: endStr,
+                    faultName: document.getElementById('bd-fault-name').value.trim(),
+                    cause: document.getElementById('bd-cause').value.trim(),
+                    content: document.getElementById('bd-content').value.trim(),
+                    prevention: document.getElementById('bd-prevention').value.trim(),
+                    startTime: startStr, endTime: endStr,
                     durationMinutes, shiftType: getShiftType(startStr), createdAt: serverTimestamp()
                 });
                 showToast("고장 실적이 등록되었습니다."); e.target.reset();
@@ -2793,6 +2858,65 @@
             finally { btn.disabled = false; btn.innerText = "고장 실적 등록"; }
         };
         
+        window.openBDDetail = (id) => {
+            renderBDDetail(id);
+            const modal = document.getElementById('bd-detail-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+        };
+        window.closeBDDetail = () => {
+            const modal = document.getElementById('bd-detail-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+        window.renderBDDetail = (id) => {
+            const item = rawBDData.find(d => d.id === id);
+            const body = document.getElementById('bd-detail-body');
+            if (!item) { body.innerHTML = '<p class="text-slate-400 text-center py-6">기록을 찾을 수 없습니다.</p>'; return; }
+            const occ = getRepeatOccurrences(item);
+            const dur = item.durationMinutes || 0;
+            const durStr = dur >= 60 ? `${Math.floor(dur/60)}시간 ${dur%60}분` : `${dur}분`;
+            const isCritical = dur >= 120;
+            const dn = getDayNight(item.startTime), wk = getWeekType(item.startTime);
+
+            let repeatHtml = '';
+            if (occ.length >= 2) {
+                const chips = occ.map(o => {
+                    const active = o.id === id;
+                    const dateLabel = (o.startTime || '').replace('T', ' ').slice(0, 16) || '-';
+                    return `<button type="button" onclick="renderBDDetail('${o.id}')" class="px-2 py-1 rounded text-[11px] font-bold border transition ${active ? 'bg-red-600 text-white border-red-600' : 'bg-white text-red-600 border-red-200 hover:bg-red-50'}">${dateLabel}</button>`;
+                }).join('');
+                repeatHtml = `<div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-xs font-bold text-red-700 mb-2 flex items-center"><i data-lucide="repeat" class="w-4 h-4 mr-1"></i> 반복고장 (${occ.length}회 발생) · 날짜를 눌러 각 이력을 확인하세요</p>
+                    <div class="flex flex-wrap gap-1.5">${chips}</div>
+                </div>`;
+            }
+            const cell = (label, value, cls = '') => `<div class="${cls}"><dt class="text-[11px] font-bold text-slate-400 mb-0.5">${label}</dt><dd class="text-sm text-slate-800 whitespace-pre-wrap break-words">${value || '-'}</dd></div>`;
+            body.innerHTML = `
+                ${repeatHtml}
+                <div class="flex items-center gap-1.5 mb-4 flex-wrap">
+                    <span class="px-2 py-0.5 rounded bg-blue-50 text-brand-700 text-xs font-bold">${item.line || '-'}</span>
+                    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-bold">${item.category || '-'}</span>
+                    ${isCritical ? '<span class="px-2 py-0.5 rounded bg-red-600 text-white text-xs font-bold">중대고장</span>' : ''}
+                    <span class="px-2 py-0.5 rounded ${dn === '야간' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} text-xs font-bold">${dn}</span>
+                    <span class="px-2 py-0.5 rounded ${wk === '주말' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'} text-xs font-bold">${wk}</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                    ${cell('설비명', item.equipmentName)}
+                    ${cell('고장명', item.faultName)}
+                    ${cell('분류 (대 › 중 › 소)', `${item.mainCategory || '-'} › ${item.subCategory || '-'} › ${item.detailCategory || '-'}`)}
+                    ${cell('고장시간', durStr)}
+                    ${cell('고장 발생일시', (item.startTime || '').replace('T', ' '))}
+                    ${cell('조치 완료일시', (item.endTime || '').replace('T', ' '))}
+                </div>
+                <div class="mt-4 space-y-2.5">
+                    ${cell('발생원인', item.cause, 'p-3 bg-slate-50 rounded-lg')}
+                    ${cell('조치내용', item.content, 'p-3 bg-slate-50 rounded-lg')}
+                    ${cell('방지대책', item.prevention, 'p-3 bg-slate-50 rounded-lg')}
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons({ root: body });
+        };
+
         window.renderBDList = () => {
             const tbody = document.getElementById('bd-list-body');
             
@@ -2808,11 +2932,14 @@
             if (fMain !== 'ALL') list = list.filter(d => d.mainCategory === fMain);
             if (fSub !== 'ALL') list = list.filter(d => d.subCategory === fSub);
             if (kw) {
-                list = list.filter(d => 
-                    (d.equipmentName || '').toLowerCase().includes(kw) || 
+                list = list.filter(d =>
+                    (d.equipmentName || '').toLowerCase().includes(kw) ||
+                    (d.faultName || '').toLowerCase().includes(kw) ||
+                    (d.cause || '').toLowerCase().includes(kw) ||
                     (d.content || '').toLowerCase().includes(kw) ||
-                    (d.mainCategory || '').toLowerCase().includes(kw) || 
-                    (d.subCategory || '').toLowerCase().includes(kw) || 
+                    (d.prevention || '').toLowerCase().includes(kw) ||
+                    (d.mainCategory || '').toLowerCase().includes(kw) ||
+                    (d.subCategory || '').toLowerCase().includes(kw) ||
                     (d.detailCategory || '').toLowerCase().includes(kw)
                 );
             }
@@ -2820,7 +2947,7 @@
             document.getElementById('bd-list-count').innerText = `총 ${list.length}건`;
 
             if(list.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="10" class="py-12 text-center text-slate-400 text-xs md:text-sm">등록된 고장 실적이 없습니다.</td></tr>`; 
+                tbody.innerHTML = `<tr><td colspan="8" class="py-12 text-center text-slate-400 text-xs md:text-sm">등록된 고장 실적이 없습니다.</td></tr>`;
                 document.getElementById('bd-list-pagination').innerHTML = '';
                 return; 
             }
@@ -2833,28 +2960,36 @@
 
             let html = '';
             paginatedList.forEach(item => {
-                const startStr = (item.startTime||'').replace('T', ' ');
-                const durStr = item.durationMinutes >= 60 ? `${Math.floor(item.durationMinutes/60)}시간 ${item.durationMinutes%60}분` : `${item.durationMinutes}분`;
-                const isCritical = (item.durationMinutes || 0) >= 120; // 조치시간 2시간 이상 = 중대 고장
-                const criticalBadge = isCritical ? '<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold inline-block mt-1">중대 고장</span>' : '';
+                const startStr = (item.startTime||'').replace('T', ' ').slice(0, 16);
+                const dur = item.durationMinutes || 0;
+                const durStr = dur >= 60 ? `${Math.floor(dur/60)}시간 ${dur%60}분` : `${dur}분`;
+                const isCritical = dur >= 120;
+                const dn = getDayNight(item.startTime);
+                const wk = getWeekType(item.startTime);
+                const repeatCount = getRepeatOccurrences(item).length;
+                const isRepeat = repeatCount >= 2;
 
-                const shiftBadge = item.shiftType === '주말' ? '<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold mt-1 inline-block">주말</span>' : 
-                                   item.shiftType === '야간' ? '<span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold mt-1 inline-block">야간</span>' : 
-                                   '<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold mt-1 inline-block">주간</span>';
+                const dnBadge = dn === '야간'
+                    ? '<span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold">야간</span>'
+                    : '<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold">주간</span>';
+                const wkBadge = wk === '주말'
+                    ? '<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold">주말</span>'
+                    : '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold">평일</span>';
+                const repeatBadge = isRepeat
+                    ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회</span>`
+                    : '<span class="text-slate-300">-</span>';
 
                 html += `
-                    <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 ${isCritical ? 'bg-red-50' : ''}">
+                    <tr class="hover:bg-blue-50/60 transition-colors border-b border-slate-50 cursor-pointer ${isCritical ? 'bg-red-50' : ''}" onclick="openBDDetail('${item.id}')" title="클릭하면 상세 내용">
                         <td class="py-2.5 px-4 font-bold text-brand-600">${item.line || '-'}</td>
-                        <td class="py-2.5 px-4 font-bold text-slate-800">${item.equipmentName}</td>
-                        <td class="py-2.5 px-3 text-slate-600 font-medium">${item.category || '-'}</td>
-                        <td class="py-2.5 px-3 text-slate-600">${item.mainCategory}</td>
-                        <td class="py-2.5 px-3 text-slate-600">${item.subCategory}</td>
-                        <td class="py-2.5 px-3 text-slate-600">${item.detailCategory}</td>
-                        <td class="py-2.5 px-4">${startStr}<br>${shiftBadge}</td>
-                        <td class="py-2.5 px-4 text-center text-red-500 font-bold">${durStr}${isCritical ? '<br>' + criticalBadge : ''}</td>
-                        <td class="py-2.5 px-4 min-w-[250px] whitespace-normal leading-snug break-words text-slate-700">${item.content}</td>
-                        <td class="py-2.5 px-4 text-center">
-                            <button onclick="openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                        <td class="py-2.5 px-4 text-slate-700">${startStr}</td>
+                        <td class="py-2.5 px-4 font-semibold text-slate-800">${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
+                        <td class="py-2.5 px-4 text-center text-red-500 font-bold">${durStr}</td>
+                        <td class="py-2.5 px-3 text-center">${dnBadge}</td>
+                        <td class="py-2.5 px-3 text-center">${wkBadge}</td>
+                        <td class="py-2.5 px-3 text-center">${repeatBadge}</td>
+                        <td class="py-2.5 px-3 text-center">
+                            <button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
@@ -2874,9 +3009,9 @@
                 XLSX.utils.book_append_sheet(wb, ws_crm, "CRM");
                 XLSX.writeFile(wb, "PM_Tasks_Template.xlsx");
             } else {
-                const header = ["설비명", "구분(전기/기계)", "대분류", "중분류", "소분류", "조치내용", "고장발생일시(YYMMDDHHmm)", "고장완료일시(YYMMDDHHmm)"];
-                const ws_arp = XLSX.utils.aoa_to_sheet([header, ["ARP 산회수펌프", "기계", "기계", "펌프", "씰", "메카니컬 씰 누수 교체", "2607031030", "2607031200"]]);
-                const ws_cgl = XLSX.utils.aoa_to_sheet([header, ["CGL 쿨링타워", "기계", "유틸리티", "공조/냉각", "냉각팬", "팬 벨트 단선 교체", "2607040900", "2607041130"]]);
+                const header = ["구분(전기/기계)", "대분류", "중분류", "소분류", "고장명", "발생원인", "조치내용", "방지대책", "고장발생일시(YYMMDDHHmm)", "고장완료일시(YYMMDDHHmm)", "설비명"];
+                const ws_arp = XLSX.utils.aoa_to_sheet([header, ["기계", "기계", "펌프", "씰", "메카니컬 씰 누수", "씰 경화 노후화", "메카니컬 씰 교체", "정기 씰 점검 주기 단축", "2607031030", "2607031200", "ARP 산회수펌프"]]);
+                const ws_cgl = XLSX.utils.aoa_to_sheet([header, ["기계", "유틸리티", "공조/냉각", "냉각팬", "팬 벨트 단선", "벨트 장력 부족", "팬 벨트 교체", "벨트 장력 주기 점검", "2607040900", "2607041130", "CGL 쿨링타워"]]);
                 XLSX.utils.book_append_sheet(wb, ws_arp, "ARP");
                 XLSX.utils.book_append_sheet(wb, ws_cgl, "CGL");
                 XLSX.writeFile(wb, "Breakdown_Template.xlsx");
@@ -2945,34 +3080,38 @@
                                         createdAt: serverTimestamp()
                                     });
                                 } else {
-                                    const equipName = String(row[0] || '').trim();
-                                    const content = String(row[5] || '').trim();
+                                    // A:구분 B:대분류 C:중분류 D:소분류 E:고장명 F:발생원인 G:조치내용 H:방지대책 I:발생일시 J:완료일시 K:설비명
+                                    const equipName = String(row[10] || '').trim();
+                                    const content = String(row[6] || '').trim();
 
                                     if (!equipName || !content) continue;
 
-                                    const startStr = parseCustomDateString(row[6]);
-                                    const endStr = parseCustomDateString(row[7]);
+                                    const startStr = parseCustomDateString(row[8]);
+                                    const endStr = parseCustomDateString(row[9]);
 
                                     let dur = 0;
-                                    if(startStr && endStr) { 
+                                    if(startStr && endStr) {
                                         const s = new Date(startStr);
-                                        const e = new Date(endStr); 
-                                        dur = Math.round((e-s)/60000); 
-                                        if(dur < 0) dur = 0; 
+                                        const e = new Date(endStr);
+                                        dur = Math.round((e-s)/60000);
+                                        if(dur < 0) dur = 0;
                                     }
 
                                     batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs')), {
-                                        line: matchedLine, 
-                                        equipmentName: equipName, 
-                                        category: String(row[1] || '기계').trim(),
-                                        mainCategory: String(row[2] || '').trim(), 
-                                        subCategory: String(row[3] || '').trim(), 
-                                        detailCategory: String(row[4] || '').trim(), 
-                                        content: content, 
-                                        startTime: startStr, 
-                                        endTime: endStr, 
+                                        line: matchedLine,
+                                        equipmentName: equipName,
+                                        category: String(row[0] || '기계').trim(),
+                                        mainCategory: String(row[1] || '').trim(),
+                                        subCategory: String(row[2] || '').trim(),
+                                        detailCategory: String(row[3] || '').trim(),
+                                        faultName: String(row[4] || '').trim(),
+                                        cause: String(row[5] || '').trim(),
+                                        content: content,
+                                        prevention: String(row[7] || '').trim(),
+                                        startTime: startStr,
+                                        endTime: endStr,
                                         durationMinutes: dur,
-                                        shiftType: getShiftType(startStr), 
+                                        shiftType: getShiftType(startStr),
                                         createdAt: serverTimestamp()
                                     });
                                 }
