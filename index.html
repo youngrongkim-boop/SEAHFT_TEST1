@@ -169,6 +169,9 @@
             <button onclick="switchTab('pm-reg')" id="nav-pm-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 등록">
                 <i data-lucide="plus-square" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 등록</span>
             </button>
+            <button onclick="switchTab('check-board')" id="nav-check-board" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="점검 현황판">
+                <i data-lucide="calendar-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">점검 현황판</span>
+            </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">고장실적 관리</div>
             <button onclick="switchTab('bd-list')" id="nav-bd-list" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장실적 리스트">
@@ -414,6 +417,20 @@
                     </div>
 
                 </div>
+            </div>
+
+            <!-- VIEW: 점검 현황판 -->
+            <div id="view-check-board" class="view-section hidden h-full flex-col min-w-0 pb-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-3 md:p-4 mb-4 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="calendar-check" class="w-5 h-5 text-brand-600"></i>
+                        <h3 class="text-sm md:text-base font-bold text-slate-800">일일 점검 현황판</h3>
+                        <span id="check-board-date" class="text-xs text-slate-400 ml-1"></span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">주기별로 점검이 필요한 항목을 한눈에 확인하고, 바로 실적을 등록할 수 있어요. 라인 탭으로 전체/개별 라인을 전환하세요.</p>
+                    <div id="check-board-line-tabs" class="flex flex-wrap gap-1.5 mt-3"></div>
+                </div>
+                <div id="check-board-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
             </div>
 
             <!-- VIEW: PM LIST -->
@@ -892,6 +909,32 @@
     </div>
 
     <!-- PM Single Edit Modal -->
+    <!-- 예방점검 실적 등록 모달 (점검 일시 입력) -->
+    <div id="pm-result-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="clipboard-check" class="w-5 h-5 mr-2 text-blue-500"></i> 점검 실적 등록</h3>
+                <button type="button" onclick="closePMResultModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div id="pm-result-info" class="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 leading-relaxed"></div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-700">점검 결과</span>
+                    <div id="pm-result-badge" class="text-lg font-bold"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">점검 일시</label>
+                    <input type="datetime-local" id="pm-result-time" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                    <p class="text-[10px] text-slate-400 mt-1">실제 점검한 시각을 입력하세요. (기본값: 현재 시각)</p>
+                </div>
+            </div>
+            <div class="px-5 py-4 border-t border-slate-100 flex justify-end gap-2">
+                <button type="button" onclick="closePMResultModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">취소</button>
+                <button type="button" onclick="confirmPMResult()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700">실적 등록</button>
+            </div>
+        </div>
+    </div>
+
     <div id="pm-edit-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[110] backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform" id="pm-edit-modal-content">
             <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -1082,6 +1125,8 @@
         let topEquipMetric = 'count'; // 고장 Top 설비 기준: 'count'(건수) | 'time'(정지시간)
         let faultTargets = {}; // 라인별 고장 목표 { CPL: { elec:{count,time}, mech:{count,time} } }
         let targetMetric = 'count'; // 목표 대비 차트 기준: 'count' | 'time'
+        let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
+        let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         
         let chartInstances = {};
         let activeRemarksTaskId = null;
@@ -1485,6 +1530,8 @@
                         if (currentLineFilter !== 'ALL') {
                             window.renderDashboardMiniTables(dashboardPMData, dashboardBDData);
                         }
+                    } else if (tabId === 'check-board') {
+                        renderCheckBoard();
                     } else if (tabId === 'edit-history') {
                         renderEditHistory();
                     } else if (tabId === 'pm-list') {
@@ -1545,7 +1592,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '점검 현황판', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -1812,6 +1859,7 @@
                 window.debouncedRenderPMHistory();
             }
             if(currentTabId === 'bd-list') window.debouncedRenderBDList();
+            if(currentTabId === 'check-board') renderCheckBoard();
             if(currentTabId === 'dashboard') {
                 toggleDashboardViews();
                 window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
@@ -2392,28 +2440,134 @@
             } catch(e) { showToast('저장 실패', 'error'); }
         };
 
-        window.handlePMResult = async (taskId, resultType) => {
-            if(!currentUser) return;
+        // 양호/불량 클릭 -> 점검 일시 입력 모달 오픈
+        window.handlePMResult = (taskId, resultType) => {
+            if(!currentUser) return showToast('인증이 필요합니다.', 'error');
             const task = rawPMData.find(t => t.id === taskId);
             if(!task) return;
+            pendingPMResult = { taskId, resultType };
+            document.getElementById('pm-result-info').innerHTML = `<b class="text-brand-600">${task.line}</b> · <b>${task.equipmentName}</b><br><span class="text-xs text-slate-500">${task.taskDetails || ''}</span>`;
+            document.getElementById('pm-result-badge').innerHTML = resultType === '양호'
+                ? '<span class="text-blue-600">양호 ✔</span>'
+                : '<span class="text-red-600">불량 ✘</span>';
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('pm-result-time').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            const modal = document.getElementById('pm-result-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if(window.lucide) lucide.createIcons();
+        };
+
+        window.closePMResultModal = () => {
+            pendingPMResult = null;
+            const modal = document.getElementById('pm-result-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+
+        window.confirmPMResult = async () => {
+            if(!pendingPMResult || !currentUser) return;
+            const { taskId, resultType } = pendingPMResult;
+            const task = rawPMData.find(t => t.id === taskId);
+            if(!task) { closePMResultModal(); return; }
+            const checkTime = document.getElementById('pm-result-time').value || '';
 
             const batch = writeBatch(db);
             batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_results')), {
                 taskId: taskId, line: task.line, equipmentName: task.equipmentName,
-                taskDetails: task.taskDetails, result: resultType, remarks: task.remarks || '', checkedAt: serverTimestamp()
+                taskDetails: task.taskDetails, result: resultType, remarks: task.remarks || '',
+                checkTime: checkTime, checkedAt: serverTimestamp()
             });
             batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', taskId), { status: '점검' });
 
             // 양호/불량 상관없이 자동으로 다음 주기 항목 생성 (Auto-regeneration)
-            // 기준일은 오늘(등록하는 날)을 기점으로 +1 Offset
             batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks')), {
                 line: task.line, equipmentName: task.equipmentName, category: task.category,
                 cycleType: normalizeCycle(task.cycleType), taskDetails: task.taskDetails, criteria: task.criteria,
                 status: '미점검', remarks: '', nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), task.cycleType, 1), createdAt: serverTimestamp()
             });
 
-            try { await batch.commit(); showToast(`[${resultType}] 실적이 등록되었습니다.`); } 
-            catch(e) { showToast('실적 등록 실패', 'error'); }
+            try { await batch.commit(); showToast(`[${resultType}] 실적이 등록되었습니다.`); closePMResultModal(); }
+            catch(e) { console.error(e); showToast('실적 등록 실패', 'error'); }
+        };
+
+        // 점검 현황판 (주기별 점검 항목을 라인별/전체로 확인)
+        const CYCLE_ORDER = ['일별', '주별', '월별', '분기별', '연별'];
+
+        window.setCheckBoardLine = (line) => { checkBoardLine = line; renderCheckBoard(); };
+
+        window.renderCheckBoard = () => {
+            const todayStr = getLocalTodayString();
+            const dateEl = document.getElementById('check-board-date');
+            if (dateEl) dateEl.innerText = `(${todayStr} 기준)`;
+
+            const tabsEl = document.getElementById('check-board-line-tabs');
+            if (tabsEl) {
+                tabsEl.innerHTML = ['ALL', ...LINES].map(l => {
+                    const active = checkBoardLine === l;
+                    const label = l === 'ALL' ? '전체' : l;
+                    return `<button type="button" onclick="setCheckBoardLine('${l}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition ${active ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${label}</button>`;
+                }).join('');
+            }
+
+            const contentEl = document.getElementById('check-board-content');
+            if (!contentEl) return;
+            let scope = rawPMData.filter(d => d.status !== '점검');
+            if (checkBoardLine !== 'ALL') scope = scope.filter(d => d.line === checkBoardLine);
+
+            let html = '';
+            CYCLE_ORDER.forEach(cycle => {
+                const items = scope.filter(d => normalizeCycle(d.cycleType) === cycle)
+                    .sort((a, b) => (a.nextCheckDate || '').localeCompare(b.nextCheckDate || ''));
+                const overdue = items.filter(d => (d.nextCheckDate || '') < todayStr).length;
+                const today = items.filter(d => d.nextCheckDate === todayStr).length;
+
+                html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-bold">${cycle}</span>
+                            <span class="text-xs text-slate-500">총 ${items.length}건</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[11px] font-bold">
+                            ${overdue ? `<span class="text-red-600">● 지연 ${overdue}</span>` : ''}
+                            ${today ? `<span class="text-amber-600">● 오늘 ${today}</span>` : ''}
+                        </div>
+                    </div>`;
+                if (!items.length) {
+                    html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">점검 대기 항목이 없습니다.</div>`;
+                } else {
+                    html += `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[640px]">
+                        <thead class="bg-white text-slate-500"><tr>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100">라인</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100">설비명</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100">점검 내용</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">예정일</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">상태</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 등록</th>
+                        </tr></thead><tbody>`;
+                    items.forEach(item => {
+                        const isOverdue = (item.nextCheckDate || '') < todayStr;
+                        const isToday = item.nextCheckDate === todayStr;
+                        const badge = isOverdue ? `<span class="px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold">지연</span>`
+                            : isToday ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200">오늘</span>`
+                            : `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">예정</span>`;
+                        html += `<tr class="border-b border-slate-50 ${isOverdue ? 'bg-red-50/40' : 'hover:bg-slate-50'}">
+                            <td class="py-2 px-3 font-bold text-brand-600">${item.line}</td>
+                            <td class="py-2 px-3 font-semibold text-slate-800">${item.equipmentName}</td>
+                            <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[160px] leading-snug">${item.taskDetails || '-'}</td>
+                            <td class="py-2 px-3 text-center ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}">${item.nextCheckDate || '-'}</td>
+                            <td class="py-2 px-3 text-center">${badge}</td>
+                            <td class="py-2 px-3 text-center"><div class="flex items-center justify-center gap-1">
+                                <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
+                                <button onclick="handlePMResult('${item.id}','불량')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">불량</button>
+                            </div></td>
+                        </tr>`;
+                    });
+                    html += `</tbody></table></div>`;
+                }
+                html += `</div>`;
+            });
+            contentEl.innerHTML = html;
+            if (window.lucide) lucide.createIcons({ root: contentEl });
         };
 
         window.clearHistorySelection = () => {
@@ -2488,7 +2642,9 @@
             let html = '';
             paginatedList.forEach(item => {
                 let dateStr = '-';
-                if(item.checkedAt && item.checkedAt.seconds) {
+                if(item.checkTime) {
+                    dateStr = item.checkTime.replace('T', ' ');
+                } else if(item.checkedAt && item.checkedAt.seconds) {
                     const d = new Date(item.checkedAt.seconds * 1000);
                     dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 }
