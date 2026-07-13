@@ -186,9 +186,6 @@
             <button onclick="switchTab('bd-reg')" id="nav-bd-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장실적 등록">
                 <i data-lucide="wrench" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장실적 등록</span>
             </button>
-            <a href="https://seahfa.vercel.app/" target="_blank" rel="noopener noreferrer" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장분석시스템(양영진)">
-                <i data-lucide="external-link" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장분석시스템(양영진)</span>
-            </a>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
             <button onclick="switchTab('edit-history')" id="nav-edit-history" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="데이터 수정 이력">
@@ -679,14 +676,14 @@
                         <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">라인</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">고장일시</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200">고장명</th>
-                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 text-center">고장시간</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">근무구분</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">요일구분</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center">반복</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">라인</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">고장일시</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">고장명</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center text-xs w-20">고장시간</th>
+                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-14">근무<br>구분</th>
+                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-14">요일<br>구분</th>
+                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-12">반복</th>
+                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-12 text-blue-600">수정</th>
                                 </tr>
                             </thead>
                             <tbody id="bd-list-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
@@ -3244,14 +3241,14 @@
 
                 html += `
                     <tr class="hover:bg-blue-50/60 transition-colors border-b border-slate-50 cursor-pointer ${isCritical ? 'bg-red-50' : ''}" onclick="openBDDetail('${item.id}')" title="클릭하면 상세 내용">
-                        <td class="py-2.5 px-4 font-bold text-brand-600">${item.line || '-'}</td>
-                        <td class="py-2.5 px-4 text-slate-700">${startStr}</td>
-                        <td class="py-2.5 px-4 font-semibold text-slate-800">${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
-                        <td class="py-2.5 px-4 text-center text-red-500 font-bold">${durStr}</td>
-                        <td class="py-2.5 px-3 text-center">${dnBadge}</td>
-                        <td class="py-2.5 px-3 text-center">${wkBadge}</td>
-                        <td class="py-2.5 px-3 text-center">${repeatBadge}</td>
-                        <td class="py-2.5 px-3 text-center">
+                        <td class="py-2.5 px-3 font-bold text-brand-600">${item.line || '-'}</td>
+                        <td class="py-2.5 px-3 text-slate-700">${startStr}</td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-800">${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
+                        <td class="py-2.5 px-2 text-center text-red-500 font-bold text-xs">${durStr}</td>
+                        <td class="py-2.5 px-1.5 text-center">${dnBadge}</td>
+                        <td class="py-2.5 px-1.5 text-center">${wkBadge}</td>
+                        <td class="py-2.5 px-1.5 text-center">${repeatBadge}</td>
+                        <td class="py-2.5 px-1.5 text-center">
                             <button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
