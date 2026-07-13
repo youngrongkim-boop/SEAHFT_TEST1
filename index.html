@@ -497,7 +497,7 @@
                                 <div>
                                     <label class="flex items-center justify-between text-sm font-bold text-slate-700 mb-1.5">
                                         <span>설비명</span>
-                                        <button type="button" onclick="toggleEquipManage()" class="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i> 설비 추가/삭제</button>
+                                        <button type="button" onclick="toggleEquipManage('pm')" class="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i> 설비 추가/삭제</button>
                                     </label>
                                     <select id="pm-equip" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                                         <option value="">라인을 먼저 선택하세요</option>
@@ -508,8 +508,8 @@
                             <!-- 설비 추가/삭제 관리 패널 -->
                             <div id="pm-equip-manage" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <div class="flex gap-2 mb-2.5">
-                                    <input type="text" id="pm-equip-new" placeholder="새 설비명 입력 후 [추가]" class="flex-1 border border-slate-300 rounded-md px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addEquipment();}">
-                                    <button type="button" onclick="addEquipment()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-1.5 rounded-md whitespace-nowrap flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 추가</button>
+                                    <input type="text" id="pm-equip-new" placeholder="새 설비명 입력 후 [추가]" class="flex-1 border border-slate-300 rounded-md px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addEquipment('pm');}">
+                                    <button type="button" onclick="addEquipment('pm')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-1.5 rounded-md whitespace-nowrap flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 추가</button>
                                 </div>
                                 <div id="pm-equip-manage-list" class="flex flex-wrap gap-1.5"></div>
                                 <p class="text-[10px] text-slate-500 mt-2">현재 라인의 설비 목록입니다. <b>&times;</b> 로 사용 안 하는 설비를 목록에서 제거할 수 있어요. (기존 등록 데이터는 유지됩니다)</p>
@@ -641,10 +641,23 @@
                                     <select id="bd-line" required onchange="updateEquipments('bd')" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"></select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">설비명 (직접입력 가능)</label>
+                                    <label class="flex items-center justify-between text-sm font-bold text-slate-700 mb-1.5">
+                                        <span>설비명 (직접입력 가능)</span>
+                                        <button type="button" onclick="toggleEquipManage('bd')" class="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i> 설비 추가/삭제</button>
+                                    </label>
                                     <input list="bd-equip-list" id="bd-equip" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="설비명을 선택하거나 입력하세요">
                                     <datalist id="bd-equip-list"></datalist>
                                 </div>
+                            </div>
+
+                            <!-- 설비 추가/삭제 관리 패널 -->
+                            <div id="bd-equip-manage" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex gap-2 mb-2.5">
+                                    <input type="text" id="bd-equip-new" placeholder="새 설비명 입력 후 [추가]" class="flex-1 border border-slate-300 rounded-md px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addEquipment('bd');}">
+                                    <button type="button" onclick="addEquipment('bd')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-1.5 rounded-md whitespace-nowrap flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 추가</button>
+                                </div>
+                                <div id="bd-equip-manage-list" class="flex flex-wrap gap-1.5"></div>
+                                <p class="text-[10px] text-slate-500 mt-2">현재 라인의 설비 목록입니다. <b>&times;</b> 로 잘못 입력했거나 사용 안 하는 설비를 제거할 수 있어요. (기존 등록 데이터는 유지됩니다)</p>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <div>
@@ -1257,13 +1270,14 @@
                 if(lineVal) {
                     getDynamicEquipments(lineVal).forEach(eq => equipList.innerHTML += `<option value="${eq}">`);
                 }
+                renderEquipManageList('bd');
             } else {
                 const equipSel = document.getElementById(`${formType}-equip`);
                 equipSel.innerHTML = '<option value="">설비 선택</option>';
                 if(lineVal) {
                     getDynamicEquipments(lineVal).forEach(eq => equipSel.innerHTML += `<option value="${eq}">${eq}</option>`);
                 }
-                if (formType === 'pm') renderEquipManageList();
+                if (formType === 'pm') renderEquipManageList('pm');
             }
         };
 
@@ -1498,10 +1512,12 @@
 
         window.__logout = () => signOut(auth);
         document.getElementById('google-login-btn').addEventListener('click', doGoogleLogin);
-        const eqManageListEl = document.getElementById('pm-equip-manage-list');
-        if (eqManageListEl) eqManageListEl.addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-remove-eq]');
-            if (btn) window.removeEquipment(btn.getAttribute('data-remove-eq'));
+        ['pm','bd'].forEach(ft => {
+            const el = document.getElementById(`${ft}-equip-manage-list`);
+            if (el) el.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-remove-eq]');
+                if (btn) window.removeEquipment(ft, btn.getAttribute('data-remove-eq'));
+            });
         });
         initAuth();
 
@@ -1535,8 +1551,10 @@
             const eqOvRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'equipmentOverrides');
             onSnapshot(eqOvRef, (snap) => {
                 equipmentOverrides = (snap.exists() && snap.data().lines) ? snap.data().lines : {};
-                const pmLineEl = document.getElementById('pm-line');
-                if (pmLineEl && pmLineEl.value) updateEquipments('pm');
+                ['pm','bd'].forEach(ft => {
+                    const el = document.getElementById(`${ft}-line`);
+                    if (el && el.value) updateEquipments(ft);
+                });
                 renderEquipManageList();
             });
         }
@@ -1547,28 +1565,34 @@
             await setDoc(eqOvRef, { lines: equipmentOverrides }, { merge: true });
         }
 
-        window.toggleEquipManage = () => {
-            const line = document.getElementById('pm-line').value;
-            if (!line) return showToast('먼저 적용 라인을 선택하세요.', 'error');
-            const panel = document.getElementById('pm-equip-manage');
-            panel.classList.toggle('hidden');
-            if (!panel.classList.contains('hidden')) renderEquipManageList();
+        const getFormLine = (formType) => {
+            const el = document.getElementById(`${formType}-line`);
+            return el ? el.value : '';
         };
 
-        window.renderEquipManageList = () => {
-            const listEl = document.getElementById('pm-equip-manage-list');
+        window.toggleEquipManage = (formType) => {
+            const line = getFormLine(formType);
+            if (!line) return showToast('먼저 적용 라인을 선택하세요.', 'error');
+            const panel = document.getElementById(`${formType}-equip-manage`);
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) renderEquipManageList(formType);
+        };
+
+        window.renderEquipManageList = (formType) => {
+            if (!formType) { ['pm','bd'].forEach(ft => renderEquipManageList(ft)); return; }
+            const listEl = document.getElementById(`${formType}-equip-manage-list`);
             if (!listEl) return;
-            const line = document.getElementById('pm-line') ? document.getElementById('pm-line').value : '';
+            const line = getFormLine(formType);
             if (!line) { listEl.innerHTML = '<span class="text-xs text-slate-400">먼저 적용 라인을 선택하세요.</span>'; return; }
             const eqs = getDynamicEquipments(line);
             if (!eqs.length) { listEl.innerHTML = '<span class="text-xs text-slate-400">등록된 설비가 없습니다. 아래에서 추가하세요.</span>'; return; }
             listEl.innerHTML = eqs.map(eq => `<span class="inline-flex items-center gap-1 bg-white border border-slate-300 rounded-full pl-2.5 pr-1 py-1 text-xs text-slate-700">${eq}<button type="button" data-remove-eq="${eq.replace(/"/g,'&quot;')}" class="w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 leading-none" title="목록에서 제거">&times;</button></span>`).join('');
         };
 
-        window.addEquipment = async () => {
-            const line = document.getElementById('pm-line').value;
+        window.addEquipment = async (formType) => {
+            const line = getFormLine(formType);
             if (!line) return showToast('먼저 적용 라인을 선택하세요.', 'error');
-            const input = document.getElementById('pm-equip-new');
+            const input = document.getElementById(`${formType}-equip-new`);
             const name = input.value.trim();
             if (!name) return;
             if (getDynamicEquipments(line).includes(name)) return showToast('이미 목록에 있는 설비명입니다.', 'error');
@@ -1579,23 +1603,23 @@
             input.value = '';
             try {
                 await saveEquipmentOverrides();
-                updateEquipments('pm');
+                updateEquipments(formType);
                 renderEquipManageList();
                 showToast(`'${name}' 설비를 추가했습니다.`, 'success');
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
         };
 
-        window.removeEquipment = async (name) => {
-            const line = document.getElementById('pm-line').value;
+        window.removeEquipment = async (formType, name) => {
+            const line = getFormLine(formType);
             if (!line || !name) return;
-            if (!confirm(`'${name}' 설비를 목록에서 제거할까요?\n(이미 등록된 점검 데이터는 그대로 유지됩니다)`)) return;
+            if (!confirm(`'${name}' 설비를 목록에서 제거할까요?\n(이미 등록된 데이터는 그대로 유지됩니다)`)) return;
             if (!equipmentOverrides[line]) equipmentOverrides[line] = { added: [], hidden: [] };
             equipmentOverrides[line].added = (equipmentOverrides[line].added || []).filter(a => a !== name);
             equipmentOverrides[line].hidden = equipmentOverrides[line].hidden || [];
             if (!equipmentOverrides[line].hidden.includes(name)) equipmentOverrides[line].hidden.push(name);
             try {
                 await saveEquipmentOverrides();
-                updateEquipments('pm');
+                updateEquipments(formType);
                 renderEquipManageList();
                 showToast(`'${name}' 설비를 제거했습니다.`, 'success');
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
