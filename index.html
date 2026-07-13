@@ -161,7 +161,7 @@
 
     <!-- Sidebar -->
     <aside id="main-sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 z-50 w-64 min-w-[16rem] bg-brand-800 text-brand-100 flex flex-col shrink-0 h-full transition-all duration-300">
-        <div class="h-16 flex items-center px-6 border-b border-brand-700 shrink-0 sidebar-header-container transition-all duration-300">
+        <div class="h-12 flex items-center px-6 border-b border-brand-700 shrink-0 sidebar-header-container transition-all duration-300">
             <img src="./SEAHCM.PNG" alt="세아씨엠 로고" class="h-8 w-auto object-contain logo-img transition-all duration-300" onerror="this.style.display='none'; document.getElementById('fallback-text-logo').classList.remove('hidden'); document.getElementById('fallback-text-logo').classList.add('flex');">
             
             <div id="fallback-text-logo" class="hidden items-center w-full">
@@ -211,7 +211,7 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full bg-slate-50 relative min-w-0">
         <!-- Top Header -->
-        <header class="h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10 shrink-0">
+        <header class="h-12 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10 shrink-0">
             <div class="flex items-center">
                 <!-- Mobile Toggle -->
                 <button onclick="toggleSidebar()" class="md:hidden mr-3 p-1 text-slate-500 hover:text-brand-600 focus:outline-none rounded transition-colors">
@@ -223,7 +223,7 @@
                     <i data-lucide="panel-left-close" class="w-5 h-5"></i>
                 </button>
 
-                <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800 truncate">종합현황 대시보드</h2>
+                <h2 id="page-title" class="text-base md:text-lg font-bold text-slate-800 truncate">종합현황 대시보드</h2>
             </div>
             <div class="flex items-center text-xs md:text-sm text-slate-500 ml-2">
                 <img src="./SEAHCM1.PNG" alt="SEAHCM" class="hidden sm:block h-6 md:h-7 w-auto object-contain mr-3">
@@ -1257,6 +1257,7 @@
 
         // Constants
         const LINES = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL'];
+        const BD_LINES = LINES.filter(l => l !== 'ARP'); // 고장실적은 ARP 제외 (예방점검은 전체 유지)
         const EQUIPMENT_MAP = {
             'CPL': ['CPL 1호기', 'CPL 2호기', 'CPL 유압유닛', 'CPL 권취기', '기타(CPL)'],
             'ARP': ['ARP 산회수펌프', 'ARP 폐산탱크', 'ARP 세정탑', '기타(ARP)'],
@@ -1298,6 +1299,7 @@
 
         // Pagination State
         const ITEMS_PER_PAGE = 20;
+        const PM_LIST_PER_PAGE = 50; // 예방점검 리스트는 한 페이지에 더 많이 표시
         let pmListPage = 1;
         let pmHistPage = 1;
         let bdListPage = 1;
@@ -1592,20 +1594,22 @@
             let lineOptions = '<option value="">라인 선택</option>';
             LINES.forEach(line => lineOptions += `<option value="${line}">${line}</option>`);
             
+            const bdLineOptions = '<option value="">라인 선택</option>' + BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
             document.getElementById('pm-line').innerHTML = lineOptions;
-            document.getElementById('bd-line').innerHTML = lineOptions;
-            
+            document.getElementById('bd-line').innerHTML = bdLineOptions;
+
             let editLineOptions = '';
             LINES.forEach(line => editLineOptions += `<option value="${line}">${line}</option>`);
             document.getElementById('edit-pm-line').innerHTML = editLineOptions;
-            document.getElementById('edit-bd-line').innerHTML = editLineOptions;
+            document.getElementById('edit-bd-line').innerHTML = BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
             
             let pmFilterLine = '<option value="ALL">전체 라인</option>';
             LINES.forEach(line => pmFilterLine += `<option value="${line}">${line}</option>`);
+            const bdFilterLine = '<option value="ALL">전체 라인</option>' + BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
             document.getElementById('pm-filter-line').innerHTML = pmFilterLine;
-            document.getElementById('bd-filter-line').innerHTML = pmFilterLine; 
+            document.getElementById('bd-filter-line').innerHTML = bdFilterLine;
             document.getElementById('pm-master-filter-line').innerHTML = pmFilterLine;
-            document.getElementById('bd-master-filter-line').innerHTML = pmFilterLine;
+            document.getElementById('bd-master-filter-line').innerHTML = bdFilterLine;
 
             // 실적이력 전용 라인 필터
             let histLineOptions = '<option value="ALL">전체 라인</option>';
@@ -2435,7 +2439,7 @@
             if (bdMasterPage > totalPages) bdMasterPage = Math.max(1, totalPages);
             const startIdx = (bdMasterPage - 1) * ITEMS_PER_PAGE;
             const paginated = list.slice(startIdx, startIdx + ITEMS_PER_PAGE);
-            const lineOptions = LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            const lineOptions = BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
             const esc = (v) => String(v || '').replace(/"/g, '&quot;');
             const txt = (item, field) => `<input type="text" value="${esc(item[field])}" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-700" onchange="updateTempBDData('${item.id}','${field}',this.value)">`;
             let html = '';
@@ -2780,10 +2784,10 @@
                 return; 
             }
 
-            const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
+            const totalPages = Math.ceil(currentList.length / PM_LIST_PER_PAGE);
             if (pmListPage > totalPages) pmListPage = Math.max(1, totalPages);
-            const start = (pmListPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = currentList.slice(start, start + ITEMS_PER_PAGE);
+            const start = (pmListPage - 1) * PM_LIST_PER_PAGE;
+            const paginatedList = currentList.slice(start, start + PM_LIST_PER_PAGE);
 
             let html = '';
             
