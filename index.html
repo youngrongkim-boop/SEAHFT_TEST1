@@ -548,7 +548,7 @@
 
             <!-- VIEW: PM REGISTRATION -->
             <div id="view-pm-reg" class="view-section hidden space-y-4 md:space-y-6 flex-col min-w-0">
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+                <div class="space-y-4 md:space-y-6">
                     <!-- 수동 등록 Form -->
                     <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col xl:col-span-2">
                         <div class="flex items-center justify-between mb-4 md:mb-6 border-b pb-3">
@@ -621,22 +621,20 @@
                         </form>
                     </div>
 
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                        <div class="flex items-center mb-4 border-b pb-3">
-                            <div class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center mr-2.5 shrink-0"><i data-lucide="file-spreadsheet" class="w-5 h-5"></i></div>
-                            <h3 class="text-base md:text-lg font-bold text-slate-800">엑셀 일괄 등록</h3>
-                        </div>
-                        <p class="text-xs md:text-sm text-slate-500">양식을 다운로드해 작성한 뒤 업로드하면 대량으로 등록됩니다.</p>
-                        <p class="text-[10px] md:text-xs text-slate-400 mt-2 font-medium leading-relaxed">A열: 순번 · B열: 설비명 · C열: 구분 · D열: 작업세부사항 · E열: 기준값 · F열: 주기</p>
-                        <p class="text-[10px] md:text-xs text-blue-500 mt-1.5 font-bold leading-relaxed">※ 시트명(하단 탭)을 'CPL', 'CRM' 등 라인명으로 작성하면 시트별로 라인이 자동 분류됩니다.</p>
-                        <div class="flex flex-col gap-2.5 mt-auto pt-5">
-                            <button onclick="downloadTemplate('pm')" class="w-full flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition">
-                                <i data-lucide="download" class="w-4 h-4 mr-2"></i> 등록 양식 다운로드
-                            </button>
-                            <label class="w-full flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white shadow-sm rounded-lg text-sm font-bold transition cursor-pointer">
-                                <i data-lucide="upload" class="w-4 h-4 mr-2"></i> 작성된 엑셀 업로드
-                                <input type="file" id="pm-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event, 'pm')">
-                            </label>
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-100">
+                        <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
+                            <div class="flex items-center shrink-0">
+                                <div class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center mr-2.5 shrink-0"><i data-lucide="file-spreadsheet" class="w-5 h-5"></i></div>
+                                <h3 class="text-base font-bold text-slate-800 whitespace-nowrap">엑셀 일괄 등록</h3>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[10px] md:text-xs text-slate-500 font-medium leading-relaxed">A: 순번 · B: 설비명 · C: 구분 · D: 작업세부사항 · E: 기준값 · F: 주기</p>
+                                <p class="text-[10px] md:text-xs text-blue-500 mt-0.5 font-bold leading-relaxed">※ 시트명(하단 탭)을 라인명(CPL, CRM…)으로 작성하면 자동 분류됩니다.</p>
+                            </div>
+                            <div class="flex gap-2 shrink-0">
+                                <button onclick="downloadTemplate('pm')" class="flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition whitespace-nowrap"><i data-lucide="download" class="w-4 h-4 mr-2"></i> 양식 다운로드</button>
+                                <label class="flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white shadow-sm rounded-lg text-sm font-bold transition cursor-pointer whitespace-nowrap"><i data-lucide="upload" class="w-4 h-4 mr-2"></i> 엑셀 업로드<input type="file" id="pm-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event, 'pm')"></label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -695,8 +693,8 @@
 
             <!-- VIEW: BD REGISTRATION -->
             <div id="view-bd-reg" class="view-section hidden space-y-4 md:space-y-6 flex-col min-w-0">
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
-                    <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-100 xl:col-span-2">
+                <div class="space-y-4 md:space-y-6">
+                    <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-100">
                         <h3 class="text-base md:text-lg font-bold text-slate-800 mb-4 md:mb-6 border-b pb-3 flex items-center">
                             <i data-lucide="edit" class="w-5 h-5 mr-2 text-slate-500"></i> 수동 고장 등록
                         </h3>
@@ -780,22 +778,20 @@
                         </form>
                     </div>
                     
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                        <div class="flex items-center mb-4 border-b pb-3">
-                            <div class="w-9 h-9 bg-red-50 text-red-500 rounded-lg flex items-center justify-center mr-2.5 shrink-0"><i data-lucide="file-spreadsheet" class="w-5 h-5"></i></div>
-                            <h3 class="text-base md:text-lg font-bold text-slate-800">엑셀 일괄 등록</h3>
-                        </div>
-                        <p class="text-xs md:text-sm text-slate-500">양식에 맞춰 작성한 뒤 업로드하면 대량으로 등록됩니다.</p>
-                        <p class="text-[10px] md:text-xs text-slate-400 mt-2 font-medium leading-relaxed">A열: 설비명 · B열: 구분 · C열: 대분류 · D열: 중분류 · E열: 소분류 · F열: 조치내용 · G열: 발생일시(YYMMDDHHmm) · H열: 완료일시</p>
-                        <p class="text-[10px] md:text-xs text-blue-500 mt-1.5 font-bold leading-relaxed">※ 시트명(하단 탭)을 'CPL', 'CRM' 등 라인명으로 작성하면 시트별로 라인이 자동 분류됩니다.</p>
-                        <div class="flex flex-col gap-2.5 mt-auto pt-5">
-                            <button onclick="downloadTemplate('bd')" class="w-full flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition">
-                                <i data-lucide="download" class="w-4 h-4 mr-2"></i> 실적 등록 양식 다운로드
-                            </button>
-                            <label class="w-full flex items-center justify-center px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white shadow-sm rounded-lg text-sm font-bold transition cursor-pointer">
-                                <i data-lucide="upload" class="w-4 h-4 mr-2"></i> 작성된 엑셀 업로드
-                                <input type="file" id="bd-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event, 'bd')">
-                            </label>
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-100">
+                        <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
+                            <div class="flex items-center shrink-0">
+                                <div class="w-9 h-9 bg-red-50 text-red-500 rounded-lg flex items-center justify-center mr-2.5 shrink-0"><i data-lucide="file-spreadsheet" class="w-5 h-5"></i></div>
+                                <h3 class="text-base font-bold text-slate-800 whitespace-nowrap">엑셀 일괄 등록</h3>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[10px] md:text-xs text-slate-500 font-medium leading-relaxed">A: 구분 · B: 대분류 · C: 중분류 · D: 소분류 · E: 고장명 · F: 발생원인 · G: 조치내용 · H: 방지대책 · I: 발생일시(YYMMDDHHmm) · J: 완료일시 · K: 설비명</p>
+                                <p class="text-[10px] md:text-xs text-blue-500 mt-0.5 font-bold leading-relaxed">※ 시트명(하단 탭)을 라인명(CPL, CRM…)으로 작성하면 자동 분류됩니다. 설비명(K)은 비워도 됩니다.</p>
+                            </div>
+                            <div class="flex gap-2 shrink-0">
+                                <button onclick="downloadTemplate('bd')" class="flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition whitespace-nowrap"><i data-lucide="download" class="w-4 h-4 mr-2"></i> 양식 다운로드</button>
+                                <label class="flex items-center justify-center px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white shadow-sm rounded-lg text-sm font-bold transition cursor-pointer whitespace-nowrap"><i data-lucide="upload" class="w-4 h-4 mr-2"></i> 엑셀 업로드<input type="file" id="bd-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event, 'bd')"></label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3081,10 +3077,12 @@
                                     });
                                 } else {
                                     // A:구분 B:대분류 C:중분류 D:소분류 E:고장명 F:발생원인 G:조치내용 H:방지대책 I:발생일시 J:완료일시 K:설비명
-                                    const equipName = String(row[10] || '').trim();
+                                    const equipName = String(row[10] || '').trim(); // 설비명은 비어도 공백으로 등록
                                     const content = String(row[6] || '').trim();
+                                    const faultNameVal = String(row[4] || '').trim();
 
-                                    if (!equipName || !content) continue;
+                                    // 조치내용·고장명이 모두 비어야 진짜 빈 행으로 보고 건너뜀
+                                    if (!content && !faultNameVal) continue;
 
                                     const startStr = parseCustomDateString(row[8]);
                                     const endStr = parseCustomDateString(row[9]);
