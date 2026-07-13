@@ -229,27 +229,38 @@
             <div id="view-dashboard" class="view-section space-y-6 flex-col min-w-0">
                 
                 <!-- 공통 KPI Cards (Deep Linking Applied) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToPMListPending()" title="대기중인 항목 리스트로 이동">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToPMListPending()" title="대기중인 항목 리스트로 이동">
                         <div>
                             <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">진행중 예방점검</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="kpi-pm-total">0</h3>
+                            <p class="text-[11px] font-semibold text-red-500 mt-1">지연 <span id="kpi-pm-overdue">0</span>건</p>
                         </div>
-                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="clipboard-check" class="w-5 h-5 md:w-6 md:h-6"></i></div>
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg shrink-0"><i data-lucide="clipboard-check" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToBDList()" title="고장실적 리스트로 이동">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToBDList()" title="고장실적 리스트로 이동">
                         <div>
-                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">총 고장 발생건</p>
+                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">총 고장 건수</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="kpi-breakdown-total">0</h3>
+                            <p class="text-[11px] font-semibold text-red-600 mt-1">중대고장 <span id="kpi-critical">0</span>건</p>
                         </div>
-                        <div class="p-3 bg-red-50 text-red-500 rounded-lg"><i data-lucide="alert-triangle" class="w-5 h-5 md:w-6 md:h-6"></i></div>
+                        <div class="p-3 bg-red-50 text-red-500 rounded-lg shrink-0"><i data-lucide="alert-triangle" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between sm:col-span-2 md:col-span-1">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
                         <div>
-                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">평균 고장 조치시간</p>
-                            <h3 class="text-2xl md:text-3xl font-bold text-slate-800"><span id="kpi-avg-downtime">0</span><span class="text-base md:text-lg font-normal text-slate-500 ml-1">분</span></h3>
+                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">누적 정지시간</p>
+                            <h3 class="text-xl md:text-3xl font-bold text-slate-800" id="kpi-total-downtime">0분</h3>
+                            <p class="text-[11px] font-medium text-slate-400 mt-1">설비 멈춘 총 시간</p>
                         </div>
-                        <div class="p-3 bg-orange-50 text-orange-500 rounded-lg"><i data-lucide="clock" class="w-5 h-5 md:w-6 md:h-6"></i></div>
+                        <div class="p-3 bg-amber-50 text-amber-500 rounded-lg shrink-0"><i data-lucide="timer-off" class="w-5 h-5 md:w-6 md:h-6"></i></div>
+                    </div>
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">평균 조치시간</p>
+                            <h3 class="text-2xl md:text-3xl font-bold text-slate-800"><span id="kpi-avg-downtime">0</span><span class="text-base md:text-lg font-normal text-slate-500 ml-1">분</span></h3>
+                            <p class="text-[11px] font-medium text-slate-400 mt-1">건당 평균(MTTR)</p>
+                        </div>
+                        <div class="p-3 bg-orange-50 text-orange-500 rounded-lg shrink-0"><i data-lucide="clock" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
                 </div>
 
@@ -265,9 +276,27 @@
                         </div>
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
                             <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center">
-                                <i data-lucide="siren" class="w-4 h-4 mr-2 text-red-500"></i> 고장 다발 설비 Top 5
+                                <i data-lucide="trending-up" class="w-4 h-4 mr-2 text-slate-500"></i> 월별 고장 추이 <span class="text-[11px] font-normal text-slate-400 ml-1">(막대: 전체 · 선: 중대고장)</span>
+                            </h4>
+                            <div class="relative h-48 md:h-64"><canvas id="chartEffectiveness"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
+                            <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
+                                <span class="flex items-center"><i data-lucide="siren" class="w-4 h-4 mr-2 text-red-500"></i> 고장 Top 설비</span>
+                                <span class="inline-flex rounded-md overflow-hidden border border-slate-200 text-[10px] font-bold shrink-0">
+                                    <button type="button" id="top-metric-count" onclick="setTopEquipMetric('count')" class="px-2 py-1 bg-red-500 text-white">건수</button>
+                                    <button type="button" id="top-metric-time" onclick="setTopEquipMetric('time')" class="px-2 py-1 bg-white text-slate-500">정지시간</button>
+                                </span>
                             </h4>
                             <div class="relative h-48 md:h-64"><canvas id="chartTopEquipments"></canvas></div>
+                        </div>
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
+                            <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center">
+                                <i data-lucide="clock" class="w-4 h-4 mr-2 text-slate-500"></i> 근무조별 고장 분포 <span class="text-[11px] font-normal text-slate-400 ml-1">(주간/야간/주말)</span>
+                            </h4>
+                            <div class="relative h-48 md:h-64"><canvas id="chartShift"></canvas></div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -278,10 +307,17 @@
                             <div class="relative h-48 mb-2"><canvas id="chartCategory"></canvas></div>
                         </div>
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 lg:col-span-2 flex flex-col min-w-0">
-                            <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center">
-                                <i data-lucide="trending-up" class="w-4 h-4 mr-2 text-slate-500"></i> 월별 예방보전 효과 분석
+                            <h4 class="text-sm md:text-base font-bold text-slate-800 mb-3 flex items-center">
+                                <i data-lucide="alert-octagon" class="w-4 h-4 mr-2 text-red-500"></i> 최근 중대고장 <span class="text-[11px] font-normal text-slate-400 ml-1">(조치시간 2시간 이상)</span>
                             </h4>
-                            <div class="relative h-48 md:h-56 flex-1"><canvas id="chartEffectiveness"></canvas></div>
+                            <div class="flex-1 overflow-auto custom-scroll border border-slate-100 rounded-lg max-h-64">
+                                <table class="w-full text-left text-xs whitespace-nowrap min-w-[520px]">
+                                    <thead class="bg-slate-50 sticky top-0 text-slate-600 shadow-sm z-10">
+                                        <tr><th class="py-2 px-3 font-bold border-b border-slate-200">발생일</th><th class="py-2 px-3 font-bold border-b border-slate-200">라인</th><th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th><th class="py-2 px-3 font-bold border-b border-slate-200 text-center">조치시간</th><th class="py-2 px-3 font-bold border-b border-slate-200">내용</th></tr>
+                                    </thead>
+                                    <tbody id="dash-critical-body" class="divide-y divide-slate-100 bg-white"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -999,6 +1035,7 @@
         let rawPMResultsData = [];
         let rawEditHistoryData = [];
         let equipmentOverrides = {}; // 라인별 설비명 추가/숨김 { CPL: { added:[], hidden:[] } }
+        let topEquipMetric = 'count'; // 고장 Top 설비 기준: 'count'(건수) | 'time'(정지시간)
         
         let chartInstances = {};
         let activeRemarksTaskId = null;
@@ -1707,10 +1744,17 @@
             }
             
             document.getElementById('kpi-breakdown-total').innerText = dashboardBDData.length.toLocaleString();
+            const totalMins = dashboardBDData.reduce((acc, cur) => acc + (cur.durationMinutes || 0), 0);
             if(dashboardBDData.length > 0) {
-                const totalMins = dashboardBDData.reduce((acc, cur) => acc + (cur.durationMinutes || 0), 0);
                 document.getElementById('kpi-avg-downtime').innerText = Math.round(totalMins / dashboardBDData.length).toLocaleString();
             } else document.getElementById('kpi-avg-downtime').innerText = '0';
+
+            const kpiOverdueEl = document.getElementById('kpi-pm-overdue');
+            if(kpiOverdueEl) kpiOverdueEl.innerText = overduePMs.length.toLocaleString();
+            const kpiCritEl = document.getElementById('kpi-critical');
+            if(kpiCritEl) kpiCritEl.innerText = dashboardBDData.filter(d => (d.durationMinutes || 0) >= 120).length.toLocaleString();
+            const kpiTdEl = document.getElementById('kpi-total-downtime');
+            if(kpiTdEl) kpiTdEl.innerText = totalMins >= 60 ? `${Math.floor(totalMins/60).toLocaleString()}시간 ${totalMins%60}분` : `${totalMins}분`;
 
             if(currentTabId === 'pm-list') {
                 window.debouncedRenderPMList();
@@ -2684,6 +2728,32 @@
         Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
         Chart.defaults.color = '#64748b';
         
+        window.setTopEquipMetric = (metric) => {
+            topEquipMetric = metric;
+            const cEl = document.getElementById('top-metric-count');
+            const tEl = document.getElementById('top-metric-time');
+            if (cEl) cEl.className = `px-2 py-1 ${metric === 'count' ? 'bg-red-500 text-white' : 'bg-white text-slate-500'}`;
+            if (tEl) tEl.className = `px-2 py-1 ${metric === 'time' ? 'bg-red-500 text-white' : 'bg-white text-slate-500'}`;
+            window.debouncedApplyFilterAndRender();
+        };
+
+        function renderCriticalMiniTable(bdData) {
+            const tbody = document.getElementById('dash-critical-body');
+            if (!tbody) return;
+            const criticals = bdData.filter(d => (d.durationMinutes || 0) >= 120)
+                .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 30);
+            if (!criticals.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">중대고장(2시간 이상) 이력이 없습니다.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = criticals.map(d => {
+                const dur = d.durationMinutes || 0;
+                const durStr = dur >= 60 ? `${Math.floor(dur/60)}시간 ${dur%60}분` : `${dur}분`;
+                const dateStr = (d.startTime || '').substring(0, 10);
+                return `<tr class="hover:bg-red-50"><td class="py-2 px-3 text-slate-600">${dateStr}</td><td class="py-2 px-3 font-bold text-brand-600">${d.line || '-'}</td><td class="py-2 px-3 font-semibold text-slate-800">${d.equipmentName || '-'}</td><td class="py-2 px-3 text-center text-red-600 font-bold">${durStr}</td><td class="py-2 px-3 text-slate-600 max-w-[220px] truncate" title="${(d.content || '').replace(/"/g,'&quot;')}">${d.content || '-'}</td></tr>`;
+            }).join('');
+        }
+
         function renderCharts(dashboardBDData, dashboardPMData) {
             Object.values(chartInstances).forEach(c => c.destroy());
             chartInstances = {};
@@ -2706,36 +2776,54 @@
                     }
                 });
 
-                const equipCounts = {};
-                dashboardBDData.forEach(d => { equipCounts[d.equipmentName || '미확인'] = (equipCounts[d.equipmentName || '미확인'] || 0) + 1; });
-                const top5Equips = Object.entries(equipCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                
+                // 고장 Top 설비 (건수 ↔ 정지시간 토글)
+                const equipAgg = {};
+                dashboardBDData.forEach(d => {
+                    const k = d.equipmentName || '미확인';
+                    if(!equipAgg[k]) equipAgg[k] = { count: 0, time: 0 };
+                    equipAgg[k].count++; equipAgg[k].time += (d.durationMinutes || 0);
+                });
+                const topEquips = Object.entries(equipAgg).sort((a, b) => b[1][topEquipMetric] - a[1][topEquipMetric]).slice(0, 5);
                 const ctxTop = document.getElementById('chartTopEquipments').getContext('2d');
                 chartInstances['all_topEq'] = new Chart(ctxTop, {
                     type: 'bar',
-                    data: { labels: top5Equips.length > 0 ? top5Equips.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: '고장 건수', data: top5Equips.length > 0 ? top5Equips.map(e => e[1]) : [0], backgroundColor: '#ef4444', borderRadius: 4 }] },
-                    options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
+                    data: { labels: topEquips.length > 0 ? topEquips.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: topEquipMetric === 'count' ? '고장 건수' : '누적 정지시간(분)', data: topEquips.length > 0 ? topEquips.map(e => e[1][topEquipMetric]) : [0], backgroundColor: '#ef4444', borderRadius: 4 }] },
+                    options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + (topEquipMetric === 'count' ? '건' : '분') } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
                 });
 
                 const catCounts = {};
                 dashboardBDData.forEach(d => { catCounts[d.mainCategory || '미분류'] = (catCounts[d.mainCategory || '미분류'] || 0) + 1; });
                 const ctxCat = document.getElementById('chartCategory').getContext('2d');
-                chartInstances['all_cat'] = new Chart(ctxCat, { 
-                    type: 'doughnut', 
-                    data: { labels: Object.keys(catCounts).length > 0 ? Object.keys(catCounts) : ['데이터 없음'], datasets: [{ data: Object.keys(catCounts).length > 0 ? Object.values(catCounts) : [1], backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#64748b'], borderWidth: 0, hoverOffset: 4 }] }, 
-                    options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '50%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } } 
+                chartInstances['all_cat'] = new Chart(ctxCat, {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(catCounts).length > 0 ? Object.keys(catCounts) : ['데이터 없음'], datasets: [{ data: Object.keys(catCounts).length > 0 ? Object.values(catCounts) : [1], backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#64748b'], borderWidth: 0, hoverOffset: 4 }] },
+                    options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '50%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
                 });
 
+                // 월별 고장 추이 (총 고장 막대 + 중대고장 선)
                 const monthlyData = {};
                 dashboardBDData.forEach(d => {
                     if(!d.startTime) return;
                     const m = d.startTime.substring(0, 7);
-                    if(!monthlyData[m]) monthlyData[m] = { bd: 0, pm: dashboardPMData.filter(p=>p.status !== '점검').length }; 
-                    monthlyData[m].bd++;
+                    if(!monthlyData[m]) monthlyData[m] = { total: 0, critical: 0 };
+                    monthlyData[m].total++;
+                    if((d.durationMinutes || 0) >= 120) monthlyData[m].critical++;
                 });
                 const sortedMonths = Object.keys(monthlyData).sort();
                 const ctxEff = document.getElementById('chartEffectiveness').getContext('2d');
-                chartInstances['all_eff'] = new Chart(ctxEff, { type: 'bar', data: { labels: sortedMonths.length > 0 ? sortedMonths : ['월 데이터 없음'], datasets: [{ type: 'line', label: '고장 발생 건수', data: sortedMonths.length > 0 ? sortedMonths.map(m => monthlyData[m].bd) : [0], borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3, borderWidth: 2 }, { type: 'bar', label: '진행중인 예방점검 항목 수', data: sortedMonths.length > 0 ? sortedMonths.map(m => monthlyData[m].pm) : [0], backgroundColor: '#94a3b8', borderRadius: 4 }] }, options: { animation: false, responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } } });
+                chartInstances['all_eff'] = new Chart(ctxEff, { data: { labels: sortedMonths.length > 0 ? sortedMonths : ['월 데이터 없음'], datasets: [{ type: 'bar', label: '총 고장', data: sortedMonths.length > 0 ? sortedMonths.map(m => monthlyData[m].total) : [0], backgroundColor: '#94a3b8', borderRadius: 4, order: 2 }, { type: 'line', label: '중대고장', data: sortedMonths.length > 0 ? sortedMonths.map(m => monthlyData[m].critical) : [0], borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3, borderWidth: 2, order: 1 }] }, options: { animation: false, responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } } });
+
+                // 근무조별 고장 분포 (주간/야간/주말)
+                const shiftCounts = { '주간': 0, '야간': 0, '주말': 0 };
+                dashboardBDData.forEach(d => { if(shiftCounts[d.shiftType] !== undefined) shiftCounts[d.shiftType]++; });
+                const ctxShift = document.getElementById('chartShift').getContext('2d');
+                chartInstances['all_shift'] = new Chart(ctxShift, {
+                    type: 'bar',
+                    data: { labels: ['주간', '야간', '주말'], datasets: [{ label: '고장 건수', data: [shiftCounts['주간'], shiftCounts['야간'], shiftCounts['주말']], backgroundColor: ['#3b82f6', '#8b5cf6', '#ef4444'], borderRadius: 4 }] },
+                    options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw + '건' } } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+                });
+
+                renderCriticalMiniTable(dashboardBDData);
 
             } else {
                 const equipTime = {};
