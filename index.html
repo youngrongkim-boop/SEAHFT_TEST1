@@ -721,6 +721,10 @@
                                 <div id="bd-equip-manage-list" class="flex flex-wrap gap-1.5"></div>
                                 <p class="text-[10px] text-slate-500 mt-2">현재 라인의 설비 목록입니다. <b>&times;</b> 로 잘못 입력했거나 사용 안 하는 설비를 제거할 수 있어요. (기존 등록 데이터는 유지됩니다)</p>
                             </div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-slate-500">고장 분류</span>
+                                <button type="button" onclick="openCategoryModal()" class="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i> 대/중/소 분류 추가·수정</button>
+                            </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-600 mb-1.5">구분(전/기)</label>
@@ -909,6 +913,50 @@
     </div>
 
     <!-- PM Single Edit Modal -->
+    <!-- 고장 분류(대/중/소) 관리 모달 -->
+    <div id="category-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="folder-tree" class="w-5 h-5 mr-2 text-blue-500"></i> 고장 분류 관리 (대 / 중 / 소)</h3>
+                <button type="button" onclick="closeCategoryModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="px-6 pt-3 text-xs text-slate-500 shrink-0">대분류를 선택하면 중분류가, 중분류를 선택하면 소분류가 나타납니다. 각 칸에서 추가하거나 <b>&times;</b>로 삭제 후 <b>저장</b>하세요.</p>
+            <div class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-auto custom-scroll flex-1">
+                <div class="border border-slate-200 rounded-lg flex flex-col overflow-hidden">
+                    <div class="bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 border-b border-slate-200">대분류</div>
+                    <div id="cat-col-main" class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1 min-h-[180px]"></div>
+                    <div class="p-2 border-t border-slate-100 flex gap-1">
+                        <input type="text" id="cat-input-main" placeholder="새 대분류" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addCategoryItem('main');}">
+                        <button type="button" onclick="addCategoryItem('main')" class="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shrink-0">추가</button>
+                    </div>
+                </div>
+                <div class="border border-slate-200 rounded-lg flex flex-col overflow-hidden">
+                    <div class="bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 border-b border-slate-200" id="cat-col-sub-title">중분류</div>
+                    <div id="cat-col-sub" class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1 min-h-[180px]"></div>
+                    <div class="p-2 border-t border-slate-100 flex gap-1">
+                        <input type="text" id="cat-input-sub" placeholder="새 중분류" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addCategoryItem('sub');}">
+                        <button type="button" onclick="addCategoryItem('sub')" class="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shrink-0">추가</button>
+                    </div>
+                </div>
+                <div class="border border-slate-200 rounded-lg flex flex-col overflow-hidden">
+                    <div class="bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 border-b border-slate-200" id="cat-col-detail-title">소분류</div>
+                    <div id="cat-col-detail" class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1 min-h-[180px]"></div>
+                    <div class="p-2 border-t border-slate-100 flex gap-1">
+                        <input type="text" id="cat-input-detail" placeholder="새 소분류" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addCategoryItem('detail');}">
+                        <button type="button" onclick="addCategoryItem('detail')" class="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shrink-0">추가</button>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-between items-center shrink-0">
+                <span class="text-[11px] text-slate-400">저장 시 모든 사용자에게 반영됩니다.</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
+                    <button type="button" onclick="saveCategoryMap()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 예방점검 실적 등록 모달 (점검 일시 입력) -->
     <div id="pm-result-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
@@ -1111,6 +1159,8 @@
             "전기/제어": { "배전반": ["차단기", "릴레이", "단자대", "퓨즈"], "센서/계측기": ["광센서", "근접센서", "온도계", "압력계"], "제어기": ["PLC", "인버터", "파워서플라이", "I/O모듈"] },
             "유틸리티": { "배관": ["가스켓", "수동밸브", "자동밸브", "플랜지"], "공조/냉각": ["필터", "냉각팬", "벨트", "컴프레셔"] }
         };
+        // 실제 사용되는 분류맵(Firestore에서 불러온 커스텀이 있으면 대체, 없으면 기본 CATEGORY_MAP)
+        let categoryMap = JSON.parse(JSON.stringify(CATEGORY_MAP));
 
         // State
         let currentUser = null;
@@ -1127,6 +1177,7 @@
         let targetMetric = 'count'; // 목표 대비 차트 기준: 'count' | 'time'
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
+        let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
         
         let chartInstances = {};
         let activeRemarksTaskId = null;
@@ -1423,7 +1474,7 @@
         function initCategorySelects() {
             let mainOptions = '<option value="">선택</option>';
             let filterMainOptions = '<option value="ALL">대분류 전체</option>';
-            Object.keys(CATEGORY_MAP).forEach(main => {
+            Object.keys(categoryMap).forEach(main => {
                 mainOptions += `<option value="${main}">${main}</option>`;
                 filterMainOptions += `<option value="${main}">${main}</option>`;
             });
@@ -1438,15 +1489,15 @@
             const detailSel = document.getElementById('bd-detail-cat');
             subSel.innerHTML = '<option value="">선택</option>';
             detailSel.innerHTML = '<option value="">선택</option>';
-            if(mainVal && CATEGORY_MAP[mainVal]) Object.keys(CATEGORY_MAP[mainVal]).forEach(sub => subSel.innerHTML += `<option value="${sub}">${sub}</option>`);
+            if(mainVal && categoryMap[mainVal]) Object.keys(categoryMap[mainVal]).forEach(sub => subSel.innerHTML += `<option value="${sub}">${sub}</option>`);
         };
         
         window.updateSubFilterBD = () => {
             const mainVal = document.getElementById('bd-filter-main').value;
             const subSel = document.getElementById('bd-filter-sub');
             subSel.innerHTML = '<option value="ALL">중분류 전체</option>';
-            if(mainVal !== 'ALL' && CATEGORY_MAP[mainVal]) {
-                Object.keys(CATEGORY_MAP[mainVal]).forEach(sub => subSel.innerHTML += `<option value="${sub}">${sub}</option>`);
+            if(mainVal !== 'ALL' && categoryMap[mainVal]) {
+                Object.keys(categoryMap[mainVal]).forEach(sub => subSel.innerHTML += `<option value="${sub}">${sub}</option>`);
             }
         };
 
@@ -1456,7 +1507,7 @@
             const subVal = document.getElementById('bd-sub-cat').value;
             const detailSel = document.getElementById('bd-detail-cat');
             detailSel.innerHTML = '<option value="">선택</option>';
-            if(mainVal && subVal && CATEGORY_MAP[mainVal][subVal]) CATEGORY_MAP[mainVal][subVal].forEach(detail => detailSel.innerHTML += `<option value="${detail}">${detail}</option>`);
+            if(mainVal && subVal && categoryMap[mainVal][subVal]) categoryMap[mainVal][subVal].forEach(detail => detailSel.innerHTML += `<option value="${detail}">${detail}</option>`);
         };
 
         window.toggleDetailsDropdown = (e) => {
@@ -1691,6 +1742,13 @@
             onSnapshot(targetRef, (snap) => {
                 faultTargets = (snap.exists() && snap.data().lines) ? snap.data().lines : {};
                 if (currentTabId === 'dashboard' && currentLineFilter === 'ALL') window.debouncedApplyFilterAndRender();
+            });
+            const catMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'categoryMap');
+            onSnapshot(catMapRef, (snap) => {
+                categoryMap = (snap.exists() && snap.data().map) ? snap.data().map : JSON.parse(JSON.stringify(CATEGORY_MAP));
+                initCategorySelects();
+                // 현재 폼에서 선택된 값 유지하며 하위 목록 갱신
+                if (document.getElementById('bd-main-cat')) updateSubCategories('bd');
             });
         }
 
@@ -2960,6 +3018,86 @@
                 return `<tr class="hover:bg-red-50"><td class="py-2 px-3 text-slate-600">${dateStr}</td><td class="py-2 px-3 font-bold text-brand-600">${d.line || '-'}</td><td class="py-2 px-3 font-semibold text-slate-800">${d.equipmentName || '-'}</td><td class="py-2 px-3 text-center text-red-600 font-bold">${durStr}</td><td class="py-2 px-3 text-slate-600 max-w-[220px] truncate" title="${(d.content || '').replace(/"/g,'&quot;')}">${d.content || '-'}</td></tr>`;
             }).join('');
         }
+
+        // ===== 고장 분류(대/중/소) 관리 =====
+        const catEsc = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        function catItemHtml(label, level, selected) {
+            const e = catEsc(label);
+            return `<div class="flex items-center justify-between gap-1 px-2 py-1.5 rounded text-xs cursor-pointer ${selected ? 'bg-blue-100 text-blue-800 font-bold' : 'hover:bg-slate-50 text-slate-700'}" onclick="selectCategory('${level}','${e}')"><span class="truncate">${label}</span><button type="button" onclick="event.stopPropagation();removeCategoryItem('${level}','${e}')" class="w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0 leading-none">&times;</button></div>`;
+        }
+        window.openCategoryModal = () => {
+            catDraft = JSON.parse(JSON.stringify(categoryMap));
+            const mains = Object.keys(catDraft);
+            catSelMain = mains.length ? mains[0] : null;
+            const subs = catSelMain ? Object.keys(catDraft[catSelMain]) : [];
+            catSelSub = subs.length ? subs[0] : null;
+            renderCategoryModal();
+            const modal = document.getElementById('category-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+        };
+        window.closeCategoryModal = () => {
+            const modal = document.getElementById('category-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+        window.renderCategoryModal = () => {
+            const empty = (t) => `<p class="text-[11px] text-slate-400 text-center py-4">${t}</p>`;
+            document.getElementById('cat-col-main').innerHTML = Object.keys(catDraft).map(m => catItemHtml(m, 'main', m === catSelMain)).join('') || empty('대분류를 추가하세요');
+            document.getElementById('cat-col-sub-title').innerText = catSelMain ? `중분류 (${catSelMain})` : '중분류';
+            const subCol = document.getElementById('cat-col-sub');
+            if (!catSelMain) subCol.innerHTML = empty('대분류를 선택하세요');
+            else { const subs = Object.keys(catDraft[catSelMain] || {}); subCol.innerHTML = subs.map(s => catItemHtml(s, 'sub', s === catSelSub)).join('') || empty('중분류를 추가하세요'); }
+            document.getElementById('cat-col-detail-title').innerText = catSelSub ? `소분류 (${catSelSub})` : '소분류';
+            const detCol = document.getElementById('cat-col-detail');
+            if (!catSelMain || !catSelSub) detCol.innerHTML = empty('중분류를 선택하세요');
+            else { const dets = (catDraft[catSelMain] && catDraft[catSelMain][catSelSub]) || []; detCol.innerHTML = dets.map(d => catItemHtml(d, 'detail', false)).join('') || empty('소분류를 추가하세요'); }
+        };
+        window.selectCategory = (level, label) => {
+            if (level === 'main') { catSelMain = label; const subs = Object.keys(catDraft[label] || {}); catSelSub = subs.length ? subs[0] : null; }
+            else if (level === 'sub') { catSelSub = label; }
+            renderCategoryModal();
+        };
+        window.addCategoryItem = (level) => {
+            const input = document.getElementById(`cat-input-${level}`);
+            const val = input.value.trim();
+            if (!val) return;
+            if (level === 'main') {
+                if (catDraft[val]) return showToast('이미 있는 대분류입니다.', 'error');
+                catDraft[val] = {}; catSelMain = val; catSelSub = null;
+            } else if (level === 'sub') {
+                if (!catSelMain) return showToast('먼저 대분류를 선택하세요.', 'error');
+                if (catDraft[catSelMain][val]) return showToast('이미 있는 중분류입니다.', 'error');
+                catDraft[catSelMain][val] = []; catSelSub = val;
+            } else {
+                if (!catSelMain || !catSelSub) return showToast('먼저 중분류를 선택하세요.', 'error');
+                if (catDraft[catSelMain][catSelSub].includes(val)) return showToast('이미 있는 소분류입니다.', 'error');
+                catDraft[catSelMain][catSelSub].push(val);
+            }
+            input.value = '';
+            renderCategoryModal();
+        };
+        window.removeCategoryItem = (level, label) => {
+            if (level === 'main') {
+                delete catDraft[label];
+                if (catSelMain === label) { const ms = Object.keys(catDraft); catSelMain = ms.length ? ms[0] : null; const ss = catSelMain ? Object.keys(catDraft[catSelMain]) : []; catSelSub = ss.length ? ss[0] : null; }
+            } else if (level === 'sub') {
+                if (catSelMain && catDraft[catSelMain]) delete catDraft[catSelMain][label];
+                if (catSelSub === label) { const ss = catSelMain ? Object.keys(catDraft[catSelMain]) : []; catSelSub = ss.length ? ss[0] : null; }
+            } else {
+                if (catSelMain && catSelSub && catDraft[catSelMain][catSelSub]) catDraft[catSelMain][catSelSub] = catDraft[catSelMain][catSelSub].filter(d => d !== label);
+            }
+            renderCategoryModal();
+        };
+        window.saveCategoryMap = async () => {
+            try {
+                categoryMap = JSON.parse(JSON.stringify(catDraft));
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'categoryMap'), { map: catDraft });
+                initCategorySelects();
+                if (document.getElementById('bd-main-cat')) updateSubCategories('bd');
+                closeCategoryModal();
+                showToast('분류를 저장했습니다.', 'success');
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
 
         window.setTargetMetric = (metric) => {
             targetMetric = metric;
