@@ -1133,6 +1133,30 @@
 
     <!-- BD Edit Modal -->
     <!-- 고장 상세 팝업 -->
+    <!-- 설비별 고장 이력 팝업 (Top 설비 클릭) -->
+    <div id="equip-faults-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 bg-slate-50">
+                <h3 class="text-sm md:text-base font-bold text-slate-800 flex items-center min-w-0"><i data-lucide="siren" class="w-5 h-5 mr-2 text-red-500 shrink-0"></i> <span id="equip-faults-title" class="truncate">설비 고장 이력</span></h3>
+                <button type="button" onclick="closeEquipFaults()" class="text-slate-400 hover:text-slate-700 shrink-0 ml-2"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-4 md:p-5 overflow-auto custom-scroll">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs whitespace-nowrap min-w-[520px]">
+                        <thead class="bg-slate-50 text-slate-600 sticky top-0"><tr>
+                            <th class="py-2 px-3 font-bold border-b border-slate-200">발생일시</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-200">라인</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-200">고장명</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">고장시간</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">상세</th>
+                        </tr></thead>
+                        <tbody id="equip-faults-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="bd-detail-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 bg-slate-50">
@@ -3164,6 +3188,38 @@
             finally { btn.disabled = false; btn.innerText = "고장 실적 등록"; }
         };
         
+        window.openEquipFaults = (equipName) => {
+            const list = rawBDData.filter(d => (d.equipmentName || '') === equipName)
+                .sort((a, b) => (b.startTime || '').localeCompare(a.startTime || ''));
+            const totalDur = list.reduce((s, d) => s + (d.durationMinutes || 0), 0);
+            const totalStr = totalDur >= 60 ? `${Math.floor(totalDur/60)}시간 ${totalDur%60}분` : `${totalDur}분`;
+            document.getElementById('equip-faults-title').innerText = `${equipName} · 고장 ${list.length}건 / 총 ${totalStr}`;
+            const tbody = document.getElementById('equip-faults-body');
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">고장 이력이 없습니다.</td></tr>';
+            } else {
+                tbody.innerHTML = list.map(d => {
+                    const dur = d.durationMinutes || 0;
+                    const durStr = dur >= 60 ? `${Math.floor(dur/60)}시간 ${dur%60}분` : `${dur}분`;
+                    const isCritical = dur >= 120;
+                    return `<tr class="hover:bg-red-50 cursor-pointer" onclick="closeEquipFaults(); openBDDetail('${d.id}')" title="클릭하면 상세 내용">
+                        <td class="py-2 px-3 text-slate-600">${(d.startTime || '').replace('T', ' ').slice(0, 16)}</td>
+                        <td class="py-2 px-3 font-bold text-brand-600">${d.line || '-'}</td>
+                        <td class="py-2 px-3 font-semibold text-slate-800">${d.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
+                        <td class="py-2 px-3 text-center text-red-600 font-bold">${durStr}</td>
+                        <td class="py-2 px-3 text-center"><i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 inline"></i></td>
+                    </tr>`;
+                }).join('');
+            }
+            const modal = document.getElementById('equip-faults-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+        };
+        window.closeEquipFaults = () => {
+            const modal = document.getElementById('equip-faults-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+
         window.openBDDetail = (id) => {
             renderBDDetail(id);
             const modal = document.getElementById('bd-detail-modal');
@@ -3756,7 +3812,10 @@
                 chartInstances['all_topEq'] = new Chart(ctxTop, {
                     type: 'bar',
                     data: { labels: topEquips.length > 0 ? topEquips.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: topEquipMetric === 'count' ? '고장 건수' : '누적 정지시간(분)', data: topEquips.length > 0 ? topEquips.map(e => e[1][topEquipMetric]) : [0], backgroundColor: '#ef4444', borderRadius: 4 }] },
-                    options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + (topEquipMetric === 'count' ? '건' : '분') } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
+                    options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        onClick: (e, els, chart) => { if (els.length) { const eq = chart.data.labels[els[0].index]; if (eq && eq !== '데이터 없음') openEquipFaults(eq); } },
+                        onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + (topEquipMetric === 'count' ? '건' : '분') } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
                 });
 
                 const catCounts = {};
