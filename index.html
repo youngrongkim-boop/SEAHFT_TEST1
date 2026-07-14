@@ -3485,7 +3485,7 @@
                 const dur = d.durationMinutes || 0;
                 const durStr = dur >= 60 ? `${Math.floor(dur/60)}시간 ${dur%60}분` : `${dur}분`;
                 const dateStr = (d.startTime || '').substring(0, 10);
-                return `<tr class="hover:bg-red-50"><td class="py-2 px-3 text-slate-600">${dateStr}</td><td class="py-2 px-3 font-bold text-brand-600">${d.line || '-'}</td><td class="py-2 px-3 font-semibold text-slate-800">${d.equipmentName || '-'}</td><td class="py-2 px-3 text-center text-red-600 font-bold">${durStr}</td><td class="py-2 px-3 text-slate-600 max-w-[220px] truncate" title="${(d.content || '').replace(/"/g,'&quot;')}">${d.content || '-'}</td></tr>`;
+                return `<tr class="hover:bg-red-50 cursor-pointer" onclick="openBDDetail('${d.id}')" title="클릭하면 상세 내용"><td class="py-2 px-3 text-slate-600">${dateStr}</td><td class="py-2 px-3 font-bold text-brand-600">${d.line || '-'}</td><td class="py-2 px-3 font-semibold text-slate-800">${d.equipmentName || '-'}</td><td class="py-2 px-3 text-center text-red-600 font-bold">${durStr}</td><td class="py-2 px-3 text-slate-600 max-w-[220px] truncate" title="${(d.content || '').replace(/"/g,'&quot;')}">${d.content || '-'}</td></tr>`;
             }).join('');
         }
 
