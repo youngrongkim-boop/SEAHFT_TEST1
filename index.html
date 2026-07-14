@@ -323,9 +323,23 @@
                             <div class="relative h-48 md:h-64"><canvas id="chartTopEquipments"></canvas></div>
                         </div>
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
-                            <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center">
-                                <i data-lucide="clock" class="w-4 h-4 mr-2 text-slate-500"></i> 근무조별 고장 분포 <span class="text-[11px] font-normal text-slate-400 ml-1">(주간/야간/주말)</span>
-                            </h4>
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                                <h4 class="text-sm md:text-base font-bold text-slate-800 flex items-center">
+                                    <i data-lucide="clock" class="w-4 h-4 mr-2 text-slate-500"></i> 근무조별 고장 분포
+                                </h4>
+                                <div class="flex items-center gap-1.5">
+                                    <select id="shift-filter-line" onchange="renderShiftChart()" class="border border-slate-300 rounded px-2 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-white font-bold text-blue-700">
+                                        <option value="ALL">전체 라인</option>
+                                    </select>
+                                    <select id="shift-filter-period" onchange="renderShiftChart()" class="border border-slate-300 rounded px-2 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-white font-medium">
+                                        <option value="ALL">전체 기간</option>
+                                        <option value="THISYEAR">올해</option>
+                                        <option value="M3">최근 3개월</option>
+                                        <option value="M6">최근 6개월</option>
+                                        <option value="M12">최근 1년</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div class="relative h-48 md:h-64"><canvas id="chartShift"></canvas></div>
                         </div>
                     </div>
@@ -447,15 +461,12 @@
             </div>
 
             <!-- VIEW: PM LIST -->
-            <div id="view-pm-list" class="view-section hidden h-full flex-col gap-3 min-w-0 pb-2">
+            <div id="view-pm-list" class="view-section hidden flex-col gap-3 min-w-0 pb-4">
 
                 <!-- 상단: 대기중인 예방점검 리스트 -->
-                <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex-[2] flex flex-col min-w-0 min-h-0">
+                <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
                     <div class="mb-2 shrink-0">
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
-                            <button onclick="openPMMasterModal()" class="flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm mr-2">
-                                <i data-lucide="database" class="w-3.5 h-3.5 mr-1.5"></i> 일괄 관리
-                            </button>
                             <select id="pm-filter-line" onchange="pmListPage=1; updatePMFilterEquip(); debouncedRenderPMList()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
                                 <option value="ALL">전체 라인</option>
                             </select>
@@ -478,10 +489,13 @@
                             </select>
                             <input type="text" id="pm-search-keyword" onkeyup="pmListPage=1; debouncedRenderPMList()" placeholder="작업내용, 기준 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-list-count">총 0건</span>
+                            <button onclick="openPMMasterModal()" class="ml-auto flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                                <i data-lucide="database" class="w-3.5 h-3.5 mr-1.5"></i> 일괄 관리
+                            </button>
                         </div>
                     </div>
                     
-                    <div class="flex-1 min-h-0 overflow-auto border border-slate-200 rounded w-full custom-scroll relative">
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-175px)]">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -507,7 +521,7 @@
                 </div>
 
                 <!-- 하단: 예방점검 실적 이력 (전체) -->
-                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0 min-h-0">
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-2 border-b border-slate-100 shrink-0 gap-3">
                         <div class="flex items-center">
                             <h3 class="text-sm md:text-base font-bold text-slate-800 flex items-center">
@@ -531,7 +545,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="flex-1 min-h-0 overflow-auto border border-slate-200 rounded w-full custom-scroll relative">
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative max-h-[450px]">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -3448,7 +3462,7 @@
             const tbody = document.getElementById('dash-critical-body');
             if (!tbody) return;
             const criticals = bdData.filter(d => (d.durationMinutes || 0) >= 120)
-                .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 30);
+                .sort((a, b) => (b.durationMinutes || 0) - (a.durationMinutes || 0)).slice(0, 30);
             if (!criticals.length) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">중대고장(2시간 이상) 이력이 없습니다.</td></tr>';
                 return;
@@ -3552,7 +3566,7 @@
 
         window.openTargetModal = () => {
             const tb = document.getElementById('target-modal-body');
-            tb.innerHTML = LINES.map(l => {
+            tb.innerHTML = BD_LINES.map(l => {
                 const t = faultTargets[l] || {};
                 const e = t.elec || {}, m = t.mech || {};
                 const inp = (id, val) => `<td class="border border-slate-200 py-1 px-1"><input type="number" min="0" id="${id}" value="${val || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 outline-none focus:ring-1 focus:ring-indigo-400"></td>`;
@@ -3571,7 +3585,7 @@
         window.saveTargets = async () => {
             const num = (id) => { const v = parseInt(document.getElementById(id).value, 10); return (isNaN(v) || v < 0) ? 0 : v; };
             const newTargets = {};
-            LINES.forEach(l => {
+            BD_LINES.forEach(l => {
                 newTargets[l] = {
                     elec: { count: num(`tgt-${l}-elec-count`), time: num(`tgt-${l}-elec-time`) },
                     mech: { count: num(`tgt-${l}-mech-count`), time: num(`tgt-${l}-mech-time`) }
@@ -3586,9 +3600,44 @@
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
         };
 
+        window.renderShiftChart = () => {
+            const el = document.getElementById('chartShift');
+            if (!el) return;
+            const lineSel = document.getElementById('shift-filter-line');
+            if (lineSel && lineSel.options.length <= 1) {
+                lineSel.innerHTML = '<option value="ALL">전체 라인</option>' + BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            }
+            const fLine = lineSel ? lineSel.value : 'ALL';
+            const periodSel = document.getElementById('shift-filter-period');
+            const fPeriod = periodSel ? periodSel.value : 'ALL';
+
+            let data = rawBDData;
+            if (fLine !== 'ALL') data = data.filter(d => d.line === fLine);
+            if (fPeriod !== 'ALL') {
+                const now = new Date();
+                if (fPeriod === 'THISYEAR') {
+                    const y = String(now.getFullYear());
+                    data = data.filter(d => (d.startTime || '').slice(0, 4) === y);
+                } else {
+                    const months = fPeriod === 'M3' ? 3 : (fPeriod === 'M6' ? 6 : 12);
+                    const cutoff = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+                    data = data.filter(d => d.startTime && new Date(d.startTime) >= cutoff);
+                }
+            }
+            const shiftCounts = { '주간': 0, '야간': 0, '주말': 0 };
+            data.forEach(d => { if (shiftCounts[d.shiftType] !== undefined) shiftCounts[d.shiftType]++; });
+
+            if (chartInstances['all_shift']) chartInstances['all_shift'].destroy();
+            chartInstances['all_shift'] = new Chart(el.getContext('2d'), {
+                type: 'bar',
+                data: { labels: ['주간', '야간', '주말'], datasets: [{ label: '고장 건수', data: [shiftCounts['주간'], shiftCounts['야간'], shiftCounts['주말']], backgroundColor: ['#3b82f6', '#8b5cf6', '#ef4444'], borderRadius: 4 }] },
+                options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw + '건' } } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+            });
+        };
+
         function renderTargetCharts(dashboardBDData) {
             const actualByLine = {};
-            LINES.forEach(l => actualByLine[l] = { elec: { count: 0, time: 0 }, mech: { count: 0, time: 0 } });
+            BD_LINES.forEach(l => actualByLine[l] = { elec: { count: 0, time: 0 }, mech: { count: 0, time: 0 } });
             dashboardBDData.forEach(d => {
                 if (!actualByLine[d.line]) return;
                 const cat = d.category === '전기' ? 'elec' : (d.category === '기계' ? 'mech' : null);
@@ -3601,8 +3650,8 @@
             const buildChart = (canvasId, catKey) => {
                 const el = document.getElementById(canvasId);
                 if (!el) return;
-                const actual = LINES.map(l => actualByLine[l][catKey][metric]);
-                const target = LINES.map(l => (faultTargets[l] && faultTargets[l][catKey] && faultTargets[l][catKey][metric]) || 0);
+                const actual = BD_LINES.map(l => actualByLine[l][catKey][metric]);
+                const target = BD_LINES.map(l => (faultTargets[l] && faultTargets[l][catKey] && faultTargets[l][catKey][metric]) || 0);
                 const barColors = actual.map((ac, i) => {
                     const tg = target[i];
                     if (!tg) return '#94a3b8';
@@ -3614,7 +3663,7 @@
                 chartInstances[canvasId] = new Chart(el.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: LINES,
+                        labels: BD_LINES,
                         datasets: [
                             { label: '실제', data: actual, backgroundColor: barColors, borderRadius: 4, order: 2 },
                             { label: '목표', type: 'line', data: target, borderColor: '#334155', borderWidth: 2, borderDash: [5, 4], pointStyle: 'rectRot', pointRadius: 4, pointBackgroundColor: '#334155', fill: false, spanGaps: true, order: 1 }
@@ -3673,15 +3722,8 @@
                     options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '50%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
                 });
 
-                // 근무조별 고장 분포 (주간/야간/주말)
-                const shiftCounts = { '주간': 0, '야간': 0, '주말': 0 };
-                dashboardBDData.forEach(d => { if(shiftCounts[d.shiftType] !== undefined) shiftCounts[d.shiftType]++; });
-                const ctxShift = document.getElementById('chartShift').getContext('2d');
-                chartInstances['all_shift'] = new Chart(ctxShift, {
-                    type: 'bar',
-                    data: { labels: ['주간', '야간', '주말'], datasets: [{ label: '고장 건수', data: [shiftCounts['주간'], shiftCounts['야간'], shiftCounts['주말']], backgroundColor: ['#3b82f6', '#8b5cf6', '#ef4444'], borderRadius: 4 }] },
-                    options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw + '건' } } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
-                });
+                // 근무조별 고장 분포 (라인·기간 필터 지원)
+                renderShiftChart();
 
                 renderCriticalMiniTable(dashboardBDData);
 
