@@ -292,6 +292,7 @@
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                             <h4 class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="target" class="w-4 h-4 mr-2 text-indigo-500"></i> 라인별 목표 대비 고장 현황</h4>
                             <div class="flex items-center gap-2">
+                                <select id="target-year-select" onchange="onTargetYearChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold text-indigo-700 outline-none focus:ring-1 focus:ring-indigo-400 bg-white"></select>
                                 <span class="inline-flex rounded-md overflow-hidden border border-slate-200 text-[10px] font-bold">
                                     <button type="button" id="target-metric-count" onclick="setTargetMetric('count')" class="px-2 py-1 bg-indigo-500 text-white">건수</button>
                                     <button type="button" id="target-metric-time" onclick="setTargetMetric('time')" class="px-2 py-1 bg-white text-slate-500">정지시간</button>
@@ -852,7 +853,11 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="target" class="w-5 h-5 mr-2 text-indigo-500"></i> 라인별 고장 목표 설정</h3>
-                <button type="button" onclick="closeTargetModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-slate-500">연도</label>
+                    <select id="target-modal-year" onchange="onTargetModalYearChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold text-indigo-700 outline-none focus:ring-1 focus:ring-indigo-400 bg-white"></select>
+                    <button type="button" onclick="closeTargetModal()" class="text-slate-400 hover:text-slate-700 ml-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
             </div>
             <div class="p-4 md:p-6 overflow-auto custom-scroll flex-1">
                 <p class="text-xs text-slate-500 mb-3">각 라인의 전기·기계 <b>목표 고장 건수</b>와 <b>목표 정지시간(분)</b>을 입력하세요. <span class="text-slate-400">(비워두거나 0 = 목표 미설정)</span></p>
@@ -1290,8 +1295,9 @@
         let rawEditHistoryData = [];
         let equipmentOverrides = {}; // 라인별 설비명 추가/숨김 { CPL: { added:[], hidden:[] } }
         let topEquipMetric = 'count'; // 고장 Top 설비 기준: 'count'(건수) | 'time'(정지시간)
-        let faultTargets = {}; // 라인별 고장 목표 { CPL: { elec:{count,time}, mech:{count,time} } }
+        let faultTargets = {}; // 연도별 라인 목표 { '2026': { CPL: { elec:{count,time}, mech:{count,time} } } }
         let targetMetric = 'count'; // 목표 대비 차트 기준: 'count' | 'time'
+        let targetYear = ''; // 대시보드/모달에서 선택된 연도
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
@@ -1943,7 +1949,15 @@
             });
             const targetRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'faultTargets');
             onSnapshot(targetRef, (snap) => {
-                faultTargets = (snap.exists() && snap.data().lines) ? snap.data().lines : {};
+                if (snap.exists()) {
+                    const dt = snap.data();
+                    if (dt.years) {
+                        faultTargets = dt.years;
+                    } else if (dt.lines) {
+                        // 구버전(연도 없음) → 올해로 이관
+                        faultTargets = { [String(new Date().getFullYear())]: dt.lines };
+                    } else faultTargets = {};
+                } else faultTargets = {};
                 if (currentTabId === 'dashboard' && currentLineFilter === 'ALL') window.debouncedApplyFilterAndRender();
             });
             const catMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'categoryMap');
@@ -3564,14 +3578,38 @@
             window.debouncedApplyFilterAndRender();
         };
 
-        window.openTargetModal = () => {
+        function getTargetYears() {
+            const dataYears = rawBDData.map(d => (d.startTime || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y));
+            const cfgYears = Object.keys(faultTargets).filter(y => /^\d{4}$/.test(y));
+            const cur = String(new Date().getFullYear());
+            return [...new Set([...dataYears, ...cfgYears, cur])].sort().reverse();
+        }
+        function fillYearSelect(sel, selected) {
+            if (!sel) return;
+            const years = getTargetYears();
+            sel.innerHTML = years.map(y => `<option value="${y}">${y}년</option>`).join('');
+            sel.value = years.includes(selected) ? selected : years[0];
+        }
+        function renderTargetModalRows(year) {
             const tb = document.getElementById('target-modal-body');
+            const yt = faultTargets[year] || {};
             tb.innerHTML = BD_LINES.map(l => {
-                const t = faultTargets[l] || {};
+                const t = yt[l] || {};
                 const e = t.elec || {}, m = t.mech || {};
                 const inp = (id, val) => `<td class="border border-slate-200 py-1 px-1"><input type="number" min="0" id="${id}" value="${val || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 outline-none focus:ring-1 focus:ring-indigo-400"></td>`;
                 return `<tr><td class="border border-slate-200 py-1.5 px-2 font-bold text-brand-600 text-center">${l}</td>${inp(`tgt-${l}-elec-count`, e.count)}${inp(`tgt-${l}-elec-time`, e.time)}${inp(`tgt-${l}-mech-count`, m.count)}${inp(`tgt-${l}-mech-time`, m.time)}</tr>`;
             }).join('');
+        }
+        window.onTargetModalYearChange = () => { renderTargetModalRows(document.getElementById('target-modal-year').value); };
+        window.onTargetYearChange = () => {
+            targetYear = document.getElementById('target-year-select').value;
+            window.debouncedApplyFilterAndRender();
+        };
+
+        window.openTargetModal = () => {
+            const yearSel = document.getElementById('target-modal-year');
+            fillYearSelect(yearSel, targetYear || String(new Date().getFullYear()));
+            renderTargetModalRows(yearSel.value);
             const modal = document.getElementById('target-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
             if (window.lucide) lucide.createIcons();
@@ -3583,6 +3621,7 @@
         };
 
         window.saveTargets = async () => {
+            const year = document.getElementById('target-modal-year').value;
             const num = (id) => { const v = parseInt(document.getElementById(id).value, 10); return (isNaN(v) || v < 0) ? 0 : v; };
             const newTargets = {};
             BD_LINES.forEach(l => {
@@ -3592,11 +3631,12 @@
                 };
             });
             try {
-                faultTargets = newTargets;
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'faultTargets'), { lines: newTargets }, { merge: true });
+                faultTargets[year] = newTargets;
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'faultTargets'), { years: faultTargets }, { merge: true });
+                targetYear = year;
                 closeTargetModal();
                 window.debouncedApplyFilterAndRender();
-                showToast('목표를 저장했습니다.', 'success');
+                showToast(`${year}년 목표를 저장했습니다.`, 'success');
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
         };
 
@@ -3636,9 +3676,15 @@
         };
 
         function renderTargetCharts(dashboardBDData) {
+            if (!targetYear) targetYear = String(new Date().getFullYear());
+            const yearSel = document.getElementById('target-year-select');
+            fillYearSelect(yearSel, targetYear);
+            if (yearSel) targetYear = yearSel.value;
+            const yearData = dashboardBDData.filter(d => (d.startTime || '').slice(0, 4) === targetYear);
+            const yearTargets = faultTargets[targetYear] || {};
             const actualByLine = {};
             BD_LINES.forEach(l => actualByLine[l] = { elec: { count: 0, time: 0 }, mech: { count: 0, time: 0 } });
-            dashboardBDData.forEach(d => {
+            yearData.forEach(d => {
                 if (!actualByLine[d.line]) return;
                 const cat = d.category === '전기' ? 'elec' : (d.category === '기계' ? 'mech' : null);
                 if (!cat) return;
@@ -3651,7 +3697,7 @@
                 const el = document.getElementById(canvasId);
                 if (!el) return;
                 const actual = BD_LINES.map(l => actualByLine[l][catKey][metric]);
-                const target = BD_LINES.map(l => (faultTargets[l] && faultTargets[l][catKey] && faultTargets[l][catKey][metric]) || 0);
+                const target = BD_LINES.map(l => (yearTargets[l] && yearTargets[l][catKey] && yearTargets[l][catKey][metric]) || 0);
                 const barColors = actual.map((ac, i) => {
                     const tg = target[i];
                     if (!tg) return '#94a3b8';
