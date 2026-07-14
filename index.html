@@ -505,7 +505,7 @@
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">구분</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">주기</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px]">점검기준</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px] text-center">점검기준</th>
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-24">예정일</th>
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-14">상태</th>
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-14">특이사항</th>
@@ -2826,7 +2826,7 @@
                         <td class="py-2.5 px-2 text-center text-slate-600">${item.category}</td>
                         <td class="py-2.5 px-2 text-center text-blue-600 font-bold">${normalizeCycle(item.cycleType)}</td>
                         <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails}</td>
-                        <td class="py-2.5 px-2 text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item.criteria}</td>
+                        <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item.criteria}</td>
                         <td class="py-2.5 px-1.5 text-center font-medium ${isOverdue && !isDone ? 'text-red-600 font-bold' : (isDone ? 'text-slate-400' : 'text-slate-800')}">${item.nextCheckDate}</td>
                         <td class="py-2.5 px-1.5 text-center">${statusBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${remarksBtn}</td>
