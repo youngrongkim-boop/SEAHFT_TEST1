@@ -3581,8 +3581,10 @@
         function getTargetYears() {
             const dataYears = rawBDData.map(d => (d.startTime || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y));
             const cfgYears = Object.keys(faultTargets).filter(y => /^\d{4}$/.test(y));
-            const cur = String(new Date().getFullYear());
-            return [...new Set([...dataYears, ...cfgYears, cur])].sort().reverse();
+            const cur = new Date().getFullYear();
+            const rangeYears = [];
+            for (let y = cur - 5; y <= cur + 3; y++) rangeYears.push(String(y)); // 현재 기준 -5 ~ +3년 항상 선택 가능
+            return [...new Set([...dataYears, ...cfgYears, ...rangeYears])].sort().reverse();
         }
         function fillYearSelect(sel, selected) {
             if (!sel) return;
