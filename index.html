@@ -306,7 +306,7 @@
                                 <div class="relative h-52 md:h-64"><canvas id="chartTargetMech"></canvas></div>
                             </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-3">막대 색 = 목표 대비 달성율: <span class="text-emerald-600 font-bold">여유(≤80%)</span> · <span class="text-amber-600 font-bold">근접(≤100%)</span> · <span class="text-red-600 font-bold">초과(&gt;100%)</span> · <span class="text-slate-500 font-bold">회색=목표 미설정</span> · 막대 클릭 시 해당 라인 이동</p>
+                        <p class="text-[10px] text-slate-400 mt-3">고장은 적을수록 좋음 · 막대 색 = 목표(상한) 대비: <span class="text-emerald-600 font-bold">여유(≤80%)</span> · <span class="text-amber-600 font-bold">주의(80~100%)</span> · <span class="text-red-600 font-bold">초과(&gt;100%, 목표 미달성)</span> · <span class="text-slate-500 font-bold">회색=목표 미설정</span> · 막대 클릭 시 해당 라인 이동</p>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
@@ -3720,8 +3720,10 @@
                             tooltip: { callbacks: { label: (c) => {
                                 const i = c.dataIndex, tg = target[i], ac = actual[i];
                                 if (c.dataset.label === '목표') return ` 목표: ${tg ? tg.toLocaleString() + unit : '미설정'}`;
-                                const pct = tg ? Math.round(ac / tg * 100) : null;
-                                return ` 실제: ${ac.toLocaleString()}${unit}${pct !== null ? ` (달성율 ${pct}%)` : ' (목표 미설정)'}`;
+                                if (!tg) return ` 실제: ${ac.toLocaleString()}${unit} (목표 미설정)`;
+                                const diff = ac - tg;
+                                const status = diff > 0 ? `초과 +${diff.toLocaleString()}${unit}` : (diff === 0 ? '목표 도달' : `여유 ${(-diff).toLocaleString()}${unit}`);
+                                return ` 실제: ${ac.toLocaleString()}${unit} / 목표 대비 ${Math.round(ac / tg * 100)}% (${status})`;
                             } } }
                         },
                         onClick: (e, els, chart) => { if (els.length) { const line = chart.data.labels[els[0].index]; if (LINES.includes(line)) setGlobalLine(line); } },
