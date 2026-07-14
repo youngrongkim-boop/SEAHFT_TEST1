@@ -328,13 +328,6 @@
                                     <select id="shift-filter-line" onchange="renderShiftChart()" class="border border-slate-300 rounded px-2 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-white font-bold text-blue-700">
                                         <option value="ALL">전체 라인</option>
                                     </select>
-                                    <select id="shift-filter-period" onchange="renderShiftChart()" class="border border-slate-300 rounded px-2 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-white font-medium">
-                                        <option value="ALL">전체 기간</option>
-                                        <option value="THISYEAR">올해</option>
-                                        <option value="M3">최근 3개월</option>
-                                        <option value="M6">최근 6개월</option>
-                                        <option value="M12">최근 1년</option>
-                                    </select>
                                 </div>
                             </div>
                             <div class="relative h-48 md:h-64"><canvas id="chartShift"></canvas></div>
@@ -1805,7 +1798,11 @@
                     if(tabId === 'dashboard') {
                         toggleDashboardViews();
                         const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
-                        const dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+                        if (!targetYear) targetYear = String(new Date().getFullYear());
+                        const ySelD = document.getElementById('target-year-select');
+                        if (ySelD) { fillYearSelect(ySelD, targetYear); targetYear = ySelD.value; }
+                        let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+                        if (targetYear) dashboardBDData = dashboardBDData.filter(d => (d.startTime || '').slice(0, 4) === targetYear);
                         window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
                         if (currentLineFilter !== 'ALL') {
                             window.renderDashboardMiniTables(dashboardPMData, dashboardBDData);
@@ -2118,7 +2115,12 @@
 
         function applyFilterAndRender() {
             const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
-            const dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+            let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+            // 대시보드 전역 연도 필터 (선택 연도 기준으로 KPI·차트·목록 모두 적용)
+            if (!targetYear) targetYear = String(new Date().getFullYear());
+            const ySel = document.getElementById('target-year-select');
+            if (ySel) { fillYearSelect(ySel, targetYear); targetYear = ySel.value; }
+            if (targetYear) dashboardBDData = dashboardBDData.filter(d => (d.startTime || '').slice(0, 4) === targetYear);
 
             window.updatePMFilterEquip();
 
@@ -3702,22 +3704,10 @@
                 lineSel.innerHTML = '<option value="ALL">전체 라인</option>' + BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
             }
             const fLine = lineSel ? lineSel.value : 'ALL';
-            const periodSel = document.getElementById('shift-filter-period');
-            const fPeriod = periodSel ? periodSel.value : 'ALL';
 
             let data = rawBDData;
+            if (targetYear) data = data.filter(d => (d.startTime || '').slice(0, 4) === targetYear); // 전역 연도 필터
             if (fLine !== 'ALL') data = data.filter(d => d.line === fLine);
-            if (fPeriod !== 'ALL') {
-                const now = new Date();
-                if (fPeriod === 'THISYEAR') {
-                    const y = String(now.getFullYear());
-                    data = data.filter(d => (d.startTime || '').slice(0, 4) === y);
-                } else {
-                    const months = fPeriod === 'M3' ? 3 : (fPeriod === 'M6' ? 6 : 12);
-                    const cutoff = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
-                    data = data.filter(d => d.startTime && new Date(d.startTime) >= cutoff);
-                }
-            }
             const shiftCounts = { '주간': 0, '야간': 0, '주말': 0 };
             data.forEach(d => { if (shiftCounts[d.shiftType] !== undefined) shiftCounts[d.shiftType]++; });
 
