@@ -280,6 +280,11 @@
                         <div class="p-3 bg-orange-50 text-orange-500 rounded-lg shrink-0"><i data-lucide="clock" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
                 </div>
+                <p class="text-[10px] md:text-[11px] text-slate-400 -mt-2 px-1">
+                    <b class="text-slate-500">진행중 예방점검</b> = 아직 완료 안 된 점검 항목 수(현재 기준·연도 무관) ·
+                    <b class="text-slate-500">총 고장 건수 / 중대고장(2h↑) / 누적 정지시간 / 평균 조치시간</b> = <b class="text-indigo-500">선택 연도</b>에 발생한 고장 기준
+                    <span class="hidden md:inline">(누적 정지시간 = 그해 고장 정지시간 합계, 평균 조치시간 = 고장 1건당 평균 조치시간)</span>
+                </p>
 
                 <!-- [대시보드 A] 종합 현황 (전체 라인일 때 표시) -->
                 <div id="dashboard-content-all" class="space-y-6">
@@ -1118,9 +1123,12 @@
                         <input type="date" id="edit-pm-nextdate" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
                     </div>
                 </form>
-                <div class="flex justify-end gap-2 mt-6">
-                    <button onclick="closePMEditModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
-                    <button onclick="savePMEdit()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm">수정 내용 저장</button>
+                <div class="flex justify-between items-center gap-2 mt-6">
+                    <button onclick="deletePMFromEdit()" class="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition flex items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
+                    <div class="flex gap-2">
+                        <button onclick="closePMEditModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
+                        <button onclick="savePMEdit()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm">수정 내용 저장</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1230,9 +1238,12 @@
                         </div>
                     </div>
                 </form>
-                <div class="flex justify-end gap-2 mt-6">
-                    <button onclick="closeBDEditModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
-                    <button onclick="saveBDEdit()" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition shadow-sm">수정 내용 저장</button>
+                <div class="flex justify-between items-center gap-2 mt-6">
+                    <button onclick="deleteBDFromEdit()" class="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition flex items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
+                    <div class="flex gap-2">
+                        <button onclick="closeBDEditModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
+                        <button onclick="saveBDEdit()" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition shadow-sm">수정 내용 저장</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2586,6 +2597,19 @@
             setTimeout(() => { document.getElementById('pm-edit-modal').classList.add('hidden'); document.getElementById('pm-edit-modal').classList.remove('flex'); }, 150);
         };
 
+        window.deletePMFromEdit = async () => {
+            const id = document.getElementById('edit-pm-id').value;
+            if (!currentUser || !id) return;
+            const rec = rawPMData.find(d => d.id === id);
+            if (!confirm(`이 예방점검 항목을 삭제할까요?\n(${rec ? (rec.equipmentName || '') + ' - ' + (rec.taskDetails || '') : ''})`)) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', id));
+                if (rec) await logEditHistory('예방점검 (삭제)', rec.line, rec.equipmentName, `항목 삭제 (${rec.taskDetails || ''})`);
+                showToast('삭제되었습니다.');
+                closePMEditModal();
+            } catch (e) { console.error(e); showToast('삭제 실패', 'error'); }
+        };
+
         window.savePMEdit = async () => {
             const id = document.getElementById('edit-pm-id').value;
             const old = rawPMData.find(d => d.id === id);
@@ -2647,6 +2671,19 @@
         window.closeBDEditModal = () => {
             document.getElementById('bd-edit-modal-content').classList.add('scale-95');
             setTimeout(() => { document.getElementById('bd-edit-modal').classList.add('hidden'); document.getElementById('bd-edit-modal').classList.remove('flex'); }, 150);
+        };
+
+        window.deleteBDFromEdit = async () => {
+            const id = document.getElementById('edit-bd-id').value;
+            if (!currentUser || !id) return;
+            const rec = rawBDData.find(d => d.id === id);
+            if (!confirm(`이 고장 실적을 삭제할까요?\n(${rec ? (rec.equipmentName || '') + ' - ' + (rec.faultName || rec.content || '') : ''})`)) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', id));
+                if (rec) await logEditHistory('고장실적 (삭제)', rec.line, rec.equipmentName, `항목 삭제 (${rec.faultName || rec.content || ''})`);
+                showToast('삭제되었습니다.');
+                closeBDEditModal();
+            } catch (e) { console.error(e); showToast('삭제 실패', 'error'); }
         };
 
         window.saveBDEdit = async () => {
