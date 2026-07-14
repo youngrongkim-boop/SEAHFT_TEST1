@@ -443,8 +443,10 @@
 
             <!-- VIEW: 점검 현황판 -->
             <div id="view-check-board" class="view-section hidden h-full flex-col min-w-0 pb-4">
-                <div class="flex flex-wrap items-center gap-1.5 mb-3 shrink-0">
+                <div class="flex flex-wrap items-center gap-2 mb-3 shrink-0">
                     <div id="check-board-line-tabs" class="flex flex-wrap gap-1.5"></div>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <div id="check-board-cat-tabs" class="flex flex-wrap gap-1.5"></div>
                     <span id="check-board-date" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
                 </div>
                 <div id="check-board-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
@@ -1312,6 +1314,7 @@
         let targetMetric = 'count'; // 목표 대비 차트 기준: 'count' | 'time'
         let targetYear = ''; // 대시보드/모달에서 선택된 연도
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
+        let checkBoardCategory = 'ALL'; // 점검 현황판 전기/기계 구분
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
         let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
@@ -2888,7 +2891,8 @@
 
         window.openRemarksModal = (id, currentRemarks) => {
             activeRemarksTaskId = id;
-            document.getElementById('modal-remarks-text').value = currentRemarks || '';
+            const rec = rawPMData.find(d => d.id === id);
+            document.getElementById('modal-remarks-text').value = (currentRemarks !== undefined ? currentRemarks : (rec ? rec.remarks : '')) || '';
             const modal = document.getElementById('remarks-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => document.getElementById('remarks-modal-content').classList.remove('scale-95'), 10);
@@ -2960,6 +2964,7 @@
         const CYCLE_ORDER = ['일별', '주별', '월별', '분기별', '연별'];
 
         window.setCheckBoardLine = (line) => { checkBoardLine = line; renderCheckBoard(); };
+        window.setCheckBoardCategory = (cat) => { checkBoardCategory = cat; renderCheckBoard(); };
 
         window.renderCheckBoard = () => {
             const todayStr = getLocalTodayString();
@@ -2975,10 +2980,19 @@
                 }).join('');
             }
 
+            const catEl = document.getElementById('check-board-cat-tabs');
+            if (catEl) {
+                catEl.innerHTML = [['ALL', '전체'], ['전기', '전기'], ['기계', '기계']].map(([v, label]) => {
+                    const active = checkBoardCategory === v;
+                    return `<button type="button" onclick="setCheckBoardCategory('${v}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition ${active ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${label}</button>`;
+                }).join('');
+            }
+
             const contentEl = document.getElementById('check-board-content');
             if (!contentEl) return;
             let scope = rawPMData.filter(d => d.status !== '점검');
             if (checkBoardLine !== 'ALL') scope = scope.filter(d => d.line === checkBoardLine);
+            if (checkBoardCategory !== 'ALL') scope = scope.filter(d => d.category === checkBoardCategory);
 
             let html = '';
             CYCLE_ORDER.forEach(cycle => {
@@ -3001,13 +3015,14 @@
                 if (!items.length) {
                     html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">점검 대기 항목이 없습니다.</div>`;
                 } else {
-                    html += `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[640px]">
+                    html += `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[720px]">
                         <thead class="bg-white text-slate-500"><tr>
                             <th class="py-2 px-3 font-bold border-b border-slate-100">라인</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100">설비명</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100">점검 내용</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">예정일</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">상태</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">특이사항</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 등록</th>
                         </tr></thead><tbody>`;
                     items.forEach(item => {
@@ -3022,6 +3037,7 @@
                             <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[160px] leading-snug">${item.taskDetails || '-'}</td>
                             <td class="py-2 px-3 text-center ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}">${item.nextCheckDate || '-'}</td>
                             <td class="py-2 px-3 text-center">${badge}</td>
+                            <td class="py-2 px-3 text-center"><button onclick="openRemarksModal('${item.id}')" class="text-[10px] font-bold px-2 py-1 rounded border ${item.remarks ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"><i data-lucide="edit-3" class="w-3 h-3 inline mr-0.5"></i>${item.remarks ? '있음' : '작성'}</button></td>
                             <td class="py-2 px-3 text-center"><div class="flex items-center justify-center gap-1">
                                 <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
                                 <button onclick="handlePMResult('${item.id}','불량')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">불량</button>
