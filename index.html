@@ -1432,15 +1432,6 @@
         const LINES = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL'];
         const BD_LINES = [...LINES.filter(l => l !== 'ARP'), 'SSCL']; // 고장실적: ARP 제외, SSCL 추가
         const NAV_LINES = [...LINES, ...BD_LINES.filter(l => !LINES.includes(l))]; // 사이드바 라인 내비 = 예방점검 라인 + 고장 전용 라인(SSCL)
-        // 사이드바 라인 계층 (ARP는 CPL 하위, SSCL은 2CCL 하위로 표시)
-        const LINE_TREE = [
-            { line: 'CPL', children: ['ARP'] },
-            { line: 'CRM', children: [] },
-            { line: 'CGL', children: [] },
-            { line: '1CCL', children: [] },
-            { line: '2CCL', children: ['SSCL'] },
-            { line: '3CCL', children: [] }
-        ];
         const EQUIPMENT_MAP = {
             'CPL': ['CPL 1호기', 'CPL 2호기', 'CPL 유압유닛', 'CPL 권취기', '기타(CPL)'],
             'ARP': ['ARP 산회수펌프', 'ARP 폐산탱크', 'ARP 세정탑', '기타(ARP)'],
@@ -1867,11 +1858,9 @@
 
         function initSidebarLines() {
             const container = document.getElementById('nav-lines-container');
-            const navBtn = (line, isChild) => `<button onclick="setGlobalLine('${line}')" id="nav-line-${line}" class="nav-line w-full flex items-center ${isChild ? 'pl-16' : 'pl-11'} pr-6 py-2.5 text-sm font-medium text-slate-300 hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent"><span class="line-prefix mr-2 ${isChild ? 'text-slate-500' : ''}">${isChild ? '└' : '-'}</span> <span class="line-text ${isChild ? 'text-slate-400' : ''}">${line}</span></button>`;
             let html = '';
-            LINE_TREE.forEach(node => {
-                html += navBtn(node.line, false);
-                node.children.forEach(child => { html += navBtn(child, true); });
+            NAV_LINES.forEach(line => {
+                html += `<button onclick="setGlobalLine('${line}')" id="nav-line-${line}" class="nav-line w-full flex items-center pl-11 pr-6 py-2.5 text-sm font-medium text-slate-300 hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent"><span class="line-prefix mr-2">-</span> <span class="line-text">${line}</span></button>`;
             });
             container.innerHTML = html;
 
