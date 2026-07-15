@@ -318,6 +318,10 @@
                             <h4 class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="calendar-range" class="w-4 h-4 mr-2 text-indigo-500"></i> 목표 대비 월별 고장 <span class="text-[11px] font-normal text-slate-400 ml-1">(누적·목표선)</span></h4>
                             <div class="flex items-center gap-1.5">
                                 <select id="monthly-target-line" onchange="onMonthlyTargetChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold text-brand-700 outline-none focus:ring-1 focus:ring-indigo-400 bg-white"></select>
+                                <select id="monthly-target-metric" onchange="onMonthlyTargetChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-medium outline-none focus:ring-1 focus:ring-indigo-400 bg-white">
+                                    <option value="count">건수</option>
+                                    <option value="time">시간(분)</option>
+                                </select>
                                 <select id="monthly-target-cat" onchange="onMonthlyTargetChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-medium outline-none focus:ring-1 focus:ring-indigo-400 bg-white">
                                     <option value="ALL">전체</option>
                                     <option value="전기">전기</option>
@@ -326,7 +330,7 @@
                             </div>
                         </div>
                         <div class="relative h-56 md:h-72"><canvas id="chartMonthlyTarget"></canvas></div>
-                        <p class="text-[10px] text-slate-400 mt-2">좌측 <span class="text-slate-700 font-bold">진한 막대 = 연간 총 고장</span>(목표 초과 시 <span class="text-red-600 font-bold">빨강</span>) · 우측 = 월별 고장 실적 · <span class="text-red-600 font-bold">빨간 점선 = 전체 연간 목표</span> · 상단 [건수/정지시간]·연도 선택 적용</p>
+                        <p class="text-[10px] text-slate-400 mt-2">좌측 <span class="text-slate-700 font-bold">진한 막대 = 연간 총 고장</span>(목표 초과 시 <span class="text-red-600 font-bold">빨강</span>) · 우측 = 월별 고장 실적 · <span class="text-red-600 font-bold">빨간 점선 = 전체 연간 목표</span> · 라인·건수/시간·전기/기계·연도 선택 적용</p>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
@@ -3867,7 +3871,8 @@
             const targetLines = monthlyTargetLine === 'ALL' ? BD_LINES : [monthlyTargetLine];
             const catSel = document.getElementById('monthly-target-cat');
             const cat = catSel ? catSel.value : 'ALL';
-            const metric = targetMetric;
+            const metricSel = document.getElementById('monthly-target-metric');
+            const metric = metricSel ? metricSel.value : targetMetric;
             const unit = metric === 'count' ? '건' : '분';
             const year = targetYear || String(new Date().getFullYear());
 
