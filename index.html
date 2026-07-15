@@ -315,8 +315,9 @@
                     <!-- 라인별 월별 목표 대비 실적 -->
                     <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-                            <h4 class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="calendar-range" class="w-4 h-4 mr-2 text-indigo-500"></i> 전체 목표 대비 월별 고장 <span class="text-[11px] font-normal text-slate-400 ml-1">(전 라인 합산)</span></h4>
+                            <h4 class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="calendar-range" class="w-4 h-4 mr-2 text-indigo-500"></i> 목표 대비 월별 고장 <span class="text-[11px] font-normal text-slate-400 ml-1">(누적·목표선)</span></h4>
                             <div class="flex items-center gap-1.5">
+                                <select id="monthly-target-line" onchange="onMonthlyTargetChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold text-brand-700 outline-none focus:ring-1 focus:ring-indigo-400 bg-white"></select>
                                 <select id="monthly-target-cat" onchange="onMonthlyTargetChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-medium outline-none focus:ring-1 focus:ring-indigo-400 bg-white">
                                     <option value="ALL">전체</option>
                                     <option value="전기">전기</option>
@@ -3849,22 +3850,31 @@
         };
 
         window.onMonthlyTargetChange = () => {
+            const ls = document.getElementById('monthly-target-line');
+            if (ls) monthlyTargetLine = ls.value;
             renderMonthlyTargetChart();
         };
 
         window.renderMonthlyTargetChart = () => {
             const el = document.getElementById('chartMonthlyTarget');
             if (!el) return;
+            const lineSel = document.getElementById('monthly-target-line');
+            if (lineSel && lineSel.options.length === 0) {
+                lineSel.innerHTML = '<option value="ALL">전체 라인</option>' + BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            }
+            if (!monthlyTargetLine || (monthlyTargetLine !== 'ALL' && !BD_LINES.includes(monthlyTargetLine))) monthlyTargetLine = 'ALL';
+            if (lineSel) lineSel.value = monthlyTargetLine;
+            const targetLines = monthlyTargetLine === 'ALL' ? BD_LINES : [monthlyTargetLine];
             const catSel = document.getElementById('monthly-target-cat');
             const cat = catSel ? catSel.value : 'ALL';
             const metric = targetMetric;
             const unit = metric === 'count' ? '건' : '분';
             const year = targetYear || String(new Date().getFullYear());
 
-            // 월별 실적 집계 (전 라인 합산)
+            // 월별 실적 집계 (선택 라인 합산)
             const monthlyActual = new Array(12).fill(0);
             rawBDData.forEach(d => {
-                if (!BD_LINES.includes(d.line)) return;
+                if (!targetLines.includes(d.line)) return;
                 if ((d.startTime || '').slice(0, 4) !== year) return;
                 if (cat === '전기' && d.category !== '전기') return;
                 if (cat === '기계' && d.category !== '기계') return;
@@ -3876,10 +3886,10 @@
             let run = 0;
             monthlyActual.forEach(v => { run += v; cumulative.push(run); });
 
-            // 전체 연간 목표 (전 라인 합산)
+            // 연간 목표 (선택 라인 합산)
             const yearTargets = faultTargets[year] || {};
             let annualTarget = 0;
-            BD_LINES.forEach(l => {
+            targetLines.forEach(l => {
                 const yt = yearTargets[l] || {};
                 if (cat === 'ALL' || cat === '전기') annualTarget += (yt.elec && yt.elec[metric]) || 0;
                 if (cat === 'ALL' || cat === '기계') annualTarget += (yt.mech && yt.mech[metric]) || 0;
