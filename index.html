@@ -289,8 +289,8 @@
             <button onclick="setGlobalLine('ALL'); switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent" title="종합현황 대시보드">
                 <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">종합현황 대시보드</span>
             </button>
-            <button onclick="switchTab('check-board')" id="nav-check-board" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="점검 현황판">
-                <i data-lucide="calendar-check" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">점검 현황판</span>
+            <button onclick="switchTab('check-board')" id="nav-check-board" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="일일점검 현황판">
+                <i data-lucide="calendar-check" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">일일점검 현황판</span>
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-4 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">라인별 현황 (대시보드)</div>
@@ -2119,7 +2119,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '점검 현황판', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
