@@ -1422,6 +1422,7 @@
         let faultTargets = {}; // 연도별 라인 목표 { '2026': { CPL: { elec:{count,time}, mech:{count,time} } } }
         let targetMetric = 'count'; // 목표 대비 차트 기준: 'count' | 'time'
         let targetYear = ''; // 대시보드/모달에서 선택된 연도
+        let targetYearAuto = true; // 사용자가 연도를 직접 고르기 전에는 데이터가 있는 최신 연도를 자동 사용
         let monthlyTargetLine = ''; // 월별 목표 대비 실적 - 선택 라인
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let checkBoardCategory = 'ALL'; // 점검 현황판 전기/기계 구분
@@ -1911,7 +1912,7 @@
                     if(tabId === 'dashboard') {
                         toggleDashboardViews();
                         const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
-                        if (!targetYear) targetYear = String(new Date().getFullYear());
+                        ensureDashboardYear();
                         const ySelD = document.getElementById('target-year-select');
                         if (ySelD) { fillYearSelect(ySelD, targetYear); targetYear = ySelD.value; }
                         let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
@@ -2249,7 +2250,7 @@
             const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
             let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
             // 대시보드 전역 연도 필터 (선택 연도 기준으로 KPI·차트·목록 모두 적용)
-            if (!targetYear) targetYear = String(new Date().getFullYear());
+            ensureDashboardYear();
             const ySel = document.getElementById('target-year-select');
             if (ySel) { fillYearSelect(ySel, targetYear); targetYear = ySel.value; }
             if (targetYear) dashboardBDData = dashboardBDData.filter(d => (d.startTime || '').slice(0, 4) === targetYear);
@@ -3852,11 +3853,18 @@
             const cfgYears = Object.keys(faultTargets).filter(y => /^\d{4}$/.test(y));
             const cur = new Date().getFullYear();
             const rangeYears = [];
-            for (let y = cur - 5; y <= cur + 3; y++) rangeYears.push(String(y)); // 현재 기준 -5 ~ +3년 항상 선택 가능
-            const all = [...new Set([...dataYears, ...cfgYears, ...rangeYears])].sort().reverse();
-            const curStr = String(cur);
-            return all.includes(curStr) ? [curStr, ...all.filter(y => y !== curStr)] : all; // 올해를 최상단으로
-
+            for (let y = cur - 6; y <= cur; y++) rangeYears.push(String(y)); // 올해 ~ 과거 6년 항상 선택 가능
+            return [...new Set([...dataYears, ...cfgYears, ...rangeYears])].sort().reverse(); // 내림차순(올해가 최상단)
+        }
+        // 진입 시 기본 조회연도: 데이터가 있는 최신 연도(없으면 올해)
+        function resolveDefaultYear() {
+            const dataYears = rawBDData.map(d => (d.startTime || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y));
+            if (dataYears.length) return dataYears.sort().reverse()[0];
+            return String(new Date().getFullYear());
+        }
+        // 사용자가 아직 연도를 직접 고르지 않았으면 최신 데이터 연도로 맞춤
+        function ensureDashboardYear() {
+            if (targetYearAuto || !targetYear) targetYear = resolveDefaultYear();
         }
         function fillYearSelect(sel, selected) {
             if (!sel) return;
@@ -3877,6 +3885,7 @@
         window.onTargetModalYearChange = () => { renderTargetModalRows(document.getElementById('target-modal-year').value); };
         window.onTargetYearChange = () => {
             targetYear = document.getElementById('target-year-select').value;
+            targetYearAuto = false; // 사용자가 직접 선택 → 자동 연도 추적 중단
             window.debouncedApplyFilterAndRender();
         };
 
@@ -4039,7 +4048,7 @@
         };
 
         function renderTargetCharts(dashboardBDData) {
-            if (!targetYear) targetYear = String(new Date().getFullYear());
+            ensureDashboardYear();
             const yearSel = document.getElementById('target-year-select');
             fillYearSelect(yearSel, targetYear);
             if (yearSel) targetYear = yearSel.value;
