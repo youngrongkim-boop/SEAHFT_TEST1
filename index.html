@@ -247,7 +247,7 @@
                 
                 <!-- 공통 KPI Cards (Deep Linking Applied) -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToPMListPending()" title="대기중인 항목 리스트로 이동">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToPMListPending()" title="아직 완료되지 않은 예방점검 항목 수 (현재 기준·연도 무관). 지연 = 예정일이 지난 항목. 클릭 시 대기 리스트로 이동">
                         <div>
                             <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">진행중 예방점검</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="kpi-pm-total">0</h3>
@@ -255,7 +255,7 @@
                         </div>
                         <div class="p-3 bg-blue-50 text-blue-600 rounded-lg shrink-0"><i data-lucide="clipboard-check" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToBDList()" title="고장실적 리스트로 이동">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToBDList()" title="선택 연도에 발생한 총 고장 건수. 중대고장 = 조치시간 2시간 이상. 클릭 시 고장 리스트로 이동">
                         <div>
                             <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">총 고장 건수</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="kpi-breakdown-total">0</h3>
@@ -263,7 +263,7 @@
                         </div>
                         <div class="p-3 bg-red-50 text-red-500 rounded-lg shrink-0"><i data-lucide="alert-triangle" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between" title="선택 연도에 발생한 고장들의 정지시간(조치시간) 합계 — 설비가 멈춰 있던 총 시간">
                         <div>
                             <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">누적 정지시간</p>
                             <h3 class="text-xl md:text-3xl font-bold text-slate-800" id="kpi-total-downtime">0분</h3>
@@ -271,7 +271,7 @@
                         </div>
                         <div class="p-3 bg-amber-50 text-amber-500 rounded-lg shrink-0"><i data-lucide="timer-off" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between" title="선택 연도 고장 1건당 평균 조치시간 (MTTR) — 누적 정지시간 ÷ 고장 건수">
                         <div>
                             <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">평균 조치시간</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-slate-800"><span id="kpi-avg-downtime">0</span><span class="text-base md:text-lg font-normal text-slate-500 ml-1">분</span></h3>
@@ -280,11 +280,6 @@
                         <div class="p-3 bg-orange-50 text-orange-500 rounded-lg shrink-0"><i data-lucide="clock" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
                 </div>
-                <p class="text-[10px] md:text-[11px] text-slate-400 -mt-2 px-1">
-                    <b class="text-slate-500">진행중 예방점검</b> = 아직 완료 안 된 점검 항목 수(현재 기준·연도 무관) ·
-                    <b class="text-slate-500">총 고장 건수 / 중대고장(2h↑) / 누적 정지시간 / 평균 조치시간</b> = <b class="text-indigo-500">선택 연도</b>에 발생한 고장 기준
-                    <span class="hidden md:inline">(누적 정지시간 = 그해 고장 정지시간 합계, 평균 조치시간 = 고장 1건당 평균 조치시간)</span>
-                </p>
 
                 <!-- [대시보드 A] 종합 현황 (전체 라인일 때 표시) -->
                 <div id="dashboard-content-all" class="space-y-6">
