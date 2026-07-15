@@ -137,7 +137,7 @@
     <div id="login-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-xl p-8 w-[90%] max-w-sm text-center">
             <h1 class="text-lg font-bold text-slate-800 mb-1">세아씨엠 설비 관리 시스템</h1>
-            <p class="text-sm text-slate-500 mb-6">계속하려면 구글 계정으로 로그인하세요.</p>
+            <p class="text-sm text-slate-500 mb-6">계속하려면 <span class="font-semibold text-slate-700">@seah.co.kr</span> 구글 계정으로 로그인하세요.</p>
             <button id="google-login-btn" class="w-full flex items-center justify-center gap-2 border border-slate-300 rounded-lg py-2.5 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
                 <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 3.5 29.5 1.5 24 1.5 11.6 1.5 1.5 11.6 1.5 24S11.6 46.5 24 46.5 46.5 36.4 46.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M4.3 14.7l6.6 4.8C12.7 15.1 18 11.5 24 11.5c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 5.5 29.5 3.5 24 3.5 15.8 3.5 8.7 8.2 4.3 14.7z"/><path fill="#4CAF50" d="M24 46.5c5.2 0 9.9-2 13.5-5.2l-6.2-5.3C29.2 37.5 26.7 38.5 24 38.5c-5.3 0-9.7-2.6-11.3-6.9l-6.5 5C8.5 42.2 15.7 46.5 24 46.5z"/><path fill="#1976D2" d="M46.1 20.5H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.2 5.3c3.9-3.6 6.3-9 6.3-15.3 0-1.2-.1-2.4-.4-3.5z"/></svg>
                 Google로 로그인
@@ -1291,7 +1291,7 @@
     <!-- Firebase & Logic Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithCustomToken, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, setDoc, serverTimestamp, doc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // 사용자 실제 API 키 
@@ -1912,13 +1912,25 @@
             }
         }
 
+        const ALLOWED_DOMAIN = 'seah.co.kr'; // 이 도메인 계정만 접속 허용
+        const isAllowedUser = (user) => !!(user && user.email && user.email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN));
+
         const provider = new GoogleAuthProvider();
+        // 구글 로그인 창을 seah.co.kr 계정으로 유도(강제 검증은 아래 도메인 체크에서 수행)
+        provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
 
         const doGoogleLogin = async () => {
             const errEl = document.getElementById('login-error');
             errEl.classList.add('hidden');
             try {
-                await signInWithPopup(auth, provider);
+                // 로그아웃 전까지 로그인 상태 유지 (새로고침·재방문 시 재로그인 불필요)
+                await setPersistence(auth, browserLocalPersistence);
+                const result = await signInWithPopup(auth, provider);
+                if (!isAllowedUser(result.user)) {
+                    await signOut(auth);
+                    errEl.textContent = `${ALLOWED_DOMAIN} 계정만 접속할 수 있습니다. (${result.user.email || '알 수 없는 계정'})`;
+                    errEl.classList.remove('hidden');
+                }
             } catch (error) {
                 console.error("로그인 실패:", error);
                 errEl.textContent = "로그인 실패: " + (error.code || error.message);
@@ -1938,6 +1950,13 @@
         };
 
         onAuthStateChanged(auth, user => {
+            if (user && !isAllowedUser(user)) {
+                // 허용 도메인이 아니면 즉시 로그아웃 처리
+                const errEl = document.getElementById('login-error');
+                if (errEl) { errEl.textContent = `${ALLOWED_DOMAIN} 계정만 접속할 수 있습니다.`; errEl.classList.remove('hidden'); }
+                signOut(auth);
+                return;
+            }
             if (user) {
                 currentUser = user;
                 document.getElementById('login-overlay').classList.add('hidden');
