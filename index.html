@@ -309,7 +309,7 @@
                                 <div class="relative h-52 md:h-64"><canvas id="chartTargetMech"></canvas></div>
                             </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-3">고장은 적을수록 좋음 · 막대 색 = 목표(상한) 대비: <span class="text-emerald-600 font-bold">여유(≤80%)</span> · <span class="text-amber-600 font-bold">주의(80~100%)</span> · <span class="text-red-600 font-bold">초과(&gt;100%, 목표 미달성)</span> · <span class="text-slate-500 font-bold">회색=목표 미설정</span> · 막대 클릭 시 해당 라인 이동</p>
+                        <p class="text-[10px] text-slate-400 mt-3">고장은 적을수록 좋음 · 막대 = 실적, <span class="text-red-600 font-bold">목표 초과 시 빨강으로 강조</span>(그 외 무채색) · 점선 = 목표 · 막대 클릭 시 해당 라인 이동</p>
                     </div>
 
                     <!-- 라인별 월별 목표 대비 실적 -->
@@ -326,7 +326,7 @@
                             </div>
                         </div>
                         <div class="relative h-56 md:h-72"><canvas id="chartMonthlyTarget"></canvas></div>
-                        <p class="text-[10px] text-slate-400 mt-2">막대 = 월 실적 · 점선 = 월 목표(연 목표÷12) · <span class="text-emerald-600 font-bold">초록=목표 이내(달성)</span> · <span class="text-red-600 font-bold">빨강=초과</span> · 상단 [건수/정지시간]·연도 선택 적용</p>
+                        <p class="text-[10px] text-slate-400 mt-2">막대 = 월 실적(무채색), <span class="text-red-600 font-bold">목표 초과 시 빨강 강조</span> · 점선 = 월 목표(연 목표÷12) · 상단 [건수/정지시간]·연도 선택 적용</p>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
@@ -3587,37 +3587,18 @@
         Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
         Chart.defaults.color = '#64748b';
 
-        // 목표선 위에 목표 수치를 뚜렷하게 표시하는 플러그인
-        const targetValuePlugin = {
-            id: 'targetValueLabels',
-            afterDatasetsDraw(chart) {
-                const dsIdx = chart.data.datasets.findIndex(d => d.label === '목표' || d.label === '월 목표');
-                if (dsIdx < 0) return;
-                const meta = chart.getDatasetMeta(dsIdx);
-                if (meta.hidden || !meta.data) return;
-                const data = chart.data.datasets[dsIdx].data;
-                const allSame = data.length > 0 && data.every(v => v === data[0]);
+        // 막대/도넛에 부드러운 그림자를 넣어 입체감(있어보이게)을 주는 플러그인
+        const shadowPlugin = {
+            id: 'softShadow',
+            beforeDatasetsDraw(chart) {
                 const ctx = chart.ctx;
                 ctx.save();
-                ctx.font = 'bold 11px "Noto Sans KR", sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                meta.data.forEach((pt, i) => {
-                    const val = data[i];
-                    if (!val) return;
-                    if (allSame && i !== data.length - 1) return; // 동일 목표(월 목표)면 하나만
-                    const label = Number.isInteger(val) ? String(val) : val.toFixed(1);
-                    const w = ctx.measureText(label).width + 10;
-                    const y = pt.y - 12;
-                    ctx.fillStyle = '#4f46e5';
-                    ctx.beginPath();
-                    if (ctx.roundRect) ctx.roundRect(pt.x - w/2, y - 8, w, 16, 4); else ctx.rect(pt.x - w/2, y - 8, w, 16);
-                    ctx.fill();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillText(label, pt.x, y);
-                });
-                ctx.restore();
-            }
+                ctx.shadowColor = 'rgba(15,23,42,0.20)';
+                ctx.shadowBlur = 7;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 3;
+            },
+            afterDatasetsDraw(chart) { chart.ctx.restore(); }
         };
         
         window.setTopEquipMetric = (metric) => {
@@ -3825,15 +3806,16 @@
                 type: 'doughnut',
                 data: {
                     labels: ['주간', '야간', '평일', '주말'],
-                    datasets: [{ data: hasData ? vals : [1, 1, 1, 1], backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#ef4444'], borderWidth: 0, hoverOffset: 4 }]
+                    datasets: [{ data: hasData ? vals : [1, 1, 1, 1], backgroundColor: ['#cbd5e1', '#475569', '#94a3b8', '#334155'], borderWidth: 3, borderColor: '#ffffff', hoverOffset: 8 }]
                 },
                 options: {
-                    animation: false, responsive: true, maintainAspectRatio: false, cutout: '50%',
+                    animation: false, responsive: true, maintainAspectRatio: false, cutout: '60%',
                     plugins: {
                         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
                         tooltip: { callbacks: { label: c => hasData ? ` ${c.label}: ${c.raw}건` : '데이터 없음' } }
                     }
-                }
+                },
+                plugins: [shadowPlugin]
             });
         };
 
@@ -3876,7 +3858,7 @@
             else if (cat === '전기') annualTarget = (yt.elec && yt.elec[metric]) || 0;
             else annualTarget = (yt.mech && yt.mech[metric]) || 0;
             const monthlyTarget = annualTarget / 12;
-            const barColors = monthlyActual.map(a => monthlyTarget > 0 ? (a <= monthlyTarget ? '#10b981' : '#ef4444') : '#94a3b8');
+            const barColors = monthlyActual.map(a => monthlyTarget > 0 ? (a <= monthlyTarget ? '#94a3b8' : '#dc2626') : '#cbd5e1');
 
             if (chartInstances['monthly_target']) chartInstances['monthly_target'].destroy();
             chartInstances['monthly_target'] = new Chart(el.getContext('2d'), {
@@ -3884,12 +3866,11 @@
                     labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
                     datasets: [
                         { type: 'bar', label: '월 실적', data: monthlyActual, backgroundColor: barColors, borderRadius: 4, order: 2 },
-                        { type: 'line', label: '월 목표', data: new Array(12).fill(monthlyTarget), borderColor: '#4f46e5', borderWidth: 3, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 }
+                        { type: 'line', label: '월 목표', data: new Array(12).fill(monthlyTarget), borderColor: '#334155', borderWidth: 2, borderDash: [5, 4], pointRadius: 0, fill: false, order: 1 }
                     ]
                 },
                 options: {
                     animation: false, responsive: true, maintainAspectRatio: false,
-                    layout: { padding: { top: 18 } },
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
                         tooltip: { callbacks: { label: (c) => {
@@ -3900,8 +3881,7 @@
                         } } }
                     },
                     scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
-                },
-                plugins: [targetValuePlugin]
+                }
             });
         };
 
@@ -3930,11 +3910,8 @@
                 const target = BD_LINES.map(l => (yearTargets[l] && yearTargets[l][catKey] && yearTargets[l][catKey][metric]) || 0);
                 const barColors = actual.map((ac, i) => {
                     const tg = target[i];
-                    if (!tg) return '#94a3b8';
-                    const ratio = ac / tg;
-                    if (ratio <= 0.8) return '#10b981';
-                    if (ratio <= 1.0) return '#f59e0b';
-                    return '#ef4444';
+                    if (!tg) return '#cbd5e1';              // 목표 미설정 (연한 무채색)
+                    return ac > tg ? '#dc2626' : '#94a3b8'; // 목표 초과 = 빨강 강조 / 이내 = 무채색
                 });
                 chartInstances[canvasId] = new Chart(el.getContext('2d'), {
                     type: 'bar',
@@ -3942,12 +3919,11 @@
                         labels: BD_LINES,
                         datasets: [
                             { label: '실제', data: actual, backgroundColor: barColors, borderRadius: 4, order: 2 },
-                            { label: '목표', type: 'line', data: target, borderColor: '#4f46e5', borderWidth: 3, borderDash: [6, 4], pointStyle: 'rectRot', pointRadius: 6, pointBackgroundColor: '#4f46e5', fill: false, spanGaps: true, order: 1 }
+                            { label: '목표', type: 'line', data: target, borderColor: '#334155', borderWidth: 2, borderDash: [5, 4], pointStyle: 'rectRot', pointRadius: 4, pointBackgroundColor: '#334155', fill: false, spanGaps: true, order: 1 }
                         ]
                     },
                     options: {
                         animation: false, responsive: true, maintainAspectRatio: false,
-                        layout: { padding: { top: 18 } },
                         plugins: {
                             legend: { display: false },
                             tooltip: { callbacks: { label: (c) => {
@@ -3962,8 +3938,7 @@
                         onClick: (e, els, chart) => { if (els.length) { const line = chart.data.labels[els[0].index]; if (LINES.includes(line)) setGlobalLine(line); } },
                         onHover: (e, chartEl) => { e.native.target.style.cursor = chartEl[0] ? 'pointer' : 'default'; },
                         scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
-                    },
-                    plugins: [targetValuePlugin]
+                    }
                 });
             };
             buildChart('chartTargetElec', 'elec');
@@ -3990,11 +3965,12 @@
                 const ctxTop = document.getElementById('chartTopEquipments').getContext('2d');
                 chartInstances['all_topEq'] = new Chart(ctxTop, {
                     type: 'bar',
-                    data: { labels: topEquips.length > 0 ? topEquips.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: topEquipMetric === 'count' ? '고장 건수' : '누적 정지시간(분)', data: topEquips.length > 0 ? topEquips.map(e => e[1][topEquipMetric]) : [0], backgroundColor: '#ef4444', borderRadius: 4 }] },
+                    data: { labels: topEquips.length > 0 ? topEquips.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: topEquipMetric === 'count' ? '고장 건수' : '누적 정지시간(분)', data: topEquips.length > 0 ? topEquips.map(e => e[1][topEquipMetric]) : [0], backgroundColor: topEquips.map((e, i) => i === 0 ? '#dc2626' : '#94a3b8'), borderRadius: 4 }] },
                     options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                         onClick: (e, els, chart) => { if (els.length) { const eq = chart.data.labels[els[0].index]; if (eq && eq !== '데이터 없음') openEquipFaults(eq); } },
                         onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; },
-                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + (topEquipMetric === 'count' ? '건' : '분') } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + (topEquipMetric === 'count' ? '건' : '분') } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } },
+                    plugins: [shadowPlugin]
                 });
 
                 const catCounts = {};
@@ -4002,8 +3978,9 @@
                 const ctxCat = document.getElementById('chartCategory').getContext('2d');
                 chartInstances['all_cat'] = new Chart(ctxCat, {
                     type: 'doughnut',
-                    data: { labels: Object.keys(catCounts).length > 0 ? Object.keys(catCounts) : ['데이터 없음'], datasets: [{ data: Object.keys(catCounts).length > 0 ? Object.values(catCounts) : [1], backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#64748b'], borderWidth: 0, hoverOffset: 4 }] },
-                    options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '50%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+                    data: { labels: Object.keys(catCounts).length > 0 ? Object.keys(catCounts) : ['데이터 없음'], datasets: [{ data: Object.keys(catCounts).length > 0 ? Object.values(catCounts) : [1], backgroundColor: ['#334155', '#64748b', '#94a3b8', '#cbd5e1', '#e2e8f0'], borderWidth: 3, borderColor: '#ffffff', hoverOffset: 8 }] },
+                    options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } },
+                    plugins: [shadowPlugin]
                 });
 
                 // 근무조별 고장 분포 (라인·기간 필터 지원)
