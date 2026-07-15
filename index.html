@@ -1684,6 +1684,15 @@
             return Array.from(equips).sort();
         }
 
+        // 현재 로그인 사용자 (auth.currentUser를 우선 신뢰)
+        function currentEditorFields() {
+            const u = auth.currentUser || currentUser;
+            const email = (u && u.email) || '';
+            return {
+                editorEmail: email || '알 수 없음',
+                editorName: (u && (u.displayName || (email ? email.split('@')[0] : ''))) || (email ? email.split('@')[0] : '알 수 없음')
+            };
+        }
         async function logEditHistory(type, line, equip, details) {
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history'), {
@@ -1691,18 +1700,10 @@
                     line: line,
                     equipmentName: equip,
                     details: details,
-                    editorEmail: (currentUser && currentUser.email) || '알 수 없음',
-                    editorName: (currentUser && (currentUser.displayName || (currentUser.email || '').split('@')[0])) || '알 수 없음',
+                    ...currentEditorFields(),
                     createdAt: serverTimestamp()
                 });
             } catch(e) { console.error("History logging failed", e); }
-        }
-        // 배치 기록 등에서 수정자 정보를 붙일 때 사용
-        function currentEditorFields() {
-            return {
-                editorEmail: (currentUser && currentUser.email) || '알 수 없음',
-                editorName: (currentUser && (currentUser.displayName || (currentUser.email || '').split('@')[0])) || '알 수 없음'
-            };
         }
 
         // ===== 수정이력 접근 PIN (평문 대신 SHA-256 해시만 코드에 보관) =====
@@ -3292,13 +3293,18 @@
             if (checkBoardLine !== 'ALL') scope = scope.filter(d => d.line === checkBoardLine);
             if (checkBoardCategory !== 'ALL') scope = scope.filter(d => d.category === checkBoardCategory);
 
-            // 상태 구분: 점검지연(예정일 경과) · 점검예정(예정일 도래) · 등록예정(예정일 이전 = 실적 등록 후 대기)
+            // 상태 구분: 점검지연(예정일 경과) · 점검예정(현재 주기 내에 해야 하는 점검) · 등록예정(현재 주기 이후 = 실적 등록 후 다음 주기 대기)
+            const periodEndCache = {};
+            const periodEnd = (cycle) => {
+                if (!(cycle in periodEndCache)) periodEndCache[cycle] = calculatePeriodEndDate(todayStr, cycle, 0);
+                return periodEndCache[cycle];
+            };
             const statusOf = (d) => {
                 const nd = d.nextCheckDate || '';
-                if (!nd) return '점검예정';       // 예정일 없으면 즉시 점검 대상
-                if (nd < todayStr) return '점검지연';
-                if (nd > todayStr) return '등록예정';
-                return '점검예정';                 // 예정일 == 오늘
+                if (!nd) return '점검예정';                       // 예정일 없으면 즉시 점검 대상
+                if (nd < todayStr) return '점검지연';             // 예정일 경과
+                if (nd <= periodEnd(normalizeCycle(d.cycleType))) return '점검예정'; // 현재 주기(일/주/월…) 내
+                return '등록예정';                                 // 현재 주기 이후
             };
             const badgeOf = (st) => st === '점검지연'
                 ? `<span class="px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold">점검지연</span>`
