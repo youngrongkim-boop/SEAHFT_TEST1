@@ -1430,7 +1430,8 @@
 
         // Constants
         const LINES = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL'];
-        const BD_LINES = LINES.filter(l => l !== 'ARP'); // 고장실적은 ARP 제외 (예방점검은 전체 유지)
+        const BD_LINES = [...LINES.filter(l => l !== 'ARP'), 'SSCL']; // 고장실적: ARP 제외, SSCL 추가
+        const NAV_LINES = [...LINES, ...BD_LINES.filter(l => !LINES.includes(l))]; // 사이드바 라인 내비 = 예방점검 라인 + 고장 전용 라인(SSCL)
         const EQUIPMENT_MAP = {
             'CPL': ['CPL 1호기', 'CPL 2호기', 'CPL 유압유닛', 'CPL 권취기', '기타(CPL)'],
             'ARP': ['ARP 산회수펌프', 'ARP 폐산탱크', 'ARP 세정탑', '기타(ARP)'],
@@ -1858,7 +1859,7 @@
         function initSidebarLines() {
             const container = document.getElementById('nav-lines-container');
             let html = '';
-            LINES.forEach(line => {
+            NAV_LINES.forEach(line => {
                 html += `<button onclick="setGlobalLine('${line}')" id="nav-line-${line}" class="nav-line w-full flex items-center pl-11 pr-6 py-2.5 text-sm font-medium text-slate-300 hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent"><span class="line-prefix mr-2">-</span> <span class="line-text">${line}</span></button>`;
             });
             container.innerHTML = html;
