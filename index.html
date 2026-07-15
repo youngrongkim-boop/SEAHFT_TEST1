@@ -1466,6 +1466,7 @@
         let monthlyTargetLine = ''; // 월별 목표 대비 실적 - 선택 라인
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let checkBoardCategory = 'ALL'; // 점검 현황판 전기/기계 구분
+        let checkBoardDonePeriod = 'MONTH'; // 점검완료 기간 필터 (TODAY/WEEK/MONTH/ALL)
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
         let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
@@ -3271,6 +3272,7 @@
 
         window.setCheckBoardLine = (line) => { checkBoardLine = line; renderCheckBoard(); };
         window.setCheckBoardCategory = (cat) => { checkBoardCategory = cat; renderCheckBoard(); };
+        window.setCheckBoardDonePeriod = (p) => { checkBoardDonePeriod = p; renderCheckBoard(); };
 
         window.renderCheckBoard = () => {
             const todayStr = getLocalTodayString();
@@ -3322,8 +3324,32 @@
             // 현황판(상단) = 미점검 항목 중 점검예정 + 점검지연  /  등록예정(현재 주기 이후)은 숨김
             // 하단 = 점검완료(양호/불량 실적 등록되어 status='점검')
             const pendingScope = scope.filter(d => d.status !== '점검');
-            const completedItems = scope.filter(d => d.status === '점검')
+            const completedAll = scope.filter(d => d.status === '점검')
                 .sort((a, b) => (b.resultCheckTime || '').localeCompare(a.resultCheckTime || '') || ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
+            // 완료일(문자열 YYYY-MM-DD) 추출
+            const doneDateStr = (item) => {
+                if (item.resultCheckTime) return String(item.resultCheckTime).slice(0, 10);
+                if (item.checkTime) return String(item.checkTime).slice(0, 10);
+                if (item.createdAt && item.createdAt.seconds) {
+                    const d = new Date(item.createdAt.seconds * 1000);
+                    const off = d.getTimezoneOffset() * 60000;
+                    return new Date(d - off).toISOString().slice(0, 10);
+                }
+                return '';
+            };
+            // 기간 필터(오늘/이번주/이번달/전체) 경계 계산
+            const weekStart = (() => { const d = new Date(todayStr); d.setDate(d.getDate() - d.getDay()); const off = d.getTimezoneOffset() * 60000; return new Date(d - off).toISOString().slice(0, 10); })();
+            const monthPrefix = todayStr.slice(0, 7);
+            const inDonePeriod = (item) => {
+                if (checkBoardDonePeriod === 'ALL') return true;
+                const ds = doneDateStr(item);
+                if (!ds) return false;
+                if (checkBoardDonePeriod === 'TODAY') return ds === todayStr;
+                if (checkBoardDonePeriod === 'WEEK') return ds >= weekStart && ds <= todayStr;
+                if (checkBoardDonePeriod === 'MONTH') return ds.slice(0, 7) === monthPrefix;
+                return true;
+            };
+            const completedItems = completedAll.filter(inDonePeriod);
             const boardItems = pendingScope.filter(d => statusOf(d) !== '등록예정');
 
             const actionCell = (item) => `<input type="text" value="${(item.actionTime || '').replace(/"/g, '&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="예:30분" class="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50">`;
@@ -3388,15 +3414,20 @@
             }
 
             // ===== 하단: 점검완료 (양호/불량 실적이 등록된 항목) =====
+            const donePeriodBtns = [['TODAY', '오늘'], ['WEEK', '이번주'], ['MONTH', '이번달'], ['ALL', '전체']].map(([v, label]) => {
+                const active = checkBoardDonePeriod === v;
+                return `<button type="button" onclick="setCheckBoardDonePeriod('${v}')" class="px-2.5 py-1 rounded text-[11px] font-bold transition ${active ? 'bg-green-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-green-200 hover:bg-green-100'}">${label}</button>`;
+            }).join('');
             html += `<div class="bg-white rounded-xl shadow-sm border border-green-200 overflow-hidden">
-                <div class="flex items-center justify-between px-4 py-3 bg-green-50 border-b border-green-100">
+                <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-green-50 border-b border-green-100">
                     <div class="flex items-center gap-2">
                         <span class="px-2 py-0.5 rounded bg-green-600 text-white text-xs font-bold">점검완료</span>
-                        <span class="text-xs text-slate-500">양호/불량 실적 등록 완료 · 총 ${completedItems.length}건${completedItems.length > 30 ? ' (최근 30건 표시)' : ''}</span>
+                        <span class="text-xs text-slate-500">양호/불량 실적 등록 완료 · ${completedItems.length}건${completedItems.length > 30 ? ' (최근 30건 표시)' : ''} / 전체 ${completedAll.length}건</span>
                     </div>
+                    <div class="flex items-center gap-1">${donePeriodBtns}</div>
                 </div>`;
             if (!completedItems.length) {
-                html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">점검완료 항목이 없습니다.</div>`;
+                html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">선택한 기간에 점검완료 항목이 없습니다.</div>`;
             } else {
                 html += `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[880px]">
                     <thead class="bg-white text-slate-500"><tr>
