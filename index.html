@@ -308,6 +308,24 @@
                         </div>
                         <p class="text-[10px] text-slate-400 mt-3">고장은 적을수록 좋음 · 막대 색 = 목표(상한) 대비: <span class="text-emerald-600 font-bold">여유(≤80%)</span> · <span class="text-amber-600 font-bold">주의(80~100%)</span> · <span class="text-red-600 font-bold">초과(&gt;100%, 목표 미달성)</span> · <span class="text-slate-500 font-bold">회색=목표 미설정</span> · 막대 클릭 시 해당 라인 이동</p>
                     </div>
+
+                    <!-- 라인별 월별 목표 대비 실적 -->
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <h4 class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="calendar-range" class="w-4 h-4 mr-2 text-indigo-500"></i> 월별 목표 대비 실적 <span class="text-[11px] font-normal text-slate-400 ml-1">(연 목표 ÷ 12)</span></h4>
+                            <div class="flex items-center gap-1.5">
+                                <select id="monthly-target-line" onchange="onMonthlyTargetChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold text-brand-700 outline-none focus:ring-1 focus:ring-indigo-400 bg-white"></select>
+                                <select id="monthly-target-cat" onchange="onMonthlyTargetChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-medium outline-none focus:ring-1 focus:ring-indigo-400 bg-white">
+                                    <option value="ALL">전체</option>
+                                    <option value="전기">전기</option>
+                                    <option value="기계">기계</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="relative h-56 md:h-72"><canvas id="chartMonthlyTarget"></canvas></div>
+                        <p class="text-[10px] text-slate-400 mt-2">막대 = 월 실적 · 점선 = 월 목표(연 목표÷12) · <span class="text-emerald-600 font-bold">초록=목표 이내(달성)</span> · <span class="text-red-600 font-bold">빨강=초과</span> · 상단 [건수/정지시간]·연도 선택 적용</p>
+                    </div>
+
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
                             <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
@@ -1319,6 +1337,7 @@
         let faultTargets = {}; // 연도별 라인 목표 { '2026': { CPL: { elec:{count,time}, mech:{count,time} } } }
         let targetMetric = 'count'; // 목표 대비 차트 기준: 'count' | 'time'
         let targetYear = ''; // 대시보드/모달에서 선택된 연도
+        let monthlyTargetLine = ''; // 월별 목표 대비 실적 - 선택 라인
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let checkBoardCategory = 'ALL'; // 점검 현황판 전기/기계 구분
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
@@ -3782,6 +3801,72 @@
             });
         };
 
+        window.onMonthlyTargetChange = () => {
+            const ls = document.getElementById('monthly-target-line');
+            if (ls) monthlyTargetLine = ls.value;
+            renderMonthlyTargetChart();
+        };
+
+        window.renderMonthlyTargetChart = () => {
+            const el = document.getElementById('chartMonthlyTarget');
+            if (!el) return;
+            const lineSel = document.getElementById('monthly-target-line');
+            if (lineSel && lineSel.options.length === 0) {
+                lineSel.innerHTML = BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            }
+            if (!monthlyTargetLine || !BD_LINES.includes(monthlyTargetLine)) monthlyTargetLine = BD_LINES[0];
+            if (lineSel) { lineSel.value = monthlyTargetLine; }
+            const catSel = document.getElementById('monthly-target-cat');
+            const cat = catSel ? catSel.value : 'ALL';
+            const metric = targetMetric;
+            const unit = metric === 'count' ? '건' : '분';
+            const year = targetYear || String(new Date().getFullYear());
+
+            // 월별 실적 집계
+            const monthlyActual = new Array(12).fill(0);
+            rawBDData.forEach(d => {
+                if (d.line !== monthlyTargetLine) return;
+                if ((d.startTime || '').slice(0, 4) !== year) return;
+                if (cat === '전기' && d.category !== '전기') return;
+                if (cat === '기계' && d.category !== '기계') return;
+                const m = parseInt((d.startTime || '').slice(5, 7), 10);
+                if (m >= 1 && m <= 12) monthlyActual[m - 1] += (metric === 'count' ? 1 : (d.durationMinutes || 0));
+            });
+
+            // 연간 목표 → 월 목표(÷12)
+            const yt = (faultTargets[year] && faultTargets[year][monthlyTargetLine]) || {};
+            let annualTarget = 0;
+            if (cat === 'ALL') annualTarget = ((yt.elec && yt.elec[metric]) || 0) + ((yt.mech && yt.mech[metric]) || 0);
+            else if (cat === '전기') annualTarget = (yt.elec && yt.elec[metric]) || 0;
+            else annualTarget = (yt.mech && yt.mech[metric]) || 0;
+            const monthlyTarget = annualTarget / 12;
+            const barColors = monthlyActual.map(a => monthlyTarget > 0 ? (a <= monthlyTarget ? '#10b981' : '#ef4444') : '#94a3b8');
+
+            if (chartInstances['monthly_target']) chartInstances['monthly_target'].destroy();
+            chartInstances['monthly_target'] = new Chart(el.getContext('2d'), {
+                data: {
+                    labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                    datasets: [
+                        { type: 'bar', label: '월 실적', data: monthlyActual, backgroundColor: barColors, borderRadius: 4, order: 2 },
+                        { type: 'line', label: '월 목표', data: new Array(12).fill(monthlyTarget), borderColor: '#334155', borderWidth: 2, borderDash: [5, 4], pointRadius: 0, fill: false, order: 1 }
+                    ]
+                },
+                options: {
+                    animation: false, responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+                        tooltip: { callbacks: { label: (c) => {
+                            if (c.dataset.label === '월 목표') return ` 월 목표: ${monthlyTarget ? monthlyTarget.toFixed(1) + unit : '미설정'}`;
+                            const a = c.raw;
+                            const status = monthlyTarget > 0 ? (a <= monthlyTarget ? '달성' : '초과') : '목표 미설정';
+                            return ` 실적: ${a.toLocaleString()}${unit} (${status})`;
+                        } } }
+                    },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
+                }
+            });
+        };
+
         function renderTargetCharts(dashboardBDData) {
             if (!targetYear) targetYear = String(new Date().getFullYear());
             const yearSel = document.getElementById('target-year-select');
@@ -3852,6 +3937,7 @@
             if (currentLineFilter === 'ALL') {
                 // 라인별 목표 대비 고장 현황 (전기/기계)
                 renderTargetCharts(dashboardBDData);
+                renderMonthlyTargetChart();
 
                 // 고장 Top 설비 (건수 ↔ 정지시간 토글)
                 const equipAgg = {};
