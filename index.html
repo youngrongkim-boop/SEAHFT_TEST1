@@ -3359,6 +3359,38 @@
                 <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
                 <button onclick="handlePMResult('${item.id}','불량')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">불량</button>
             </div>`;
+            const resBadgeHtml = (item) => item.result === '양호'
+                ? `<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200">양호</span>`
+                : item.result === '불량'
+                    ? `<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold border border-red-200">불량</span>`
+                    : `<span class="text-slate-400 text-[10px]">-</span>`;
+            // 모바일용 카드 (가로 스크롤 없이 세로로 쌓아 보기)
+            const boardCard = (item, st) => {
+                const isOverdue = st === '점검지연';
+                return `<div class="px-3 py-3 border-b border-slate-100 ${isOverdue ? 'bg-red-50/40' : ''}">
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-1.5 min-w-0"><span class="font-bold text-brand-600 text-[11px] shrink-0">${item.line}</span><span class="font-semibold text-slate-800 text-sm truncate">${item.equipmentName}</span></div>
+                        ${badgeOf(st)}
+                    </div>
+                    <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
+                    <div class="text-xs text-slate-500 leading-snug mt-0.5"><span class="text-slate-400 mr-1">기준</span>${item.criteria || '-'}</div>
+                    <div class="flex items-center gap-1.5 mt-1.5 text-[11px]"><span class="${isOverdue ? 'text-red-600 font-bold' : 'text-slate-500'}">예정 ${item.nextCheckDate || '-'}</span><span class="text-slate-300">|</span><span class="text-slate-400">조치</span>${actionCell(item)}</div>
+                    <div class="flex items-center gap-2 mt-2">${remarksCell(item)}<div class="ml-auto">${resultBtns(item)}</div></div>
+                </div>`;
+            };
+            const completedCard = (item) => {
+                const doneStr = item.resultCheckTime ? String(item.resultCheckTime).replace('T', ' ') : '-';
+                return `<div class="px-3 py-3 border-b border-slate-100">
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-1.5 min-w-0"><span class="font-bold text-brand-600 text-[11px] shrink-0">${item.line}</span><span class="font-semibold text-slate-800 text-sm truncate">${item.equipmentName}</span></div>
+                        ${resBadgeHtml(item)}
+                    </div>
+                    <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
+                    <div class="text-xs text-slate-500 leading-snug mt-0.5"><span class="text-slate-400 mr-1">기준</span>${item.criteria || '-'}</div>
+                    <div class="text-[11px] text-slate-500 mt-1.5">완료 ${doneStr}</div>
+                    <div class="flex items-center gap-2 mt-2">${remarksCell(item)}<div class="ml-auto">${resultBtns(item)}</div></div>
+                </div>`;
+            };
 
             let html = '';
             let boardHasAny = false;
@@ -3381,7 +3413,7 @@
                             ${due ? `<span class="text-amber-600">● 점검예정 ${due}</span>` : ''}
                         </div>
                     </div>
-                    <div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[880px]">
+                    <div class="overflow-x-auto hidden md:block"><table class="w-full text-left text-xs whitespace-nowrap min-w-[880px]">
                         <thead class="bg-white text-slate-500"><tr>
                             <th class="py-2 px-3 font-bold border-b border-slate-100">라인</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100">설비명</th>
@@ -3393,6 +3425,7 @@
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">특이사항</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 등록</th>
                         </tr></thead><tbody>`;
+                let cards = '';
                 items.forEach(item => {
                     const st = statusOf(item);
                     const isOverdue = st === '점검지연';
@@ -3407,8 +3440,9 @@
                         <td class="py-2 px-3 text-center">${remarksCell(item)}</td>
                         <td class="py-2 px-3 text-center">${resultBtns(item)}</td>
                     </tr>`;
+                    cards += boardCard(item, st);
                 });
-                html += `</tbody></table></div></div>`;
+                html += `</tbody></table></div><div class="md:hidden">${cards}</div></div>`;
             });
             if (!boardHasAny) {
                 html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 px-4 py-8 text-center text-slate-400 text-xs">점검예정·점검지연 항목이 없습니다.</div>`;
@@ -3430,36 +3464,33 @@
             if (!completedItems.length) {
                 html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">선택한 기간에 점검완료 항목이 없습니다.</div>`;
             } else {
-                html += `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[880px]">
+                html += `<div class="overflow-x-auto hidden md:block"><table class="w-full text-left text-xs whitespace-nowrap min-w-[880px]">
                     <thead class="bg-white text-slate-500"><tr>
                         <th class="py-2 px-3 font-bold border-b border-slate-100">라인</th>
                         <th class="py-2 px-3 font-bold border-b border-slate-100">설비명</th>
                         <th class="py-2 px-3 font-bold border-b border-slate-100">점검 내용</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100">점검기준</th>
+                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">점검기준</th>
                         <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">완료일시</th>
                         <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">결과</th>
                         <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">특이사항</th>
                         <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 정정</th>
                     </tr></thead><tbody>`;
+                let doneCards = '';
                 completedItems.slice(0, 30).forEach(item => {
                     const doneStr = item.resultCheckTime ? String(item.resultCheckTime).replace('T', ' ') : '-';
-                    const resBadge = item.result === '양호'
-                        ? `<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200">양호</span>`
-                        : item.result === '불량'
-                            ? `<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold border border-red-200">불량</span>`
-                            : `<span class="text-slate-400 text-[10px]">-</span>`;
                     html += `<tr class="border-b border-slate-50 hover:bg-slate-50">
                         <td class="py-2 px-3 font-bold text-brand-600">${item.line}</td>
                         <td class="py-2 px-3 font-semibold text-slate-800">${item.equipmentName}</td>
                         <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[150px] leading-snug">${item.taskDetails || '-'}</td>
                         <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[130px] leading-snug text-center">${item.criteria || '-'}</td>
                         <td class="py-2 px-3 text-center text-slate-500">${doneStr}</td>
-                        <td class="py-2 px-3 text-center">${resBadge}</td>
+                        <td class="py-2 px-3 text-center">${resBadgeHtml(item)}</td>
                         <td class="py-2 px-3 text-center">${remarksCell(item)}</td>
                         <td class="py-2 px-3 text-center">${resultBtns(item)}</td>
                     </tr>`;
+                    doneCards += completedCard(item);
                 });
-                html += `</tbody></table></div>`;
+                html += `</tbody></table></div><div class="md:hidden">${doneCards}</div>`;
             }
             html += `</div>`;
 
