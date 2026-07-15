@@ -225,6 +225,23 @@
         </div>
     </div>
 
+    <!-- 수정이력 접근 비밀번호(PIN) 모달 -->
+    <div id="edit-pin-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-7 w-full max-w-xs text-center">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-blue-50 flex items-center justify-center"><i data-lucide="lock" class="w-6 h-6 text-blue-500"></i></div>
+            <h3 class="text-base font-bold text-slate-800 mb-1">데이터 수정 이력</h3>
+            <p class="text-xs text-slate-500 mb-5">접근하려면 4자리 비밀번호를 입력하세요.</p>
+            <input type="password" id="edit-pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"
+                   class="w-40 mx-auto text-center tracking-[0.6em] text-2xl font-bold border border-slate-300 rounded-lg py-2.5 px-3 outline-none focus:ring-2 focus:ring-blue-400"
+                   onkeydown="if(event.key==='Enter'){window.verifyEditPin();}">
+            <p id="edit-pin-error" class="hidden text-xs text-red-500 mt-3">비밀번호가 올바르지 않습니다.</p>
+            <div class="flex gap-2 mt-5">
+                <button onclick="window.closeEditPinModal()" class="flex-1 border border-slate-300 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">취소</button>
+                <button onclick="window.verifyEditPin()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold">확인</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[999] hidden flex-col items-center justify-center">
@@ -277,7 +294,7 @@
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
-            <button onclick="switchTab('edit-history')" id="nav-edit-history" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="데이터 수정 이력">
+            <button onclick="window.enterEditHistory()" id="nav-edit-history" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="데이터 수정 이력">
                 <i data-lucide="history" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">데이터 수정 이력</span>
             </button>
         </nav>
@@ -930,6 +947,7 @@
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200 w-24">분류</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200 w-48">설비명</th>
                                     <th class="py-2.5 px-4 font-bold border-b border-slate-200">수정 내역</th>
+                                    <th class="py-2.5 px-4 font-bold border-b border-slate-200 w-44">수정자</th>
                                 </tr>
                             </thead>
                             <tbody id="edit-history-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
@@ -1651,10 +1669,72 @@
                     line: line,
                     equipmentName: equip,
                     details: details,
+                    editorEmail: (currentUser && currentUser.email) || '알 수 없음',
+                    editorName: (currentUser && (currentUser.displayName || (currentUser.email || '').split('@')[0])) || '알 수 없음',
                     createdAt: serverTimestamp()
                 });
             } catch(e) { console.error("History logging failed", e); }
         }
+        // 배치 기록 등에서 수정자 정보를 붙일 때 사용
+        function currentEditorFields() {
+            return {
+                editorEmail: (currentUser && currentUser.email) || '알 수 없음',
+                editorName: (currentUser && (currentUser.displayName || (currentUser.email || '').split('@')[0])) || '알 수 없음'
+            };
+        }
+
+        // ===== 수정이력 접근 PIN (평문 대신 SHA-256 해시만 코드에 보관) =====
+        // 소스(F12)에는 해시만 노출되며 원래 PIN은 드러나지 않습니다.
+        // 기본 PIN은 "2580". 운영 중에는 window.__setEditHistoryPin('새PIN') 으로 변경(해시가 Firestore에 저장되어 이 기본값을 대체).
+        const DEFAULT_EDIT_PIN_HASH = 'ed946f65d2c785d90e827c5ffd879ce3b49c68d4c88013074176a7e73bc58bcf';
+        let editHistoryPinHash = DEFAULT_EDIT_PIN_HASH; // Firestore에 설정이 있으면 그 값으로 대체됨
+        let editHistoryUnlocked = false; // 이번 방문(페이지 로드) 동안 잠금 해제 여부
+
+        async function sha256Hex(str) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        window.enterEditHistory = () => {
+            if (editHistoryUnlocked) { switchTab('edit-history'); return; }
+            const modal = document.getElementById('edit-pin-modal');
+            const inp = document.getElementById('edit-pin-input');
+            const err = document.getElementById('edit-pin-error');
+            if (err) err.classList.add('hidden');
+            if (inp) inp.value = '';
+            modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => inp && inp.focus(), 50);
+        };
+        window.closeEditPinModal = () => {
+            document.getElementById('edit-pin-modal').classList.add('hidden');
+        };
+        window.verifyEditPin = async () => {
+            const inp = document.getElementById('edit-pin-input');
+            const err = document.getElementById('edit-pin-error');
+            const val = (inp.value || '').trim();
+            if (!/^\d{4}$/.test(val)) { err.textContent = '4자리 숫자를 입력하세요.'; err.classList.remove('hidden'); return; }
+            const h = await sha256Hex(val);
+            if (h === editHistoryPinHash) {
+                editHistoryUnlocked = true;
+                window.closeEditPinModal();
+                switchTab('edit-history');
+            } else {
+                err.textContent = '비밀번호가 올바르지 않습니다.';
+                err.classList.remove('hidden');
+                inp.value = ''; inp.focus();
+            }
+        };
+        // 관리자용: 콘솔에서 PIN 변경 (해시만 Firestore에 저장 → 코드/평문에 남지 않음)
+        window.__setEditHistoryPin = async (newPin) => {
+            if (!/^\d{4}$/.test(String(newPin || ''))) { console.warn('4자리 숫자 PIN을 입력하세요.'); return; }
+            if (!currentUser) { console.warn('로그인 후 실행하세요.'); return; }
+            const hash = await sha256Hex(String(newPin));
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'editHistoryPin'),
+                { hash, updatedBy: (currentUser.email || ''), updatedAt: serverTimestamp() });
+            editHistoryPinHash = hash;
+            console.log('수정이력 PIN이 변경되었습니다.');
+        };
 
         // KPI Card Deep Linking
         window.goToPMListPending = () => {
@@ -2110,6 +2190,10 @@
                 } else faultTargets = {};
                 if (currentTabId === 'dashboard' && currentLineFilter === 'ALL') window.debouncedApplyFilterAndRender();
             });
+            const editPinRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'editHistoryPin');
+            onSnapshot(editPinRef, (snap) => {
+                editHistoryPinHash = (snap.exists() && snap.data().hash) ? snap.data().hash : DEFAULT_EDIT_PIN_HASH;
+            });
             const catMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'categoryMap');
             onSnapshot(catMapRef, (snap) => {
                 categoryMap = (snap.exists() && snap.data().map) ? snap.data().map : JSON.parse(JSON.stringify(CATEGORY_MAP));
@@ -2496,6 +2580,7 @@
                         line: m.line,
                         equipmentName: m.equipmentName,
                         details: '마스터 모드 데이터 수정 적용',
+                        ...currentEditorFields(),
                         createdAt: serverTimestamp()
                     });
                     opsCount++;
@@ -2516,6 +2601,7 @@
                             line: orig.line,
                             equipmentName: orig.equipmentName,
                             details: `항목 영구 삭제 (${orig.taskDetails})`,
+                            ...currentEditorFields(),
                             createdAt: serverTimestamp()
                         });
                         opsCount++;
@@ -2666,7 +2752,7 @@
                         startTime: m.startTime, endTime: m.endTime, durationMinutes: dur, shiftType: getShiftType(m.startTime)
                     });
                     opsCount++; await commitIfNeeded();
-                    batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history')), { type: '고장실적 (마스터 일괄)', line: m.line, equipmentName: m.equipmentName, details: '마스터 모드 데이터 수정 적용', createdAt: serverTimestamp() });
+                    batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history')), { type: '고장실적 (마스터 일괄)', line: m.line, equipmentName: m.equipmentName, details: '마스터 모드 데이터 수정 적용', ...currentEditorFields(), createdAt: serverTimestamp() });
                     opsCount++; await commitIfNeeded();
                 }
                 for(const delId of window.deletedBDIds) {
@@ -2674,7 +2760,7 @@
                     batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', delId));
                     opsCount++; await commitIfNeeded();
                     if(orig) {
-                        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history')), { type: '고장실적 (삭제)', line: orig.line, equipmentName: orig.equipmentName, details: `항목 영구 삭제 (${orig.faultName || orig.content || ''})`, createdAt: serverTimestamp() });
+                        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'edit_history')), { type: '고장실적 (삭제)', line: orig.line, equipmentName: orig.equipmentName, details: `항목 영구 삭제 (${orig.faultName || orig.content || ''})`, ...currentEditorFields(), createdAt: serverTimestamp() });
                         opsCount++; await commitIfNeeded();
                     }
                 }
@@ -2872,8 +2958,8 @@
             const tbody = document.getElementById('edit-history-body');
             document.getElementById('history-list-count').innerText = `총 ${rawEditHistoryData.length}건`;
 
-            if(rawEditHistoryData.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">수정 이력이 없습니다.</td></tr>`; 
+            if(rawEditHistoryData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">수정 이력이 없습니다.</td></tr>`;
                 document.getElementById('edit-history-pagination').innerHTML = '';
                 return; 
             }
@@ -2895,12 +2981,15 @@
                     ? `<span class="px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 font-bold text-[10px] md:text-[11px]">${item.type}</span>`
                     : `<span class="px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 font-bold text-[10px] md:text-[11px]">${item.type}</span>`;
 
+                const editorMail = item.editorEmail || '알 수 없음';
+                const editorNm = item.editorName || (editorMail !== '알 수 없음' ? editorMail.split('@')[0] : '알 수 없음');
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
                         <td class="py-2.5 px-4 font-bold text-slate-500">${dateStr}</td>
                         <td class="py-2.5 px-4">${typeBadge}</td>
                         <td class="py-2.5 px-4 font-bold text-slate-800"><span class="text-brand-500 mr-1">[${item.line}]</span> ${item.equipmentName}</td>
                         <td class="py-2.5 px-4 text-slate-700 whitespace-normal leading-snug font-medium break-keep">${item.details}</td>
+                        <td class="py-2.5 px-4 text-slate-600"><div class="font-bold text-slate-700">${editorNm}</div><div class="text-[10px] text-slate-400">${editorMail}</div></td>
                     </tr>
                 `;
             });
