@@ -64,6 +64,57 @@
         .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
         .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
 
+        /* ===== 인트로 스플래시 (세아씨엠 브랜드 리빌) ===== */
+        #intro-splash {
+            position: fixed; inset: 0; z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(120% 120% at 50% 30%, #102a43 0%, #0a1d30 55%, #061323 100%);
+            cursor: pointer; overflow: hidden;
+        }
+        #intro-splash.intro-out { animation: introFadeOut 0.65s cubic-bezier(0.4,0,0.2,1) forwards; }
+        #intro-splash .intro-logo {
+            height: 68px; width: auto; object-fit: contain;
+            opacity: 0; transform: translateY(14px) scale(0.94);
+            animation: introLogoIn 1s cubic-bezier(0.22,1,0.36,1) 0.15s forwards;
+            filter: drop-shadow(0 6px 20px rgba(0,0,0,0.45));
+        }
+        #intro-splash .intro-line {
+            height: 2px; width: 0; margin: 22px 0 18px;
+            background: linear-gradient(90deg, transparent, #60a5fa, #93c5fd, transparent);
+            animation: introLineGrow 0.9s cubic-bezier(0.22,1,0.36,1) 0.6s forwards;
+        }
+        #intro-splash .intro-sub {
+            color: #cbd5e1; font-size: 15px; letter-spacing: 0.35em; font-weight: 500;
+            text-indent: 0.35em; opacity: 0; transform: translateY(8px);
+            animation: introSubIn 0.8s ease-out 0.95s forwards;
+        }
+        #intro-splash .intro-skip {
+            position: absolute; bottom: 26px; left: 0; right: 0; text-align: center;
+            color: rgba(203,213,225,0.5); font-size: 11px; letter-spacing: 0.15em;
+            opacity: 0; animation: introSubIn 0.8s ease-out 1.6s forwards;
+        }
+        @keyframes introLogoIn {
+            0% { opacity: 0; transform: translateY(14px) scale(0.94); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes introLineGrow {
+            0% { width: 0; opacity: 0; }
+            100% { width: 220px; opacity: 1; }
+        }
+        @keyframes introSubIn {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes introFadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        @media (max-width: 767px) {
+            #intro-splash .intro-logo { height: 52px; }
+            #intro-splash .intro-sub { font-size: 13px; letter-spacing: 0.28em; }
+            @keyframes introLineGrow { 0% { width: 0; opacity: 0; } 100% { width: 170px; opacity: 1; } }
+        }
+
         /* 기능 버튼 색을 부드럽게 (너무 쨍한 채도 완화) — 사이드바 내비/토글 제외 */
         button:not(.nav-btn):not(.nav-line):not(#desktop-sidebar-toggle),
         label.cursor-pointer {
@@ -133,6 +184,34 @@
     </style>
 </head>
 <body class="flex h-screen w-full overflow-hidden text-slate-800 relative">
+    <!-- 인트로 스플래시 (세아씨엠 브랜드 리빌 · 클릭/터치 시 스킵) -->
+    <div id="intro-splash">
+        <img src="./SEAHCM.PNG" alt="세아씨엠" class="intro-logo" onerror="this.style.display='none'; var t=document.getElementById('intro-fallback'); if(t){t.style.display='block';}">
+        <div id="intro-fallback" style="display:none; color:#fff; font-size:34px; font-weight:700; letter-spacing:0.08em;">SeAH CM</div>
+        <div class="intro-line"></div>
+        <div class="intro-sub">설비 관리 시스템</div>
+        <div class="intro-skip">화면을 터치하면 바로 시작합니다</div>
+    </div>
+    <script>
+        (function () {
+            var splash = document.getElementById('intro-splash');
+            if (!splash) return;
+            var done = false;
+            function dismissIntro() {
+                if (done) return; done = true;
+                splash.classList.add('intro-out');
+                setTimeout(function () { if (splash && splash.parentNode) splash.parentNode.removeChild(splash); }, 700);
+                window.removeEventListener('keydown', dismissIntro);
+            }
+            // 클릭/터치/키 입력 시 즉시 스킵
+            splash.addEventListener('click', dismissIntro);
+            splash.addEventListener('touchstart', dismissIntro, { passive: true });
+            window.addEventListener('keydown', dismissIntro);
+            // 애니메이션 후 자연스럽게 자동 종료
+            setTimeout(dismissIntro, 2800);
+        })();
+    </script>
+
     <!-- 로그인 오버레이 (구글 로그인) -->
     <div id="login-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-xl p-8 w-[90%] max-w-sm text-center">
