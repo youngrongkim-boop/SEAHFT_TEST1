@@ -242,6 +242,25 @@
         </div>
     </div>
 
+    <!-- 수정이력 비밀번호(PIN) 변경 모달 -->
+    <div id="edit-pin-change-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-7 w-full max-w-xs text-center">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-blue-50 flex items-center justify-center"><i data-lucide="key-round" class="w-6 h-6 text-blue-500"></i></div>
+            <h3 class="text-base font-bold text-slate-800 mb-1">비밀번호 변경</h3>
+            <p class="text-xs text-slate-500 mb-5">새 4자리 비밀번호를 입력하세요.</p>
+            <input type="password" id="edit-pin-new" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="새 비밀번호"
+                   class="w-48 mx-auto block text-center tracking-[0.4em] text-lg font-bold border border-slate-300 rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-blue-400 mb-2">
+            <input type="password" id="edit-pin-new2" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="새 비밀번호 확인"
+                   class="w-48 mx-auto block text-center tracking-[0.4em] text-lg font-bold border border-slate-300 rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-blue-400"
+                   onkeydown="if(event.key==='Enter'){window.saveEditPin();}">
+            <p id="edit-pin-change-error" class="hidden text-xs text-red-500 mt-3"></p>
+            <div class="flex gap-2 mt-5">
+                <button onclick="window.closeEditPinChange()" class="flex-1 border border-slate-300 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">취소</button>
+                <button onclick="window.saveEditPin()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold">저장</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[999] hidden flex-col items-center justify-center">
@@ -937,7 +956,10 @@
                         <h3 class="text-base md:text-lg font-bold text-slate-800 flex items-center">
                             <i data-lucide="history" class="w-5 h-5 mr-2 text-blue-500"></i> 데이터 수정 이력 (Audit Log)
                         </h3>
-                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="history-list-count">총 0건</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.openEditPinChange()" class="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1 rounded flex items-center gap-1"><i data-lucide="key-round" class="w-3.5 h-3.5"></i>비밀번호 변경</button>
+                            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="history-list-count">총 0건</span>
+                        </div>
                     </div>
                     <div class="flex-1 overflow-x-auto border border-slate-200 rounded w-full custom-scroll relative">
                         <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
@@ -1725,15 +1747,46 @@
                 inp.value = ''; inp.focus();
             }
         };
-        // 관리자용: 콘솔에서 PIN 변경 (해시만 Firestore에 저장 → 코드/평문에 남지 않음)
+        // 공통: 새 PIN을 해시로 Firestore에 저장 (기본값 대체, 평문 미저장)
+        async function persistEditPin(newPin) {
+            const hash = await sha256Hex(String(newPin));
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'editHistoryPin'),
+                { hash, updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp() });
+            editHistoryPinHash = hash;
+        }
+        // 관리자용: 콘솔에서 PIN 변경
         window.__setEditHistoryPin = async (newPin) => {
             if (!/^\d{4}$/.test(String(newPin || ''))) { console.warn('4자리 숫자 PIN을 입력하세요.'); return; }
             if (!currentUser) { console.warn('로그인 후 실행하세요.'); return; }
-            const hash = await sha256Hex(String(newPin));
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'editHistoryPin'),
-                { hash, updatedBy: (currentUser.email || ''), updatedAt: serverTimestamp() });
-            editHistoryPinHash = hash;
+            await persistEditPin(newPin);
             console.log('수정이력 PIN이 변경되었습니다.');
+        };
+        // UI: 비밀번호 변경 모달
+        window.openEditPinChange = () => {
+            const err = document.getElementById('edit-pin-change-error');
+            if (err) err.classList.add('hidden');
+            document.getElementById('edit-pin-new').value = '';
+            document.getElementById('edit-pin-new2').value = '';
+            document.getElementById('edit-pin-change-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => document.getElementById('edit-pin-new').focus(), 50);
+        };
+        window.closeEditPinChange = () => {
+            document.getElementById('edit-pin-change-modal').classList.add('hidden');
+        };
+        window.saveEditPin = async () => {
+            const err = document.getElementById('edit-pin-change-error');
+            const p1 = (document.getElementById('edit-pin-new').value || '').trim();
+            const p2 = (document.getElementById('edit-pin-new2').value || '').trim();
+            const fail = (msg) => { err.textContent = msg; err.classList.remove('hidden'); };
+            if (!/^\d{4}$/.test(p1)) return fail('4자리 숫자를 입력하세요.');
+            if (p1 !== p2) return fail('두 입력이 일치하지 않습니다.');
+            if (!currentUser) return fail('로그인이 필요합니다.');
+            try {
+                await persistEditPin(p1);
+                window.closeEditPinChange();
+                showToast('수정이력 비밀번호가 변경되었습니다.', 'success');
+            } catch (e) { console.error(e); fail('저장에 실패했습니다.'); }
         };
 
         // KPI Card Deep Linking
@@ -3239,12 +3292,34 @@
             if (checkBoardLine !== 'ALL') scope = scope.filter(d => d.line === checkBoardLine);
             if (checkBoardCategory !== 'ALL') scope = scope.filter(d => d.category === checkBoardCategory);
 
+            // 상태 구분: 점검지연(예정일 경과) · 점검예정(예정일 도래) · 등록예정(예정일 이전 = 실적 등록 후 대기)
+            const statusOf = (d) => {
+                const nd = d.nextCheckDate || '';
+                if (!nd) return '점검예정';       // 예정일 없으면 즉시 점검 대상
+                if (nd < todayStr) return '점검지연';
+                if (nd > todayStr) return '등록예정';
+                return '점검예정';                 // 예정일 == 오늘
+            };
+            const badgeOf = (st) => st === '점검지연'
+                ? `<span class="px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold">점검지연</span>`
+                : st === '점검예정'
+                    ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200">점검예정</span>`
+                    : `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">등록예정</span>`;
+
+            // 현황판(상단) = 점검예정 + 점검지연  /  등록예정은 하단에 별도 표시
+            const boardItems = scope.filter(d => statusOf(d) !== '등록예정');
+            const pendingItems = scope.filter(d => statusOf(d) === '등록예정')
+                .sort((a, b) => (a.nextCheckDate || '').localeCompare(b.nextCheckDate || ''));
+
             let html = '';
+            let boardHasAny = false;
             CYCLE_ORDER.forEach(cycle => {
-                const items = scope.filter(d => normalizeCycle(d.cycleType) === cycle)
+                const items = boardItems.filter(d => normalizeCycle(d.cycleType) === cycle)
                     .sort((a, b) => (a.nextCheckDate || '').localeCompare(b.nextCheckDate || ''));
-                const overdue = items.filter(d => (d.nextCheckDate || '') < todayStr).length;
-                const today = items.filter(d => d.nextCheckDate === todayStr).length;
+                if (!items.length) return; // 점검예정·지연 없는 주기는 생략
+                boardHasAny = true;
+                const overdue = items.filter(d => statusOf(d) === '점검지연').length;
+                const due = items.filter(d => statusOf(d) === '점검예정').length;
 
                 html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
@@ -3253,14 +3328,11 @@
                             <span class="text-xs text-slate-500">총 ${items.length}건</span>
                         </div>
                         <div class="flex items-center gap-2 text-[11px] font-bold">
-                            ${overdue ? `<span class="text-red-600">● 지연 ${overdue}</span>` : ''}
-                            ${today ? `<span class="text-amber-600">● 오늘 ${today}</span>` : ''}
+                            ${overdue ? `<span class="text-red-600">● 점검지연 ${overdue}</span>` : ''}
+                            ${due ? `<span class="text-amber-600">● 점검예정 ${due}</span>` : ''}
                         </div>
-                    </div>`;
-                if (!items.length) {
-                    html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">점검 대기 항목이 없습니다.</div>`;
-                } else {
-                    html += `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[720px]">
+                    </div>
+                    <div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[720px]">
                         <thead class="bg-white text-slate-500"><tr>
                             <th class="py-2 px-3 font-bold border-b border-slate-100">라인</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100">설비명</th>
@@ -3270,29 +3342,62 @@
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">특이사항</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 등록</th>
                         </tr></thead><tbody>`;
-                    items.forEach(item => {
-                        const isOverdue = (item.nextCheckDate || '') < todayStr;
-                        const isToday = item.nextCheckDate === todayStr;
-                        const badge = isOverdue ? `<span class="px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold">지연</span>`
-                            : isToday ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200">오늘</span>`
-                            : `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">예정</span>`;
-                        html += `<tr class="border-b border-slate-50 ${isOverdue ? 'bg-red-50/40' : 'hover:bg-slate-50'}">
-                            <td class="py-2 px-3 font-bold text-brand-600">${item.line}</td>
-                            <td class="py-2 px-3 font-semibold text-slate-800">${item.equipmentName}</td>
-                            <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[160px] leading-snug">${item.taskDetails || '-'}</td>
-                            <td class="py-2 px-3 text-center ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}">${item.nextCheckDate || '-'}</td>
-                            <td class="py-2 px-3 text-center">${badge}</td>
-                            <td class="py-2 px-3 text-center"><button onclick="openRemarksModal('${item.id}')" class="text-[10px] font-bold px-2 py-1 rounded border ${item.remarks ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"><i data-lucide="edit-3" class="w-3 h-3 inline mr-0.5"></i>${item.remarks ? '있음' : '작성'}</button></td>
-                            <td class="py-2 px-3 text-center"><div class="flex items-center justify-center gap-1">
-                                <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
-                                <button onclick="handlePMResult('${item.id}','불량')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">불량</button>
-                            </div></td>
-                        </tr>`;
-                    });
-                    html += `</tbody></table></div>`;
-                }
-                html += `</div>`;
+                items.forEach(item => {
+                    const st = statusOf(item);
+                    const isOverdue = st === '점검지연';
+                    html += `<tr class="border-b border-slate-50 ${isOverdue ? 'bg-red-50/40' : 'hover:bg-slate-50'}">
+                        <td class="py-2 px-3 font-bold text-brand-600">${item.line}</td>
+                        <td class="py-2 px-3 font-semibold text-slate-800">${item.equipmentName}</td>
+                        <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[160px] leading-snug">${item.taskDetails || '-'}</td>
+                        <td class="py-2 px-3 text-center ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}">${item.nextCheckDate || '-'}</td>
+                        <td class="py-2 px-3 text-center">${badgeOf(st)}</td>
+                        <td class="py-2 px-3 text-center"><button onclick="openRemarksModal('${item.id}')" class="text-[10px] font-bold px-2 py-1 rounded border ${item.remarks ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"><i data-lucide="edit-3" class="w-3 h-3 inline mr-0.5"></i>${item.remarks ? '있음' : '작성'}</button></td>
+                        <td class="py-2 px-3 text-center"><div class="flex items-center justify-center gap-1">
+                            <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
+                            <button onclick="handlePMResult('${item.id}','불량')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">불량</button>
+                        </div></td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div></div>`;
             });
+            if (!boardHasAny) {
+                html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 px-4 py-8 text-center text-slate-400 text-xs">점검예정·점검지연 항목이 없습니다.</div>`;
+            }
+
+            // ===== 하단: 등록예정 (실적 등록되어 다음 점검 예정일 대기 중) =====
+            html += `<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-200">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded bg-slate-300 text-slate-700 text-xs font-bold">등록예정</span>
+                        <span class="text-xs text-slate-500">실적 등록 후 다음 점검 예정일 대기 · 총 ${pendingItems.length}건</span>
+                    </div>
+                </div>`;
+            if (!pendingItems.length) {
+                html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">등록예정 항목이 없습니다.</div>`;
+            } else {
+                html += `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[640px]">
+                    <thead class="bg-white text-slate-500"><tr>
+                        <th class="py-2 px-3 font-bold border-b border-slate-100">라인</th>
+                        <th class="py-2 px-3 font-bold border-b border-slate-100">설비명</th>
+                        <th class="py-2 px-3 font-bold border-b border-slate-100">점검 내용</th>
+                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">주기</th>
+                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">다음 예정일</th>
+                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">상태</th>
+                    </tr></thead><tbody>`;
+                pendingItems.forEach(item => {
+                    html += `<tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="py-2 px-3 font-bold text-brand-600">${item.line}</td>
+                        <td class="py-2 px-3 font-semibold text-slate-800">${item.equipmentName}</td>
+                        <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[160px] leading-snug">${item.taskDetails || '-'}</td>
+                        <td class="py-2 px-3 text-center text-slate-500">${normalizeCycle(item.cycleType)}</td>
+                        <td class="py-2 px-3 text-center text-slate-600">${item.nextCheckDate || '-'}</td>
+                        <td class="py-2 px-3 text-center">${badgeOf('등록예정')}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div>`;
+            }
+            html += `</div>`;
+
             contentEl.innerHTML = html;
             if (window.lucide) lucide.createIcons({ root: contentEl });
         };
