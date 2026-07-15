@@ -3600,6 +3600,36 @@
             },
             afterDatasetsDraw(chart) { chart.ctx.restore(); }
         };
+
+        // 목표선의 우측 끝 지점 위에 목표 수치 하나만 표시
+        const targetEndLabelPlugin = {
+            id: 'targetEndLabel',
+            afterDatasetsDraw(chart) {
+                const dsIdx = chart.data.datasets.findIndex(d => d.label === '목표' || d.label === '월 목표');
+                if (dsIdx < 0) return;
+                const meta = chart.getDatasetMeta(dsIdx);
+                if (meta.hidden || !meta.data || !meta.data.length) return;
+                const data = chart.data.datasets[dsIdx].data;
+                const lastIdx = meta.data.length - 1;
+                const val = data[lastIdx];
+                if (!val) return;
+                const pt = meta.data[lastIdx];
+                const label = '목표 ' + (Number.isInteger(val) ? val.toLocaleString() : val.toFixed(1));
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.font = 'bold 11px "Noto Sans KR", sans-serif';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                const x = Math.min(pt.x + 2, chart.chartArea.right);
+                const y = Math.max(pt.y - 5, chart.chartArea.top + 11);
+                const w = ctx.measureText(label).width + 8;
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.fillRect(x - w, y - 12, w, 14);
+                ctx.fillStyle = '#334155';
+                ctx.fillText(label, x - 3, y);
+                ctx.restore();
+            }
+        };
         
         window.setTopEquipMetric = (metric) => {
             topEquipMetric = metric;
@@ -3871,6 +3901,7 @@
                 },
                 options: {
                     animation: false, responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 14 } },
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
                         tooltip: { callbacks: { label: (c) => {
@@ -3881,7 +3912,8 @@
                         } } }
                     },
                     scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
-                }
+                },
+                plugins: [targetEndLabelPlugin]
             });
         };
 
@@ -3924,6 +3956,7 @@
                     },
                     options: {
                         animation: false, responsive: true, maintainAspectRatio: false,
+                        layout: { padding: { top: 14 } },
                         plugins: {
                             legend: { display: false },
                             tooltip: { callbacks: { label: (c) => {
@@ -3938,7 +3971,8 @@
                         onClick: (e, els, chart) => { if (els.length) { const line = chart.data.labels[els[0].index]; if (LINES.includes(line)) setGlobalLine(line); } },
                         onHover: (e, chartEl) => { e.native.target.style.cursor = chartEl[0] ? 'pointer' : 'default'; },
                         scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
-                    }
+                    },
+                    plugins: [targetEndLabelPlugin]
                 });
             };
             buildChart('chartTargetElec', 'elec');
