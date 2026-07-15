@@ -243,41 +243,45 @@
             
 
             <!-- VIEW: DASHBOARD -->
-            <div id="view-dashboard" class="view-section space-y-6 flex-col min-w-0">
-                
+            <div id="view-dashboard" class="view-section space-y-4 flex-col min-w-0">
+
+                <!-- 조회 연도 (대시보드 전역 적용) -->
+                <div class="flex items-center flex-wrap gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
+                    <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-600 shrink-0"></i>
+                    <span class="text-sm font-bold text-indigo-800">조회 연도</span>
+                    <select id="target-year-select" onchange="onTargetYearChange()" class="border-2 border-indigo-300 rounded-lg px-3 py-1 text-sm font-bold text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-400 bg-white"></select>
+                    <span class="text-[11px] text-indigo-500 hidden sm:inline">← 선택한 연도의 고장 데이터가 아래 전체에 적용됩니다</span>
+                </div>
+
                 <!-- 공통 KPI Cards (Deep Linking Applied) -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                    <div class="bg-white p-2.5 md:p-3 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToPMListPending()" title="아직 완료되지 않은 예방점검 항목 수 (현재 기준·연도 무관). 지연 = 예정일이 지난 항목. 클릭 시 대기 리스트로 이동">
-                        <div>
-                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">진행중 예방점검</p>
-                            <h3 class="text-xl md:text-2xl font-bold text-slate-800" id="kpi-pm-total">0</h3>
-                            <p class="text-[11px] font-semibold text-red-500 mt-1">지연 <span id="kpi-pm-overdue">0</span>건</p>
+                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2 cursor-pointer hover:bg-slate-50 transition" onclick="goToPMListPending()" title="아직 완료되지 않은 예방점검 항목 수 (현재 기준·연도 무관). 지연 = 예정일이 지난 항목. 클릭 시 대기 리스트로 이동">
+                        <div class="p-1.5 bg-blue-50 text-blue-600 rounded-md shrink-0"><i data-lucide="clipboard-check" class="w-4 h-4"></i></div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] text-slate-500 leading-none truncate">진행중 예방점검</p>
+                            <p class="leading-none mt-1"><span class="text-lg font-bold text-slate-800" id="kpi-pm-total">0</span> <span class="text-[10px] font-semibold text-red-500 whitespace-nowrap">지연 <span id="kpi-pm-overdue">0</span></span></p>
                         </div>
-                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg shrink-0 !p-2"><i data-lucide="clipboard-check" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-2.5 md:p-3 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 hover:shadow transition" onclick="goToBDList()" title="선택 연도에 발생한 총 고장 건수. 중대고장 = 조치시간 2시간 이상. 클릭 시 고장 리스트로 이동">
-                        <div>
-                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">총 고장 건수</p>
-                            <h3 class="text-xl md:text-2xl font-bold text-slate-800" id="kpi-breakdown-total">0</h3>
-                            <p class="text-[11px] font-semibold text-red-600 mt-1">중대고장 <span id="kpi-critical">0</span>건</p>
+                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2 cursor-pointer hover:bg-slate-50 transition" onclick="goToBDList()" title="선택 연도에 발생한 총 고장 건수. 중대고장 = 조치시간 2시간 이상. 클릭 시 고장 리스트로 이동">
+                        <div class="p-1.5 bg-red-50 text-red-500 rounded-md shrink-0"><i data-lucide="alert-triangle" class="w-4 h-4"></i></div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] text-slate-500 leading-none truncate">총 고장 건수</p>
+                            <p class="leading-none mt-1"><span class="text-lg font-bold text-slate-800" id="kpi-breakdown-total">0</span> <span class="text-[10px] font-semibold text-red-600 whitespace-nowrap">중대 <span id="kpi-critical">0</span></span></p>
                         </div>
-                        <div class="p-3 bg-red-50 text-red-500 rounded-lg shrink-0 !p-2"><i data-lucide="alert-triangle" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-2.5 md:p-3 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between" title="선택 연도에 발생한 고장들의 정지시간(조치시간) 합계 — 설비가 멈춰 있던 총 시간">
-                        <div>
-                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">누적 정지시간</p>
-                            <h3 class="text-lg md:text-2xl font-bold text-slate-800" id="kpi-total-downtime">0분</h3>
-                            <p class="text-[11px] font-medium text-slate-400 mt-1">설비 멈춘 총 시간</p>
+                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2" title="선택 연도에 발생한 고장들의 정지시간(조치시간) 합계 — 설비가 멈춰 있던 총 시간">
+                        <div class="p-1.5 bg-amber-50 text-amber-500 rounded-md shrink-0"><i data-lucide="timer-off" class="w-4 h-4"></i></div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] text-slate-500 leading-none truncate">누적 정지시간</p>
+                            <p class="text-base font-bold text-slate-800 leading-none mt-1 truncate" id="kpi-total-downtime">0분</p>
                         </div>
-                        <div class="p-3 bg-amber-50 text-amber-500 rounded-lg shrink-0 !p-2"><i data-lucide="timer-off" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
-                    <div class="bg-white p-2.5 md:p-3 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between" title="선택 연도 고장 1건당 평균 조치시간 (MTTR) — 누적 정지시간 ÷ 고장 건수">
-                        <div>
-                            <p class="text-xs md:text-sm font-medium text-slate-500 mb-1">평균 조치시간</p>
-                            <h3 class="text-xl md:text-2xl font-bold text-slate-800"><span id="kpi-avg-downtime">0</span><span class="text-base md:text-lg font-normal text-slate-500 ml-1">분</span></h3>
-                            <p class="text-[11px] font-medium text-slate-400 mt-1">건당 평균(MTTR)</p>
+                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2" title="선택 연도 고장 1건당 평균 조치시간 (MTTR) — 누적 정지시간 ÷ 고장 건수">
+                        <div class="p-1.5 bg-orange-50 text-orange-500 rounded-md shrink-0"><i data-lucide="clock" class="w-4 h-4"></i></div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] text-slate-500 leading-none truncate">평균 조치시간</p>
+                            <p class="leading-none mt-1"><span class="text-lg font-bold text-slate-800" id="kpi-avg-downtime">0</span><span class="text-[10px] text-slate-500 ml-0.5">분 (MTTR)</span></p>
                         </div>
-                        <div class="p-3 bg-orange-50 text-orange-500 rounded-lg shrink-0 !p-2"><i data-lucide="clock" class="w-5 h-5 md:w-6 md:h-6"></i></div>
                     </div>
                 </div>
 
@@ -288,7 +292,6 @@
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                             <h4 class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="target" class="w-4 h-4 mr-2 text-indigo-500"></i> 라인별 목표 대비 고장 현황</h4>
                             <div class="flex items-center gap-2">
-                                <select id="target-year-select" onchange="onTargetYearChange()" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold text-indigo-700 outline-none focus:ring-1 focus:ring-indigo-400 bg-white"></select>
                                 <span class="inline-flex rounded-md overflow-hidden border border-slate-200 text-[10px] font-bold">
                                     <button type="button" id="target-metric-count" onclick="setTargetMetric('count')" class="px-2 py-1 bg-indigo-500 text-white">건수</button>
                                     <button type="button" id="target-metric-time" onclick="setTargetMetric('time')" class="px-2 py-1 bg-white text-slate-500">정지시간</button>
@@ -3583,6 +3586,39 @@
         // ==========================================
         Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
         Chart.defaults.color = '#64748b';
+
+        // 목표선 위에 목표 수치를 뚜렷하게 표시하는 플러그인
+        const targetValuePlugin = {
+            id: 'targetValueLabels',
+            afterDatasetsDraw(chart) {
+                const dsIdx = chart.data.datasets.findIndex(d => d.label === '목표' || d.label === '월 목표');
+                if (dsIdx < 0) return;
+                const meta = chart.getDatasetMeta(dsIdx);
+                if (meta.hidden || !meta.data) return;
+                const data = chart.data.datasets[dsIdx].data;
+                const allSame = data.length > 0 && data.every(v => v === data[0]);
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.font = 'bold 11px "Noto Sans KR", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                meta.data.forEach((pt, i) => {
+                    const val = data[i];
+                    if (!val) return;
+                    if (allSame && i !== data.length - 1) return; // 동일 목표(월 목표)면 하나만
+                    const label = Number.isInteger(val) ? String(val) : val.toFixed(1);
+                    const w = ctx.measureText(label).width + 10;
+                    const y = pt.y - 12;
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.beginPath();
+                    if (ctx.roundRect) ctx.roundRect(pt.x - w/2, y - 8, w, 16, 4); else ctx.rect(pt.x - w/2, y - 8, w, 16);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(label, pt.x, y);
+                });
+                ctx.restore();
+            }
+        };
         
         window.setTopEquipMetric = (metric) => {
             topEquipMetric = metric;
@@ -3848,11 +3884,12 @@
                     labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
                     datasets: [
                         { type: 'bar', label: '월 실적', data: monthlyActual, backgroundColor: barColors, borderRadius: 4, order: 2 },
-                        { type: 'line', label: '월 목표', data: new Array(12).fill(monthlyTarget), borderColor: '#334155', borderWidth: 2, borderDash: [5, 4], pointRadius: 0, fill: false, order: 1 }
+                        { type: 'line', label: '월 목표', data: new Array(12).fill(monthlyTarget), borderColor: '#4f46e5', borderWidth: 3, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 }
                     ]
                 },
                 options: {
                     animation: false, responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 18 } },
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
                         tooltip: { callbacks: { label: (c) => {
@@ -3863,7 +3900,8 @@
                         } } }
                     },
                     scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
-                }
+                },
+                plugins: [targetValuePlugin]
             });
         };
 
@@ -3904,11 +3942,12 @@
                         labels: BD_LINES,
                         datasets: [
                             { label: '실제', data: actual, backgroundColor: barColors, borderRadius: 4, order: 2 },
-                            { label: '목표', type: 'line', data: target, borderColor: '#334155', borderWidth: 2, borderDash: [5, 4], pointStyle: 'rectRot', pointRadius: 4, pointBackgroundColor: '#334155', fill: false, spanGaps: true, order: 1 }
+                            { label: '목표', type: 'line', data: target, borderColor: '#4f46e5', borderWidth: 3, borderDash: [6, 4], pointStyle: 'rectRot', pointRadius: 6, pointBackgroundColor: '#4f46e5', fill: false, spanGaps: true, order: 1 }
                         ]
                     },
                     options: {
                         animation: false, responsive: true, maintainAspectRatio: false,
+                        layout: { padding: { top: 18 } },
                         plugins: {
                             legend: { display: false },
                             tooltip: { callbacks: { label: (c) => {
@@ -3923,7 +3962,8 @@
                         onClick: (e, els, chart) => { if (els.length) { const line = chart.data.labels[els[0].index]; if (LINES.includes(line)) setGlobalLine(line); } },
                         onHover: (e, chartEl) => { e.native.target.style.cursor = chartEl[0] ? 'pointer' : 'default'; },
                         scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
-                    }
+                    },
+                    plugins: [targetValuePlugin]
                 });
             };
             buildChart('chartTargetElec', 'elec');
