@@ -3971,8 +3971,7 @@
                         onClick: (e, els, chart) => { if (els.length) { const line = chart.data.labels[els[0].index]; if (LINES.includes(line)) setGlobalLine(line); } },
                         onHover: (e, chartEl) => { e.native.target.style.cursor = chartEl[0] ? 'pointer' : 'default'; },
                         scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } }
-                    },
-                    plugins: [targetEndLabelPlugin]
+                    }
                 });
             };
             buildChart('chartTargetElec', 'elec');
