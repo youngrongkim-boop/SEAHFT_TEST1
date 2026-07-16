@@ -261,6 +261,21 @@
         </div>
     </div>
 
+    <!-- 설비명 매핑 관리 모달 -->
+    <div id="equip-map-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 md:p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[92vh] flex flex-col">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="link" class="w-5 h-5 text-brand-500"></i> 설비명 매핑 관리</h3>
+                <button onclick="closeEquipMapModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="px-5 py-3 border-b border-slate-100 shrink-0">
+                <div id="equip-map-line-tabs" class="flex flex-wrap gap-1.5"></div>
+                <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">같은 설비인데 예방점검·고장에서 다르게 적힌 이름을 하나의 그룹으로 묶으세요. ① <b>새 그룹</b> 만들기 → ② 그룹 선택 → ③ 아래 <b>미매핑 설비</b> 이름 클릭하면 그 그룹에 추가됩니다. <span class="text-blue-600">PM</span>=예방점검 · <span class="text-red-600">BD</span>=고장</p>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll px-5 py-4 space-y-4" id="equip-map-body"></div>
+        </div>
+    </div>
+
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[999] hidden flex-col items-center justify-center">
@@ -598,7 +613,8 @@
             <div id="view-risk-analysis" class="view-section hidden h-full flex-col min-w-0 pb-4">
                 <div class="flex flex-wrap items-center gap-2 mb-3 shrink-0">
                     <div id="risk-line-tabs" class="flex flex-wrap gap-1.5"></div>
-                    <span id="risk-period-label" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
+                    <button onclick="openEquipMapModal()" class="text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-2.5 py-1.5 rounded flex items-center gap-1 ml-auto"><i data-lucide="link" class="w-3.5 h-3.5"></i>설비명 매핑</button>
+                    <span id="risk-period-label" class="text-[11px] text-slate-400 pl-1"></span>
                 </div>
                 <div id="risk-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
             </div>
@@ -1481,6 +1497,9 @@
         let checkBoardCategory = 'ALL'; // 점검 현황판 전기/기계 구분
         let checkBoardDonePeriod = 'MONTH'; // 점검완료 기간 필터 (TODAY/WEEK/MONTH/ALL)
         let riskLine = 'ALL'; // 고장 예측/위험도 선택 라인
+        let equipMappingGroups = []; // 설비명 매핑 그룹 [{id, line, std, members:[]}]
+        let mapModalLine = 'CPL'; // 설비명 매핑 모달 선택 라인
+        let activeMapGroupId = null; // 매핑 모달에서 선택(활성) 그룹
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
         let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
@@ -2264,6 +2283,12 @@
             const editPinRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'editHistoryPin');
             onSnapshot(editPinRef, (snap) => {
                 editHistoryPinHash = (snap.exists() && snap.data().hash) ? snap.data().hash : DEFAULT_EDIT_PIN_HASH;
+            });
+            const equipMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'equipmentMapping');
+            onSnapshot(equipMapRef, (snap) => {
+                equipMappingGroups = (snap.exists() && Array.isArray(snap.data().groups)) ? snap.data().groups : [];
+                if (currentTabId === 'risk-analysis') renderRiskAnalysis();
+                if (!document.getElementById('equip-map-modal').classList.contains('hidden')) renderEquipMapModal();
             });
             const catMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'categoryMap');
             onSnapshot(catMapRef, (snap) => {
@@ -3524,6 +3549,18 @@
             if (line) s = s.replace(new RegExp('^' + line + '\\s*', 'i'), '');
             return s.toUpperCase().replace(/\s+/g, '').replace(/[()\-_.\/]/g, '');
         }
+        // 매핑 그룹 우선, 없으면 정규화로 설비 식별 키/표시명 산출
+        function findMapGroup(line, name) {
+            return equipMappingGroups.find(g => g.line === line && Array.isArray(g.members) && g.members.includes(String(name || '').trim()));
+        }
+        function resolveEquipKey(line, name) {
+            const g = findMapGroup(line, name);
+            return g ? (line + '|G:' + g.id) : (line + '|' + normEquip(name, line));
+        }
+        function resolveEquipDisplay(line, name) {
+            const g = findMapGroup(line, name);
+            return g ? g.std : name;
+        }
         window.setRiskLine = (l) => { riskLine = l; renderRiskAnalysis(); };
 
         window.renderRiskAnalysis = () => {
@@ -3585,22 +3622,22 @@
                 return { t: '낮음', badge: 'bg-green-100 text-green-700 border-green-200', bar: 'bg-green-400', dot: 'bg-green-500' };
             };
 
-            // ===== 설비별 위험도 (라인+정규화 설비명) =====
+            // ===== 설비별 위험도 (매핑 그룹 우선, 없으면 정규화) =====
             const equipMap = {};
             faults.forEach(d => {
-                const key = d.line + '|' + normEquip(d.equipmentName, d.line);
-                if (!normEquip(d.equipmentName, d.line)) return;
-                if (!equipMap[key]) equipMap[key] = { line: d.line, name: d.equipmentName, count: 0, critical: 0, downtime: 0, last: '', defects: 0 };
+                if (!String(d.equipmentName || '').trim()) return;
+                const key = resolveEquipKey(d.line, d.equipmentName);
+                const disp = resolveEquipDisplay(d.line, d.equipmentName);
+                if (!equipMap[key]) equipMap[key] = { line: d.line, name: disp, count: 0, critical: 0, downtime: 0, last: '', defects: 0 };
                 const e = equipMap[key];
                 e.count++; e.downtime += (d.durationMinutes || 0);
                 if ((d.durationMinutes || 0) >= 120) e.critical++;
-                if ((d.startTime || '') > e.last) { e.last = d.startTime || ''; e.name = d.equipmentName; }
+                if ((d.startTime || '') > e.last) { e.last = d.startTime || ''; e.name = disp; }
             });
-            // PM 불량을 정규화 매칭으로 설비에 연결
-            let matchedDefectKeys = 0;
+            // PM 불량을 매핑/정규화로 설비에 연결
             pmDefects.forEach(d => {
-                const key = d.line + '|' + normEquip(d.equipmentName, d.line);
-                if (equipMap[key]) { equipMap[key].defects++; matchedDefectKeys++; }
+                const key = resolveEquipKey(d.line, d.equipmentName);
+                if (equipMap[key]) equipMap[key].defects++;
             });
             const equipList = Object.values(equipMap).map(e => {
                 const lastDays = e.last ? Math.max(0, daysBetween(todayStr, e.last.slice(0, 10))) : null;
@@ -3612,11 +3649,11 @@
             // ===== 선행지표: 예방점검 '불량' 이후 30일 내 같은 설비 고장 발생 =====
             let defectFollowed = 0, defectTotalWithMatch = 0;
             pmDefects.forEach(d => {
-                const nk = normEquip(d.equipmentName, d.line);
-                if (!nk) return;
+                if (!String(d.equipmentName || '').trim()) return;
+                const dk = resolveEquipKey(d.line, d.equipmentName);
                 const ct = (d.checkTime || '').slice(0, 10);
                 if (!ct) return;
-                const relatedFaults = faults.filter(f => f.line === d.line && normEquip(f.equipmentName, f.line) === nk);
+                const relatedFaults = faults.filter(f => resolveEquipKey(f.line, f.equipmentName) === dk);
                 if (!relatedFaults.length) return; // 매칭되는 고장 이력이 아예 없으면 제외(설비명 불일치 가능성)
                 defectTotalWithMatch++;
                 const hit = relatedFaults.some(f => { const fd = (f.startTime || '').slice(0, 10); return fd >= ct && daysBetween(fd, ct) <= 30; });
@@ -3632,7 +3669,7 @@
             html += `<div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-[11px] text-slate-600 leading-relaxed">
                 <div class="font-bold text-blue-700 mb-1 flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5"></i> 위험도 산출 기준 (최근 12개월)</div>
                 위험도 점수 = 고장건수×3 + 중대고장×5 + 예방점검 불량×4 + 점검지연×2 + 정지시간(시간)×1 · 상대적으로 높은 순으로 <span class="text-red-600 font-bold">높음</span>/<span class="text-amber-600 font-bold">주의</span>/<span class="text-green-600 font-bold">낮음</span> 구분.
-                <span class="text-slate-400">※ 예방점검과 고장의 설비명이 서로 달라, 설비 단위 매칭은 정규화 자동매칭(참고용)입니다. 설비명을 통일하면 정확도가 크게 올라갑니다.</span>
+                <span class="text-slate-400">※ 예방점검과 고장의 설비명이 다르면 상단 <b>[설비명 매핑]</b>에서 같은 설비끼리 묶어주세요. 묶은 만큼 설비 단위 분석 정확도가 올라갑니다. (미매핑은 정규화 자동매칭으로 참고 처리)</span>
             </div>`;
 
             // 요약 KPI
@@ -3694,6 +3731,127 @@
 
             contentEl.innerHTML = html;
             if (window.lucide) lucide.createIcons({ root: contentEl });
+        };
+
+        // ===== 설비명 매핑 모달 =====
+        async function saveEquipMapping() {
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'equipmentMapping'),
+                    { groups: equipMappingGroups, updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp() });
+            } catch (e) { console.error(e); showToast('매핑 저장 실패', 'error'); }
+        }
+        window.openEquipMapModal = () => {
+            if (riskLine !== 'ALL') mapModalLine = riskLine;
+            if (!BD_LINES.includes(mapModalLine)) mapModalLine = BD_LINES[0];
+            activeMapGroupId = null;
+            document.getElementById('equip-map-modal').classList.remove('hidden');
+            renderEquipMapModal();
+        };
+        window.closeEquipMapModal = () => { document.getElementById('equip-map-modal').classList.add('hidden'); };
+        window.setMapModalLine = (l) => { mapModalLine = l; activeMapGroupId = null; renderEquipMapModal(); };
+        window.createMapGroup = () => {
+            const inp = document.getElementById('equip-map-new-name');
+            const std = (inp.value || '').trim();
+            if (!std) { showToast('표준 설비명을 입력하세요.', 'error'); return; }
+            const id = 'g' + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+            equipMappingGroups.push({ id, line: mapModalLine, std, members: [] });
+            activeMapGroupId = id;
+            saveEquipMapping(); renderEquipMapModal();
+        };
+        window.deleteMapGroup = (id) => {
+            equipMappingGroups = equipMappingGroups.filter(g => g.id !== id);
+            if (activeMapGroupId === id) activeMapGroupId = null;
+            saveEquipMapping(); renderEquipMapModal();
+        };
+        window.selectMapGroup = (id) => { activeMapGroupId = (activeMapGroupId === id ? null : id); renderEquipMapModal(); };
+        window.addMapName = (encName) => {
+            const name = decodeURIComponent(encName);
+            const g = equipMappingGroups.find(x => x.id === activeMapGroupId);
+            if (!g) { showToast('먼저 그룹을 선택하거나 새로 만드세요.', 'error'); return; }
+            // 다른 그룹에 있던 이름이면 이동
+            equipMappingGroups.forEach(x => { if (x.line === mapModalLine) x.members = (x.members || []).filter(m => m !== name); });
+            if (!g.members.includes(name)) g.members.push(name);
+            saveEquipMapping(); renderEquipMapModal();
+        };
+        window.removeMapName = (id, encName) => {
+            const name = decodeURIComponent(encName);
+            const g = equipMappingGroups.find(x => x.id === id);
+            if (g) g.members = (g.members || []).filter(m => m !== name);
+            saveEquipMapping(); renderEquipMapModal();
+        };
+        window.renderEquipMapModal = () => {
+            // 라인 탭
+            const tabs = document.getElementById('equip-map-line-tabs');
+            if (tabs) tabs.innerHTML = BD_LINES.map(l => {
+                const active = mapModalLine === l;
+                return `<button type="button" onclick="setMapModalLine('${l}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition ${active ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${l}</button>`;
+            }).join('');
+
+            const line = mapModalLine;
+            const pmSet = new Set(), bdSet = new Set();
+            rawPMData.forEach(d => { if (d.line === line && String(d.equipmentName || '').trim()) pmSet.add(d.equipmentName.trim()); });
+            rawPMResultsData.forEach(d => { if (d.line === line && String(d.equipmentName || '').trim()) pmSet.add(d.equipmentName.trim()); });
+            rawBDData.forEach(d => { if (d.line === line && String(d.equipmentName || '').trim()) bdSet.add(d.equipmentName.trim()); });
+            const allNames = new Set([...pmSet, ...bdSet]);
+            const groups = equipMappingGroups.filter(g => g.line === line);
+            const mapped = new Set();
+            groups.forEach(g => (g.members || []).forEach(m => mapped.add(m)));
+            const tag = (name) => {
+                const inPm = pmSet.has(name), inBd = bdSet.has(name);
+                let t = '';
+                if (inPm) t += `<span class="text-[9px] font-bold text-blue-600 mr-0.5">PM</span>`;
+                if (inBd) t += `<span class="text-[9px] font-bold text-red-600">BD</span>`;
+                return t || `<span class="text-[9px] text-slate-400">-</span>`;
+            };
+
+            let html = '';
+            // 그룹 목록
+            html += `<div><div class="flex items-center justify-between mb-2"><span class="text-xs font-bold text-slate-700">매핑 그룹 (${groups.length})</span></div>`;
+            if (!groups.length) {
+                html += `<div class="text-[11px] text-slate-400 border border-dashed border-slate-200 rounded-lg px-3 py-4 text-center">아직 그룹이 없습니다. 아래에서 새 그룹을 만들어 이름을 묶어보세요.</div>`;
+            } else {
+                html += `<div class="space-y-2">`;
+                groups.forEach(g => {
+                    const isActive = activeMapGroupId === g.id;
+                    html += `<div class="border rounded-lg px-3 py-2.5 ${isActive ? 'border-brand-400 ring-1 ring-brand-200 bg-brand-50/40' : 'border-slate-200'}">
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <button onclick="selectMapGroup('${g.id}')" class="flex items-center gap-1.5 min-w-0 text-left">
+                                <span class="w-4 h-4 rounded-full border ${isActive ? 'bg-brand-600 border-brand-600' : 'border-slate-300'} flex items-center justify-center">${isActive ? '<span class=\'w-1.5 h-1.5 bg-white rounded-full\'></span>' : ''}</span>
+                                <span class="font-bold text-slate-800 text-sm truncate">${g.std}</span>
+                                <span class="text-[10px] text-slate-400">${(g.members || []).length}개</span>
+                            </button>
+                            <button onclick="deleteMapGroup('${g.id}')" class="text-slate-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            ${(g.members || []).length ? (g.members || []).map(m => `<span class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-[11px] text-slate-700">${tag(m)} ${m} <button onclick="removeMapName('${g.id}','${encodeURIComponent(m)}')" class="text-slate-400 hover:text-red-600">×</button></span>`).join('') : '<span class="text-[10px] text-slate-400">멤버 없음 — 아래 미매핑 이름을 클릭해 추가</span>'}
+                        </div>
+                        ${isActive ? '<div class="text-[10px] text-brand-600 mt-1.5">✔ 선택됨 — 아래 미매핑 이름을 클릭하면 이 그룹에 추가됩니다</div>' : ''}
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            html += `</div>`;
+
+            // 새 그룹 만들기
+            html += `<div class="flex items-center gap-2">
+                <input id="equip-map-new-name" type="text" placeholder="새 표준 설비명 (예: ${line} 1호기 펌프)" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-brand-400" onkeydown="if(event.key==='Enter'){window.createMapGroup();}">
+                <button onclick="createMapGroup()" class="bg-brand-600 hover:bg-brand-700 text-white rounded-lg px-3 py-2 text-sm font-bold whitespace-nowrap">＋ 새 그룹</button>
+            </div>`;
+
+            // 미매핑 설비
+            const unmapped = [...allNames].filter(n => !mapped.has(n)).sort();
+            html += `<div><div class="text-xs font-bold text-slate-700 mb-2">미매핑 설비 (${unmapped.length}) <span class="text-[10px] font-normal text-slate-400">— 클릭하면 선택된 그룹에 추가</span></div>`;
+            if (!unmapped.length) {
+                html += `<div class="text-[11px] text-slate-400">모든 설비가 매핑되었습니다.</div>`;
+            } else {
+                html += `<div class="flex flex-wrap gap-1.5">` + unmapped.map(n =>
+                    `<button onclick="addMapName('${encodeURIComponent(n)}')" class="inline-flex items-center gap-1 bg-slate-50 hover:bg-brand-50 border border-slate-200 hover:border-brand-300 rounded px-2 py-1 text-[11px] text-slate-700 transition">${tag(n)} ${n} <span class="text-brand-500 font-bold">＋</span></button>`
+                ).join('') + `</div>`;
+            }
+            html += `</div>`;
+
+            document.getElementById('equip-map-body').innerHTML = html;
+            if (window.lucide) lucide.createIcons({ root: document.getElementById('equip-map-body') });
         };
 
         window.clearHistorySelection = () => {
