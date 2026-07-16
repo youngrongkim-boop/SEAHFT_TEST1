@@ -292,6 +292,9 @@
             <button onclick="switchTab('check-board')" id="nav-check-board" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="일일점검 현황판">
                 <i data-lucide="calendar-check" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">일일점검 현황판</span>
             </button>
+            <button onclick="switchTab('risk-analysis')" id="nav-risk-analysis" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장 예측 · 위험도">
+                <i data-lucide="activity" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장 예측 · 위험도</span>
+            </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-4 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">라인별 현황 (대시보드)</div>
             <div class="space-y-0.5" id="nav-lines-container"></div>
@@ -589,6 +592,15 @@
                     <span id="check-board-date" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
                 </div>
                 <div id="check-board-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
+            </div>
+
+            <!-- VIEW: 고장 예측 · 위험도 -->
+            <div id="view-risk-analysis" class="view-section hidden h-full flex-col min-w-0 pb-4">
+                <div class="flex flex-wrap items-center gap-2 mb-3 shrink-0">
+                    <div id="risk-line-tabs" class="flex flex-wrap gap-1.5"></div>
+                    <span id="risk-period-label" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
+                </div>
+                <div id="risk-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
             </div>
 
             <!-- VIEW: PM LIST -->
@@ -1468,6 +1480,7 @@
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let checkBoardCategory = 'ALL'; // 점검 현황판 전기/기계 구분
         let checkBoardDonePeriod = 'MONTH'; // 점검완료 기간 필터 (TODAY/WEEK/MONTH/ALL)
+        let riskLine = 'ALL'; // 고장 예측/위험도 선택 라인
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
         let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
@@ -2059,6 +2072,8 @@
                         }
                     } else if (tabId === 'check-board') {
                         renderCheckBoard();
+                    } else if (tabId === 'risk-analysis') {
+                        renderRiskAnalysis();
                     } else if (tabId === 'edit-history') {
                         renderEditHistory();
                     } else if (tabId === 'pm-list') {
@@ -2119,7 +2134,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -2430,6 +2445,7 @@
             }
             if(currentTabId === 'bd-list') window.debouncedRenderBDList();
             if(currentTabId === 'check-board') renderCheckBoard();
+            if(currentTabId === 'risk-analysis') renderRiskAnalysis();
             if(currentTabId === 'dashboard') {
                 toggleDashboardViews();
                 window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
@@ -3491,6 +3507,188 @@
                     doneCards += completedCard(item);
                 });
                 html += `</tbody></table></div><div class="md:hidden">${doneCards}</div>`;
+            }
+            html += `</div>`;
+
+            contentEl.innerHTML = html;
+            if (window.lucide) lucide.createIcons({ root: contentEl });
+        };
+
+        // ==========================================
+        // 고장 예측 · 위험도 분석
+        // ==========================================
+        // 설비명 정규화(공백·특수문자 제거, 라인 접두어 제거) → 예방점검/고장 설비명이 달라도 최대한 매칭
+        function normEquip(name, line) {
+            let s = String(name || '').trim();
+            if (!s) return '';
+            if (line) s = s.replace(new RegExp('^' + line + '\\s*', 'i'), '');
+            return s.toUpperCase().replace(/\s+/g, '').replace(/[()\-_.\/]/g, '');
+        }
+        window.setRiskLine = (l) => { riskLine = l; renderRiskAnalysis(); };
+
+        window.renderRiskAnalysis = () => {
+            const todayStr = getLocalTodayString();
+            const contentEl = document.getElementById('risk-content');
+            if (!contentEl) return;
+
+            // 라인 탭
+            const tabsEl = document.getElementById('risk-line-tabs');
+            if (tabsEl) {
+                tabsEl.innerHTML = ['ALL', ...BD_LINES].map(l => {
+                    const active = riskLine === l;
+                    const label = l === 'ALL' ? '전체' : l;
+                    return `<button type="button" onclick="setRiskLine('${l}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition ${active ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${label}</button>`;
+                }).join('');
+            }
+
+            // 최근 12개월 분석 기간
+            const sinceD = new Date(todayStr); sinceD.setMonth(sinceD.getMonth() - 12);
+            const sinceStr = new Date(sinceD - sinceD.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+            const labelEl = document.getElementById('risk-period-label');
+            if (labelEl) labelEl.innerText = `(${sinceStr} ~ ${todayStr} · 최근 12개월)`;
+
+            // 데이터 수집
+            let faults = rawBDData.filter(d => BD_LINES.includes(d.line) && (d.startTime || '') >= sinceStr);
+            let pmDefects = rawPMResultsData.filter(d => d.result === '불량' && (d.checkTime || '').slice(0, 10) >= sinceStr);
+            let pmOverdue = rawPMData.filter(d => d.status !== '점검' && (d.nextCheckDate || '') !== '' && d.nextCheckDate < todayStr);
+            if (riskLine !== 'ALL') {
+                faults = faults.filter(d => d.line === riskLine);
+                pmDefects = pmDefects.filter(d => d.line === riskLine);
+                pmOverdue = pmOverdue.filter(d => d.line === riskLine);
+            }
+
+            const daysBetween = (a, b) => Math.floor((new Date(a) - new Date(b)) / 86400000);
+
+            // ===== 라인별 위험도 =====
+            const lineScope = riskLine === 'ALL' ? BD_LINES : [riskLine];
+            const lineStats = lineScope.map(line => {
+                const f = faults.filter(d => d.line === line);
+                const faultCount = f.length;
+                const critical = f.filter(d => (d.durationMinutes || 0) >= 120).length;
+                const downtime = f.reduce((a, d) => a + (d.durationMinutes || 0), 0);
+                const defects = pmDefects.filter(d => d.line === line).length;
+                const overdue = pmOverdue.filter(d => d.line === line).length;
+                let lastFaultDays = null;
+                if (f.length) {
+                    const last = f.reduce((mx, d) => (d.startTime || '') > mx ? (d.startTime || '') : mx, '');
+                    if (last) lastFaultDays = Math.max(0, daysBetween(todayStr, last.slice(0, 10)));
+                }
+                const score = faultCount * 3 + critical * 5 + defects * 4 + overdue * 2 + Math.round(downtime / 60);
+                return { line, faultCount, critical, downtime, defects, overdue, lastFaultDays, score };
+            }).sort((a, b) => b.score - a.score);
+            const maxScore = Math.max(1, ...lineStats.map(s => s.score));
+            const levelOf = (score) => {
+                if (score === 0) return { t: '낮음', badge: 'bg-green-100 text-green-700 border-green-200', bar: 'bg-green-400', dot: 'bg-green-500' };
+                const r = score / maxScore;
+                if (r >= 0.66) return { t: '높음', badge: 'bg-red-100 text-red-700 border-red-200', bar: 'bg-red-500', dot: 'bg-red-500' };
+                if (r >= 0.33) return { t: '주의', badge: 'bg-amber-100 text-amber-700 border-amber-200', bar: 'bg-amber-400', dot: 'bg-amber-500' };
+                return { t: '낮음', badge: 'bg-green-100 text-green-700 border-green-200', bar: 'bg-green-400', dot: 'bg-green-500' };
+            };
+
+            // ===== 설비별 위험도 (라인+정규화 설비명) =====
+            const equipMap = {};
+            faults.forEach(d => {
+                const key = d.line + '|' + normEquip(d.equipmentName, d.line);
+                if (!normEquip(d.equipmentName, d.line)) return;
+                if (!equipMap[key]) equipMap[key] = { line: d.line, name: d.equipmentName, count: 0, critical: 0, downtime: 0, last: '', defects: 0 };
+                const e = equipMap[key];
+                e.count++; e.downtime += (d.durationMinutes || 0);
+                if ((d.durationMinutes || 0) >= 120) e.critical++;
+                if ((d.startTime || '') > e.last) { e.last = d.startTime || ''; e.name = d.equipmentName; }
+            });
+            // PM 불량을 정규화 매칭으로 설비에 연결
+            let matchedDefectKeys = 0;
+            pmDefects.forEach(d => {
+                const key = d.line + '|' + normEquip(d.equipmentName, d.line);
+                if (equipMap[key]) { equipMap[key].defects++; matchedDefectKeys++; }
+            });
+            const equipList = Object.values(equipMap).map(e => {
+                const lastDays = e.last ? Math.max(0, daysBetween(todayStr, e.last.slice(0, 10))) : null;
+                const score = e.count * 3 + e.critical * 5 + e.defects * 4 + Math.round(e.downtime / 60);
+                return { ...e, lastDays, score };
+            }).sort((a, b) => b.score - a.score);
+            const maxEquipScore = Math.max(1, ...equipList.map(e => e.score));
+
+            // ===== 선행지표: 예방점검 '불량' 이후 30일 내 같은 설비 고장 발생 =====
+            let defectFollowed = 0, defectTotalWithMatch = 0;
+            pmDefects.forEach(d => {
+                const nk = normEquip(d.equipmentName, d.line);
+                if (!nk) return;
+                const ct = (d.checkTime || '').slice(0, 10);
+                if (!ct) return;
+                const relatedFaults = faults.filter(f => f.line === d.line && normEquip(f.equipmentName, f.line) === nk);
+                if (!relatedFaults.length) return; // 매칭되는 고장 이력이 아예 없으면 제외(설비명 불일치 가능성)
+                defectTotalWithMatch++;
+                const hit = relatedFaults.some(f => { const fd = (f.startTime || '').slice(0, 10); return fd >= ct && daysBetween(fd, ct) <= 30; });
+                if (hit) defectFollowed++;
+            });
+
+            // ===== 렌더 =====
+            const totalFaults = faults.length;
+            const totalCritical = faults.filter(d => (d.durationMinutes || 0) >= 120).length;
+            let html = '';
+
+            // 안내 배너
+            html += `<div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-[11px] text-slate-600 leading-relaxed">
+                <div class="font-bold text-blue-700 mb-1 flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5"></i> 위험도 산출 기준 (최근 12개월)</div>
+                위험도 점수 = 고장건수×3 + 중대고장×5 + 예방점검 불량×4 + 점검지연×2 + 정지시간(시간)×1 · 상대적으로 높은 순으로 <span class="text-red-600 font-bold">높음</span>/<span class="text-amber-600 font-bold">주의</span>/<span class="text-green-600 font-bold">낮음</span> 구분.
+                <span class="text-slate-400">※ 예방점검과 고장의 설비명이 서로 달라, 설비 단위 매칭은 정규화 자동매칭(참고용)입니다. 설비명을 통일하면 정확도가 크게 올라갑니다.</span>
+            </div>`;
+
+            // 요약 KPI
+            html += `<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-3 py-2.5"><p class="text-[10px] text-slate-500">분석 고장건수</p><p class="text-lg font-bold text-slate-800">${totalFaults.toLocaleString()}건</p></div>
+                <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-3 py-2.5"><p class="text-[10px] text-slate-500">중대고장</p><p class="text-lg font-bold text-red-600">${totalCritical.toLocaleString()}건</p></div>
+                <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-3 py-2.5"><p class="text-[10px] text-slate-500">예방점검 불량</p><p class="text-lg font-bold text-amber-600">${pmDefects.length.toLocaleString()}건</p></div>
+                <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-3 py-2.5" title="예방점검 불량 판정 후 30일 내 같은 설비에서 실제 고장이 발생한 비율(설비명 매칭된 건 기준)"><p class="text-[10px] text-slate-500">불량→30일내 고장</p><p class="text-lg font-bold text-slate-800">${defectTotalWithMatch ? Math.round(defectFollowed / defectTotalWithMatch * 100) : 0}<span class="text-xs">% </span><span class="text-[10px] text-slate-400">(${defectFollowed}/${defectTotalWithMatch})</span></p></div>
+            </div>`;
+
+            // 라인별 위험도
+            html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 font-bold text-slate-700 text-sm flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4 text-brand-500"></i> 라인별 고장 위험도</div>
+                <div class="p-3 space-y-2">`;
+            lineStats.forEach(s => {
+                const lv = levelOf(s.score);
+                const pct = Math.round(s.score / maxScore * 100);
+                html += `<div class="border border-slate-100 rounded-lg px-3 py-2.5">
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${lv.dot}"></span><span class="font-bold text-slate-800 text-sm">${s.line}</span><span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${lv.badge}">${lv.t}</span></div>
+                        <span class="text-xs font-bold text-slate-500">점수 ${s.score}</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5"><div class="h-full ${lv.bar}" style="width:${pct}%"></div></div>
+                    <div class="flex flex-wrap gap-1.5 text-[10px]">
+                        <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">고장 ${s.faultCount}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-red-50 text-red-600">중대 ${s.critical}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">불량 ${s.defects}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">지연 ${s.overdue}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">정지 ${Math.round(s.downtime / 60)}h</span>
+                        <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">${s.lastFaultDays === null ? '고장이력 없음' : '최근고장 ' + s.lastFaultDays + '일 전'}</span>
+                    </div>
+                </div>`;
+            });
+            html += `</div></div>`;
+
+            // 고장 위험 설비 TOP
+            html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 font-bold text-slate-700 text-sm flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-500"></i> 고장 위험 설비 TOP ${Math.min(15, equipList.length)}</div>`;
+            if (!equipList.length) {
+                html += `<div class="px-4 py-6 text-center text-slate-400 text-xs">분석 기간 내 고장 이력이 없습니다.</div>`;
+            } else {
+                html += `<div class="divide-y divide-slate-50">`;
+                equipList.slice(0, 15).forEach((e, i) => {
+                    const lv = levelOf(e.score >= maxEquipScore * 0.66 ? maxScore : (e.score >= maxEquipScore * 0.33 ? maxScore * 0.5 : 0));
+                    html += `<div class="px-4 py-2.5 flex items-center gap-3">
+                        <span class="w-6 text-center font-bold ${i === 0 ? 'text-red-600' : 'text-slate-400'}">${i + 1}</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-brand-600">[${e.line}]</span><span class="font-semibold text-slate-800 text-sm truncate">${e.name}</span>${e.defects ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200">불량 연계 ${e.defects}</span>` : ''}</div>
+                            <div class="flex flex-wrap gap-1.5 text-[10px] mt-1 text-slate-500">
+                                <span>고장 ${e.count}</span><span class="text-red-500">중대 ${e.critical}</span><span>정지 ${Math.round(e.downtime / 60)}h</span><span>${e.lastDays === null ? '' : '최근 ' + e.lastDays + '일 전'}</span>
+                            </div>
+                        </div>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${lv.badge}">${lv.t}</span>
+                    </div>`;
+                });
+                html += `</div>`;
             }
             html += `</div>`;
 
