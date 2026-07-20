@@ -4067,8 +4067,6 @@
                 { key: 'current',    label: '정격전류(A)',       ph: '15.2' },
                 { key: 'rpm',        label: '회전수(RPM)',       ph: '1750' },
                 { key: 'frame',      label: '프레임',            ph: '132M' },
-                { key: 'bearingDE',  label: '베어링 구동측(DE)',  ph: '6308 ZZ' },
-                { key: 'bearingNDE', label: '베어링 반구동측(NDE)', ph: '6208 ZZ' },
             ],
         };
         // 이 항목이 스펙 관리 대상(전장품/모터)인지 판별 → 대상이면 타입명, 아니면 null
@@ -4203,12 +4201,13 @@
                     ${cell('고장 발생일시', (item.startTime || '').replace('T', ' '))}
                     ${cell('조치 완료일시', (item.endTime || '').replace('T', ' '))}
                 </div>
-                ${getSpecType(item) ? `<div id="bd-detail-spec" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">${specDisplayHtml(item)}</div>` : ''}
+                ${getSpecType(item) === '전장품' ? `<div id="bd-detail-spec" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">${specDisplayHtml(item)}</div>` : ''}
                 <div class="mt-4 space-y-2.5">
                     ${cell('발생원인', item.cause, 'p-3 bg-slate-50 rounded-lg')}
                     ${cell('조치내용', item.content, 'p-3 bg-slate-50 rounded-lg')}
                     ${cell('방지대책', item.prevention, 'p-3 bg-slate-50 rounded-lg')}
                 </div>
+                ${getSpecType(item) === '모터' ? `<div id="bd-detail-spec" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">${specDisplayHtml(item)}</div>` : ''}
             `;
             if (window.lucide) lucide.createIcons({ root: body });
         };
