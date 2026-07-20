@@ -2770,7 +2770,8 @@
                 (d.prevention||'').toLowerCase().includes(kw) ||
                 (d.mainCategory||'').toLowerCase().includes(kw) ||
                 (d.subCategory||'').toLowerCase().includes(kw) ||
-                (d.detailCategory||'').toLowerCase().includes(kw)
+                (d.detailCategory||'').toLowerCase().includes(kw) ||
+                Object.values(d.spec || {}).join(' ').toLowerCase().includes(kw)
             );
             return list;
         }
@@ -4237,7 +4238,8 @@
                     (d.prevention || '').toLowerCase().includes(kw) ||
                     (d.mainCategory || '').toLowerCase().includes(kw) ||
                     (d.subCategory || '').toLowerCase().includes(kw) ||
-                    (d.detailCategory || '').toLowerCase().includes(kw)
+                    (d.detailCategory || '').toLowerCase().includes(kw) ||
+                    Object.values(d.spec || {}).join(' ').toLowerCase().includes(kw)
                 );
             }
 
