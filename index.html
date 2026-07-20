@@ -2085,7 +2085,6 @@
                         if (ySelD) { fillYearSelect(ySelD, targetYear); targetYear = ySelD.value; }
                         let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
                         if (targetYear) dashboardBDData = dashboardBDData.filter(d => (d.startTime || '').slice(0, 4) === targetYear);
-                        window.__animateCharts = true; // 대시보드 탭 진입 → 등장 애니메이션 1회 재생
                         window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
                         if (currentLineFilter !== 'ALL') {
                             window.renderDashboardMiniTables(dashboardPMData, dashboardBDData);
@@ -4454,11 +4453,9 @@
         Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
         Chart.defaults.color = '#64748b';
 
-        // 차트 등장 애니메이션: 대시보드를 처음 열 때/탭 진입 시에만 재생하고,
-        // 실시간 데이터 갱신 때는 조용히 반영(깜빡임 방지)하기 위한 스위치.
-        window.__animateCharts = false;
-        window.__chartsFirstRender = true;
-        const chartAnim = () => window.__animateCharts ? { duration: 750, easing: 'easeOutQuart' } : false;
+        // 차트 등장 애니메이션: 차트를 그릴 때마다 부드럽게 나타나도록 항상 적용.
+        // (열 때, 필터/분류 변경, 데이터 갱신 모두 동일하게 애니메이션)
+        const chartAnim = () => ({ duration: 700, easing: 'easeOutQuart' });
 
         // 막대/도넛에 부드러운 그림자를 넣어 입체감(있어보이게)을 주는 플러그인
         const shadowPlugin = {
@@ -4883,9 +4880,6 @@
             Object.values(chartInstances).forEach(c => c.destroy());
             chartInstances = {};
 
-            // 최초 1회는 무조건 애니메이션(첫 화면 진입). 이후엔 탭 진입 시에만 __animateCharts=true 로 켜짐.
-            if (window.__chartsFirstRender) { window.__animateCharts = true; window.__chartsFirstRender = false; }
-
             if (currentLineFilter === 'ALL') {
                 // 라인별 목표 대비 고장 현황 (전기/기계)
                 renderTargetCharts(dashboardBDData);
@@ -5000,9 +4994,6 @@
                     options: { animation: chartAnim(), responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
                 });
             }
-
-            // 이번 렌더로 애니메이션 소진 → 다음 데이터 갱신 렌더는 애니메이션 없이 조용히 반영
-            window.__animateCharts = false;
         }
 
         let config;
