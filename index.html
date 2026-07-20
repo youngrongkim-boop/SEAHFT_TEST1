@@ -4050,6 +4050,119 @@
             const modal = document.getElementById('bd-detail-modal');
             modal.classList.add('hidden'); modal.classList.remove('flex');
         };
+        // ===== 전장품/모터 스펙 관리 =====
+        // 대분류(mainCategory) 값에 따라 입력 칸 구성이 결정된다. 향후 자재리스트 연동 시 이 스키마를 그대로 재사용.
+        window.SPEC_SCHEMAS = {
+            '전장품': [
+                { key: 'maker', label: '제조사', ph: '예: LS산전, 지멘스' },
+                { key: 'model', label: '모델명', ph: '예: XGB-XBM-DR16S' },
+                { key: 'note',  label: '스펙메모', ph: '전압/용량/품번 등 자유 입력', full: true, textarea: true },
+            ],
+            '모터': [
+                { key: 'maker',      label: '제조사',            ph: '예: 효성, 현대일렉트릭' },
+                { key: 'model',      label: '모델/형식',         ph: '예: 132M-4' },
+                { key: 'powerKw',    label: '용량(kW)',          ph: '7.5' },
+                { key: 'poles',      label: '극수(P)',           ph: '4' },
+                { key: 'voltage',    label: '전압(V)',           ph: '380' },
+                { key: 'current',    label: '정격전류(A)',       ph: '15.2' },
+                { key: 'rpm',        label: '회전수(RPM)',       ph: '1750' },
+                { key: 'frame',      label: '프레임',            ph: '132M' },
+                { key: 'bearingDE',  label: '베어링 구동측(DE)',  ph: '6308 ZZ' },
+                { key: 'bearingNDE', label: '베어링 반구동측(NDE)', ph: '6208 ZZ' },
+            ],
+        };
+        // 이 항목이 스펙 관리 대상(전장품/모터)인지 판별 → 대상이면 타입명, 아니면 null
+        window.getSpecType = (item) => {
+            const m = (item && item.mainCategory || '').trim();
+            return window.SPEC_SCHEMAS[m] ? m : null;
+        };
+        const specIcon = (type) => type === '모터' ? 'fan' : 'cpu';
+
+        // 스펙 카드 - 표시(읽기) 모드 HTML
+        window.specDisplayHtml = (item) => {
+            const type = getSpecType(item);
+            if (!type) return '';
+            const fields = SPEC_SCHEMAS[type];
+            const data = item.spec || {};
+            const anyFilled = fields.some(f => String(data[f.key] || '').trim());
+            const grid = fields.map(f => {
+                const v = String(data[f.key] || '').trim();
+                return `<div class="${f.full ? 'col-span-2 lg:col-span-3' : ''}">
+                    <dt class="text-[10px] font-bold text-amber-700/80">${f.label}</dt>
+                    <dd class="text-sm font-semibold break-words whitespace-pre-wrap ${v ? 'text-slate-800' : 'text-slate-300'}">${v || '-'}</dd>
+                </div>`;
+            }).join('');
+            return `
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span class="text-xs font-black text-amber-700 flex items-center"><i data-lucide="${specIcon(type)}" class="w-4 h-4 mr-1"></i> ${type} 스펙</span>
+                    <button type="button" onclick="editBDSpec('${item.id}')" class="px-3 py-1.5 text-xs font-bold text-amber-700 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 transition shrink-0">${anyFilled ? '수정' : '입력'}</button>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-2">${grid}</div>`;
+        };
+
+        // 스펙 카드 - 편집 모드로 전환
+        window.editBDSpec = (id) => {
+            const item = rawBDData.find(d => d.id === id);
+            const box = document.getElementById('bd-detail-spec');
+            if (!item || !box) return;
+            const type = getSpecType(item);
+            if (!type) return;
+            const fields = SPEC_SCHEMAS[type];
+            const data = item.spec || {};
+            const esc = (v) => String(v || '').replace(/"/g, '&quot;');
+            const inputs = fields.map(f => {
+                const v = esc(data[f.key]);
+                const wrapCls = f.full ? 'col-span-2 lg:col-span-3' : '';
+                const field = f.textarea
+                    ? `<textarea id="spec-${f.key}" rows="2" placeholder="${f.ph || ''}" class="w-full border border-amber-300 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-400 resize-y">${v}</textarea>`
+                    : `<input id="spec-${f.key}" type="text" value="${v}" placeholder="${f.ph || ''}" class="w-full border border-amber-300 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-400">`;
+                return `<div class="${wrapCls}"><label class="block text-[10px] font-bold text-amber-700/80 mb-0.5">${f.label}</label>${field}</div>`;
+            }).join('');
+            box.innerHTML = `
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span class="text-xs font-black text-amber-700 flex items-center"><i data-lucide="${specIcon(type)}" class="w-4 h-4 mr-1"></i> ${type} 스펙 입력</span>
+                    <div class="flex gap-2 shrink-0">
+                        <button type="button" onclick="saveBDSpec('${id}')" class="px-4 py-1.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition">저장</button>
+                        <button type="button" onclick="cancelBDSpec('${id}')" class="px-3 py-1.5 text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5">${inputs}</div>`;
+            if (window.lucide) lucide.createIcons({ root: box });
+            const first = box.querySelector('input, textarea');
+            if (first) first.focus();
+        };
+
+        // 스펙 - 편집 취소(표시 모드로 복귀)
+        window.cancelBDSpec = (id) => {
+            const item = rawBDData.find(d => d.id === id);
+            const box = document.getElementById('bd-detail-spec');
+            if (!item || !box) return;
+            box.innerHTML = specDisplayHtml(item);
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
+        // 스펙 저장 (item.spec 객체로 저장)
+        window.saveBDSpec = async (id) => {
+            if (!currentUser) return showToast("인증이 필요합니다.", "error");
+            const item = rawBDData.find(d => d.id === id);
+            if (!item) return;
+            const type = getSpecType(item);
+            if (!type) return;
+            const fields = SPEC_SCHEMAS[type];
+            const spec = {};
+            fields.forEach(f => { spec[f.key] = (document.getElementById('spec-' + f.key)?.value || '').trim(); });
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', id), { spec });
+                item.spec = spec; // 스냅샷 반영 전 낙관적 업데이트
+                await logEditHistory('고장실적', item.line, item.equipmentName, `${type} 스펙 수정`);
+                showToast("스펙이 저장되었습니다.");
+                renderBDDetail(id);
+            } catch (e) {
+                console.error(e);
+                showToast("스펙 저장 실패", "error");
+            }
+        };
+
         window.renderBDDetail = (id) => {
             const item = rawBDData.find(d => d.id === id);
             const body = document.getElementById('bd-detail-body');
@@ -4090,6 +4203,7 @@
                     ${cell('고장 발생일시', (item.startTime || '').replace('T', ' '))}
                     ${cell('조치 완료일시', (item.endTime || '').replace('T', ' '))}
                 </div>
+                ${getSpecType(item) ? `<div id="bd-detail-spec" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">${specDisplayHtml(item)}</div>` : ''}
                 <div class="mt-4 space-y-2.5">
                     ${cell('발생원인', item.cause, 'p-3 bg-slate-50 rounded-lg')}
                     ${cell('조치내용', item.content, 'p-3 bg-slate-50 rounded-lg')}
