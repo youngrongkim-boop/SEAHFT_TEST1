@@ -2085,6 +2085,7 @@
                         if (ySelD) { fillYearSelect(ySelD, targetYear); targetYear = ySelD.value; }
                         let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
                         if (targetYear) dashboardBDData = dashboardBDData.filter(d => (d.startTime || '').slice(0, 4) === targetYear);
+                        window.__animateCharts = true; // 대시보드 탭 진입 → 등장 애니메이션 1회 재생
                         window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
                         if (currentLineFilter !== 'ALL') {
                             window.renderDashboardMiniTables(dashboardPMData, dashboardBDData);
@@ -4453,6 +4454,12 @@
         Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
         Chart.defaults.color = '#64748b';
 
+        // 차트 등장 애니메이션: 대시보드를 처음 열 때/탭 진입 시에만 재생하고,
+        // 실시간 데이터 갱신 때는 조용히 반영(깜빡임 방지)하기 위한 스위치.
+        window.__animateCharts = false;
+        window.__chartsFirstRender = true;
+        const chartAnim = () => window.__animateCharts ? { duration: 750, easing: 'easeOutQuart' } : false;
+
         // 막대/도넛에 부드러운 그림자를 넣어 입체감(있어보이게)을 주는 플러그인
         const shadowPlugin = {
             id: 'softShadow',
@@ -4716,7 +4723,7 @@
                     datasets: [{ data: hasData ? vals : [1, 1, 1, 1], backgroundColor: ['#f59e0b', '#4f46e5', '#0ea5e9', '#ef4444'], borderWidth: 3, borderColor: '#ffffff', hoverOffset: 8 }]
                 },
                 options: {
-                    animation: false, responsive: true, maintainAspectRatio: false, cutout: '60%',
+                    animation: chartAnim(), responsive: true, maintainAspectRatio: false, cutout: '60%',
                     plugins: {
                         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
                         tooltip: { callbacks: { label: c => hasData ? ` ${c.label}: ${c.raw}건` : '데이터 없음' } }
@@ -4789,7 +4796,7 @@
                     ]
                 },
                 options: {
-                    animation: false, responsive: true, maintainAspectRatio: false,
+                    animation: chartAnim(), responsive: true, maintainAspectRatio: false,
                     layout: { padding: { top: 14 } },
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
@@ -4849,7 +4856,7 @@
                         ]
                     },
                     options: {
-                        animation: false, responsive: true, maintainAspectRatio: false,
+                        animation: chartAnim(), responsive: true, maintainAspectRatio: false,
                         layout: { padding: { top: 14 } },
                         plugins: {
                             legend: { display: false },
@@ -4876,6 +4883,9 @@
             Object.values(chartInstances).forEach(c => c.destroy());
             chartInstances = {};
 
+            // 최초 1회는 무조건 애니메이션(첫 화면 진입). 이후엔 탭 진입 시에만 __animateCharts=true 로 켜짐.
+            if (window.__chartsFirstRender) { window.__animateCharts = true; window.__chartsFirstRender = false; }
+
             if (currentLineFilter === 'ALL') {
                 // 라인별 목표 대비 고장 현황 (전기/기계)
                 renderTargetCharts(dashboardBDData);
@@ -4893,7 +4903,7 @@
                 chartInstances['all_topEq'] = new Chart(ctxTop, {
                     type: 'bar',
                     data: { labels: topEquips.length > 0 ? topEquips.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: topEquipMetric === 'count' ? '고장 건수' : '누적 정지시간(분)', data: topEquips.length > 0 ? topEquips.map(e => e[1][topEquipMetric]) : [0], backgroundColor: topEquips.map((e, i) => i === 0 ? '#dc2626' : '#94a3b8'), borderRadius: 4 }] },
-                    options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    options: { animation: chartAnim(), indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                         onClick: (e, els, chart) => { if (els.length) { const eq = chart.data.labels[els[0].index]; if (eq && eq !== '데이터 없음') openEquipFaults(eq); } },
                         onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; },
                         plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + (topEquipMetric === 'count' ? '건' : '분') } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } },
@@ -4906,7 +4916,7 @@
                 chartInstances['all_cat'] = new Chart(ctxCat, {
                     type: 'doughnut',
                     data: { labels: Object.keys(catCounts).length > 0 ? Object.keys(catCounts) : ['데이터 없음'], datasets: [{ data: Object.keys(catCounts).length > 0 ? Object.values(catCounts) : [1], backgroundColor: (Object.keys(catCounts).length > 0 ? Object.keys(catCounts) : ['데이터 없음']).map((_, i) => ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#0ea5e9', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#84cc16'][i % 10]), borderWidth: 3, borderColor: '#ffffff', hoverOffset: 8 }] },
-                    options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } },
+                    options: { animation: chartAnim(), responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } },
                     plugins: [shadowPlugin]
                 });
 
@@ -4923,7 +4933,7 @@
                 chartInstances['line_eqTime'] = new Chart(ctxEqTime, {
                     type: 'bar',
                     data: { labels: sortedEqTime.length > 0 ? sortedEqTime.map(e => e[0]) : ['데이터 없음'], datasets: [{ label: '누적 조치시간(분)', data: sortedEqTime.length > 0 ? sortedEqTime.map(e => e[1]) : [0], backgroundColor: '#3b82f6', borderRadius: 4 }] },
-                    options: { animation: false, indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
+                    options: { animation: chartAnim(), indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, y: { grid: { display: false } } } }
                 });
 
                 // 중분류(subCategory)별 발생 빈도 + 각 막대를 소분류(detailCategory)로 누적 구분
@@ -4954,7 +4964,7 @@
                         datasets: subCatDatasets.length > 0 ? subCatDatasets : [{ label: '없음', data: [0], backgroundColor: '#e2e8f0' }]
                     },
                     options: {
-                        animation: false, responsive: true, maintainAspectRatio: false,
+                        animation: chartAnim(), responsive: true, maintainAspectRatio: false,
                         plugins: {
                             legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
                             tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}건` } }
@@ -4972,7 +4982,7 @@
                 chartInstances['line_elecMech'] = new Chart(ctxElecMech, {
                     type: 'pie',
                     data: { labels: ['기계', '전기'], datasets: [{ data: (elec===0 && mech===0) ? [1,1] : [mech, elec], backgroundColor: ['#3b82f6', '#f59e0b'], borderWidth: 0, hoverOffset: 4 }] },
-                    options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { label: function(c){ if(elec===0 && mech===0) return '데이터 없음'; return ' ' + c.label + ': ' + c.raw + '건'; } } } } }
+                    options: { animation: chartAnim(), responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { label: function(c){ if(elec===0 && mech===0) return '데이터 없음'; return ' ' + c.label + ': ' + c.raw + '건'; } } } } }
                 });
 
                 const lineMonthly = {};
@@ -4987,9 +4997,12 @@
                 chartInstances['line_trend'] = new Chart(ctxLineTrend, {
                     type: 'line',
                     data: { labels: lSortedMonths.length > 0 ? lSortedMonths : ['월 데이터 없음'], datasets: [{ label: '월별 고장 발생 건수', data: lSortedMonths.length > 0 ? lSortedMonths.map(m => lineMonthly[m].bd) : [0], borderColor: '#f97316', backgroundColor: '#f97316', tension: 0.3, borderWidth: 2, fill: true, backgroundColor: 'rgba(249, 115, 22, 0.1)' }] },
-                    options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+                    options: { animation: chartAnim(), responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
                 });
             }
+
+            // 이번 렌더로 애니메이션 소진 → 다음 데이터 갱신 렌더는 애니메이션 없이 조용히 반영
+            window.__animateCharts = false;
         }
 
         let config;
