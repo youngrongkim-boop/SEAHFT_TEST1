@@ -2247,7 +2247,12 @@
                 window.debouncedApplyFilterAndRender();
             });
             onSnapshot(bdRef, (snapshot) => {
-                rawBDData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => new Date(b.startTime) - new Date(a.startTime));
+                // startTime 은 'YYYY-MM-DDTHH:mm' 형식이라 문자열 비교만으로 날짜순 정렬됨.
+                // new Date() 방식은 값이 비거나 깨지면 NaN 이 되어 정렬이 부분적으로 어긋나므로 문자열 내림차순으로 정렬.
+                rawBDData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => {
+                    const x = (a.startTime||''), y = (b.startTime||'');
+                    return x < y ? 1 : x > y ? -1 : 0; // 최신 → 과거 (빈 값은 맨 아래)
+                });
                 window.debouncedApplyFilterAndRender();
             });
             onSnapshot(pmResRef, (snapshot) => {
