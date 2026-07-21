@@ -71,6 +71,9 @@
         }
         .chart-reveal { animation: chartReveal 0.6s cubic-bezier(0.22,1,0.36,1) both; }
 
+        /* 위험도 막대: 좌→우로 채워지는 애니메이션 (초기 0% → 목표 %로 transition) */
+        .risk-bar { width: 0; transition: width 0.9s cubic-bezier(0.22,1,0.36,1); }
+
         /* ===== 인트로 스플래시 (세아씨엠 브랜드 리빌) ===== */
         #intro-splash {
             position: fixed; inset: 0; z-index: 200;
@@ -3779,7 +3782,7 @@
                         <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${lv.dot}"></span><span class="font-bold text-slate-800 text-sm">${s.line}</span><span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${lv.badge}">${lv.t}</span></div>
                         <span class="text-xs font-bold text-slate-500">점수 ${s.score}</span>
                     </div>
-                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5"><div class="h-full ${lv.bar}" style="width:${pct}%"></div></div>
+                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5"><div class="h-full risk-bar ${lv.bar}" data-pct="${pct}" style="width:0%"></div></div>
                     <div class="flex flex-wrap gap-1.5 text-[10px]">
                         <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">고장 ${s.faultCount}</span>
                         <span class="px-1.5 py-0.5 rounded bg-red-50 text-red-600">중대 ${s.critical}</span>
@@ -3818,6 +3821,11 @@
 
             contentEl.innerHTML = html;
             if (window.lucide) lucide.createIcons({ root: contentEl });
+
+            // 위험도 막대를 0% → 목표 %로 채워지게 (초기 0% 페인트 후 다음 프레임에 목표값 지정)
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                contentEl.querySelectorAll('.risk-bar').forEach(el => { el.style.width = (el.dataset.pct || 0) + '%'; });
+            }));
         };
 
         // ===== 설비명 매핑 모달 =====
