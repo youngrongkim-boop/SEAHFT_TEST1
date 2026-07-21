@@ -64,6 +64,13 @@
         .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
         .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
 
+        /* 차트 등장 리빌: OS의 '동작 줄이기' 설정과 무관하게 항상 재생 (Chart.js 내부 애니메이션 대체/보강) */
+        @keyframes chartReveal {
+            0% { opacity: 0; transform: translateY(10px) scale(0.985); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .chart-reveal { animation: chartReveal 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+
         /* ===== 인트로 스플래시 (세아씨엠 브랜드 리빌) ===== */
         #intro-splash {
             position: fixed; inset: 0; z-index: 200;
@@ -969,7 +976,7 @@
                                 <h3 class="text-base font-bold text-slate-800 whitespace-nowrap">엑셀 일괄 등록</h3>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-[10px] md:text-xs text-slate-500 font-medium leading-relaxed">A: 구분 · B: 대분류 · C: 중분류 · D: 소분류 · E: 고장명 · F: 발생원인 · G: 조치내용 · H: 방지대책 · I: 발생일시(YYMMDDHHmm) · J: 완료일시 · K: 설비명</p>
+                                <p class="text-[10px] md:text-xs text-slate-500 font-medium leading-relaxed">A: 구분 · B: 대분류 · C: 중분류 · D: 소분류 · E: 고장명 · F: 발생원인 · G: 조치내용 · H: 방지대책 · I: 발생일시 · J: 완료일시 · K: 설비명</p>
                                 <p class="text-[10px] md:text-xs text-blue-500 mt-0.5 font-bold leading-relaxed">※ 시트명(하단 탭)을 라인명(CPL, CRM…)으로 작성하면 자동 분류됩니다. 설비명(K)은 비워도 됩니다.</p>
                             </div>
                             <div class="flex gap-2 shrink-0">
@@ -4312,7 +4319,7 @@
                 XLSX.writeFile(wb, "PM_Tasks_Template.xlsx");
             } else {
                 const header = ["구분(전기/기계)", "대분류", "중분류", "소분류", "고장명", "발생원인", "조치내용", "방지대책", "고장발생일시(YYMMDDHHmm)", "고장완료일시(YYMMDDHHmm)", "설비명"];
-                const ws_arp = XLSX.utils.aoa_to_sheet([header, ["기계", "기계", "펌프", "씰", "메카니컬 씰 누수", "씰 경화 노후화", "메카니컬 씰 교체", "정기 씰 점검 주기 단축", "2607031030", "2607031200", "ARP 산회수펌프"]]);
+                const ws_arp = XLSX.utils.aoa_to_sheet([header, ["전기", "전장품", "센서", "소손", "근접센서 소손", "과열 및 노후화", "센서 교체", "정기 점검 및 교체주기 관리", "2607031030", "2607031200", "ARP 산회수펌프"]]);
                 const ws_cgl = XLSX.utils.aoa_to_sheet([header, ["기계", "유틸리티", "공조/냉각", "냉각팬", "팬 벨트 단선", "벨트 장력 부족", "팬 벨트 교체", "벨트 장력 주기 점검", "2607040900", "2607041130", "CGL 쿨링타워"]]);
                 XLSX.utils.book_append_sheet(wb, ws_arp, "ARP");
                 XLSX.utils.book_append_sheet(wb, ws_cgl, "CGL");
@@ -4461,6 +4468,19 @@
                 window.debouncedApplyFilterAndRender();
             }
         };
+
+        // 대시보드 캔버스에 CSS 리빌 애니메이션을 (재)적용. OS '동작 줄이기'와 무관하게 항상 보임.
+        function playChartReveal() {
+            const root = document.getElementById('view-dashboard');
+            if (!root) return;
+            root.querySelectorAll('canvas').forEach(cv => {
+                const box = cv.parentElement;
+                if (!box) return;
+                box.classList.remove('chart-reveal');
+                void box.offsetWidth; // 리플로우 강제 → 애니메이션 재시작
+                box.classList.add('chart-reveal');
+            });
+        }
 
         // 막대/도넛에 부드러운 그림자를 넣어 입체감(있어보이게)을 주는 플러그인
         const shadowPlugin = {
@@ -4996,6 +5016,9 @@
                     options: { animation: chartAnim(), responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } }, x: { grid: { display: false } } } }
                 });
             }
+
+            // 차트가 다 그려진 뒤 CSS 리빌 재생 (OS 설정과 무관하게 항상 보이는 등장 효과)
+            playChartReveal();
         }
 
         let config;
