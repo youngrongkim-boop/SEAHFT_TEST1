@@ -323,8 +323,11 @@
                 <i data-lucide="activity" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장 예측 · 위험도</span>
             </button>
 
-            <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-4 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">라인별 현황 (대시보드)</div>
-            <div class="space-y-0.5" id="nav-lines-container"></div>
+            <button type="button" onclick="toggleNavLines()" id="nav-lines-toggle" class="w-full flex items-center justify-between px-6 py-2 mt-4 mb-1 text-[11px] font-bold text-brand-500 uppercase tracking-wider hover:text-brand-200 transition-colors sidebar-section-title whitespace-nowrap" title="라인별 현황 펼치기/접기">
+                <span>라인별 현황 (대시보드)</span>
+                <span id="nav-lines-chevron" class="shrink-0 transition-transform duration-200 inline-flex" style="transform: rotate(-90deg)"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
+            </button>
+            <div class="space-y-0.5 hidden" id="nav-lines-container"></div>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">예방점검 관리</div>
             <button onclick="switchTab('pm-list')" id="nav-pm-list" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 리스트">
@@ -478,13 +481,6 @@
                         <div class="relative h-48 md:h-56"><canvas id="chartMonthlyTarget"></canvas></div>
                     </div>
 
-                    <!-- 라인별 현황 (접기/펼치기 · 기본 접힘) -->
-                    <button type="button" onclick="toggleDashboardExtra()" class="w-full flex items-center justify-between gap-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 shadow-sm transition">
-                        <span class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="layers" class="w-4 h-4 mr-2 text-indigo-500"></i> 라인별 현황 <span class="text-[11px] font-normal text-slate-400 ml-1">고장 Top · 근무조 · 대분류 · 중대고장</span></span>
-                        <span id="dashboard-extra-chevron" class="text-slate-400 transition-transform duration-200 inline-flex"><i data-lucide="chevron-down" class="w-5 h-5"></i></span>
-                    </button>
-
-                    <div id="dashboard-extra" class="hidden space-y-4 md:space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
                             <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
@@ -530,7 +526,6 @@
                                 </table>
                             </div>
                         </div>
-                    </div>
                     </div>
                 </div>
 
@@ -1911,6 +1906,15 @@
             }
             lucide.createIcons({root: document.getElementById('desktop-sidebar-toggle')});
             setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
+        };
+
+        // 사이드바 '라인별 현황' 접기/펼치기 (CPL, ARP … 라인 목록)
+        window.toggleNavLines = () => {
+            const c = document.getElementById('nav-lines-container');
+            const chev = document.getElementById('nav-lines-chevron');
+            if (!c) return;
+            const nowHidden = c.classList.toggle('hidden');
+            if (chev) chev.style.transform = nowHidden ? 'rotate(-90deg)' : 'rotate(0deg)';
         };
 
         function initSidebarLines() {
@@ -4520,21 +4524,6 @@
         window.replayDashboardEntrance = () => {
             if (currentTabId === 'dashboard' && window.debouncedApplyFilterAndRender) {
                 window.debouncedApplyFilterAndRender();
-            }
-        };
-
-        // '라인별 현황' 섹션 접기/펼치기. 펼칠 때 숨겨진 상태로 그려진 차트 크기를 재조정.
-        window.toggleDashboardExtra = () => {
-            const box = document.getElementById('dashboard-extra');
-            const chev = document.getElementById('dashboard-extra-chevron');
-            if (!box) return;
-            const nowHidden = box.classList.toggle('hidden');
-            if (chev) chev.style.transform = nowHidden ? '' : 'rotate(180deg)';
-            if (!nowHidden) {
-                // 펼침: display:none 상태로 생성돼 크기가 0이던 차트들을 다시 맞춤 + 등장 애니메이션
-                Object.values(chartInstances).forEach(c => { try { c.resize(); } catch (e) {} });
-                if (typeof playChartReveal === 'function') playChartReveal();
-                if (window.lucide) lucide.createIcons();
             }
         };
 
