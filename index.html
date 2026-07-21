@@ -448,11 +448,11 @@
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                             <div>
                                 <p class="text-xs font-bold text-slate-500 mb-2 flex items-center"><span class="w-2 h-2 rounded-full bg-amber-500 mr-1.5"></span>전기 고장 (실제 막대 · 목표 점선)</p>
-                                <div class="relative h-52 md:h-64"><canvas id="chartTargetElec"></canvas></div>
+                                <div class="relative h-44 md:h-52"><canvas id="chartTargetElec"></canvas></div>
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-slate-500 mb-2 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span>기계 고장 (실제 막대 · 목표 점선)</p>
-                                <div class="relative h-52 md:h-64"><canvas id="chartTargetMech"></canvas></div>
+                                <div class="relative h-44 md:h-52"><canvas id="chartTargetMech"></canvas></div>
                             </div>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-3">고장은 적을수록 좋음 · 막대 = 실적, <span class="text-red-600 font-bold">목표 초과 시 빨강으로 강조</span>(그 외 무채색) · 점선 = 목표 · 막대 클릭 시 해당 라인 이동</p>
@@ -475,9 +475,16 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="relative h-56 md:h-72"><canvas id="chartMonthlyTarget"></canvas></div>
+                        <div class="relative h-48 md:h-56"><canvas id="chartMonthlyTarget"></canvas></div>
                     </div>
 
+                    <!-- 라인별 현황 (접기/펼치기 · 기본 접힘) -->
+                    <button type="button" onclick="toggleDashboardExtra()" class="w-full flex items-center justify-between gap-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 shadow-sm transition">
+                        <span class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="layers" class="w-4 h-4 mr-2 text-indigo-500"></i> 라인별 현황 <span class="text-[11px] font-normal text-slate-400 ml-1">고장 Top · 근무조 · 대분류 · 중대고장</span></span>
+                        <span id="dashboard-extra-chevron" class="text-slate-400 transition-transform duration-200 inline-flex"><i data-lucide="chevron-down" class="w-5 h-5"></i></span>
+                    </button>
+
+                    <div id="dashboard-extra" class="hidden space-y-4 md:space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
                             <h4 class="text-sm md:text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
@@ -523,6 +530,7 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
 
@@ -4512,6 +4520,21 @@
         window.replayDashboardEntrance = () => {
             if (currentTabId === 'dashboard' && window.debouncedApplyFilterAndRender) {
                 window.debouncedApplyFilterAndRender();
+            }
+        };
+
+        // '라인별 현황' 섹션 접기/펼치기. 펼칠 때 숨겨진 상태로 그려진 차트 크기를 재조정.
+        window.toggleDashboardExtra = () => {
+            const box = document.getElementById('dashboard-extra');
+            const chev = document.getElementById('dashboard-extra-chevron');
+            if (!box) return;
+            const nowHidden = box.classList.toggle('hidden');
+            if (chev) chev.style.transform = nowHidden ? '' : 'rotate(180deg)';
+            if (!nowHidden) {
+                // 펼침: display:none 상태로 생성돼 크기가 0이던 차트들을 다시 맞춤 + 등장 애니메이션
+                Object.values(chartInstances).forEach(c => { try { c.resize(); } catch (e) {} });
+                if (typeof playChartReveal === 'function') playChartReveal();
+                if (window.lucide) lucide.createIcons();
             }
         };
 
