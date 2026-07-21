@@ -390,16 +390,16 @@
             <!-- VIEW: DASHBOARD -->
             <div id="view-dashboard" class="view-section space-y-4 flex-col min-w-0">
 
-                <!-- 조회 연도 (대시보드 전역 적용) -->
-                <div class="flex items-center flex-wrap gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
-                    <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-600 shrink-0"></i>
-                    <span class="text-sm font-bold text-indigo-800">조회 연도</span>
-                    <select id="target-year-select" onchange="onTargetYearChange()" class="border-2 border-indigo-300 rounded-lg px-3 py-1 text-sm font-bold text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-400 bg-white"></select>
-                    <span class="text-[11px] text-indigo-500 hidden sm:inline">← 선택한 연도의 고장 데이터가 아래 전체에 적용됩니다</span>
-                </div>
+                <!-- 조회 연도 + 공통 KPI (한 줄 통합) -->
+                <div class="flex flex-wrap items-stretch gap-2 md:gap-3">
+                    <div class="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 shrink-0" title="선택한 연도의 고장 데이터가 대시보드 전체에 적용됩니다">
+                        <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-600 shrink-0"></i>
+                        <span class="text-sm font-bold text-indigo-800 whitespace-nowrap">조회 연도</span>
+                        <select id="target-year-select" onchange="onTargetYearChange()" class="border-2 border-indigo-300 rounded-lg px-2 py-1 text-sm font-bold text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-400 bg-white"></select>
+                    </div>
 
-                <!-- 공통 KPI Cards (Deep Linking Applied) -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                    <!-- 공통 KPI Cards (Deep Linking Applied) -->
+                    <div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 min-w-[260px]">
                     <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2 cursor-pointer hover:bg-slate-50 transition" onclick="goToPMListPending()" title="아직 완료되지 않은 예방점검 항목 수 (현재 기준·연도 무관). 지연 = 예정일이 지난 항목. 클릭 시 대기 리스트로 이동">
                         <div class="p-1.5 bg-blue-50 text-blue-600 rounded-md shrink-0"><i data-lucide="clipboard-check" class="w-4 h-4"></i></div>
                         <div class="min-w-0 flex-1">
@@ -427,6 +427,7 @@
                             <p class="text-[10px] text-slate-500 leading-none truncate">평균 조치시간</p>
                             <p class="leading-none mt-1"><span class="text-lg font-bold text-slate-800" id="kpi-avg-downtime">0</span><span class="text-[10px] text-slate-500 ml-0.5">분 (MTTR)</span></p>
                         </div>
+                    </div>
                     </div>
                 </div>
 
