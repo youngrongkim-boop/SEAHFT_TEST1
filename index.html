@@ -852,8 +852,11 @@
                             <select id="bd-filter-main" onchange="bdListPage=1; updateSubFilterBD(); debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">대분류 전체</option>
                             </select>
-                            <select id="bd-filter-sub" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <select id="bd-filter-sub" onchange="bdListPage=1; updateDetailFilterBD(); debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">중분류 전체</option>
+                            </select>
+                            <select id="bd-filter-detail" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">소분류 전체</option>
                             </select>
                             <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
                             <input type="text" id="bd-search-keyword" onkeyup="bdListPage=1; debouncedRenderBDList()" placeholder="설비, 조치내용 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
@@ -2016,6 +2019,22 @@
             const subs = [...new Set(src.map(d => (d.subCategory || '').trim()).filter(Boolean))].sort();
             subSel.innerHTML = '<option value="ALL">중분류 전체</option>' + subs.map(s => `<option value="${s}">${s}</option>`).join('');
             subSel.value = (prevSub === 'ALL' || subs.includes(prevSub)) ? prevSub : 'ALL';
+            updateDetailFilterBD(); // 중분류가 바뀌면 소분류 목록도 연동 갱신
+        };
+
+        // 고장 리스트 필터의 소분류: 선택된 대분류·중분류에 해당하는 실제 소분류값으로 채운다
+        window.updateDetailFilterBD = () => {
+            const detSel = document.getElementById('bd-filter-detail');
+            if (!detSel) return;
+            const mainVal = document.getElementById('bd-filter-main').value;
+            const subVal = document.getElementById('bd-filter-sub').value;
+            const prevDet = detSel.value;
+            let src = rawBDData;
+            if (mainVal !== 'ALL') src = src.filter(d => (d.mainCategory || '').trim() === mainVal);
+            if (subVal !== 'ALL') src = src.filter(d => (d.subCategory || '').trim() === subVal);
+            const dets = [...new Set(src.map(d => (d.detailCategory || '').trim()).filter(Boolean))].sort();
+            detSel.innerHTML = '<option value="ALL">소분류 전체</option>' + dets.map(s => `<option value="${s}">${s}</option>`).join('');
+            detSel.value = (prevDet === 'ALL' || dets.includes(prevDet)) ? prevDet : 'ALL';
         };
 
         window.updateDetailCategories = (formType) => {
@@ -4238,6 +4257,7 @@
             const fCat = document.getElementById('bd-filter-category').value;
             const fMain = document.getElementById('bd-filter-main').value;
             const fSub = document.getElementById('bd-filter-sub').value;
+            const fDetail = document.getElementById('bd-filter-detail')?.value || 'ALL';
             const kw = document.getElementById('bd-search-keyword')?.value.toLowerCase();
 
             let list = rawBDData;
@@ -4246,6 +4266,7 @@
             if (fCat !== 'ALL') list = list.filter(d => d.category === fCat);
             if (fMain !== 'ALL') list = list.filter(d => d.mainCategory === fMain);
             if (fSub !== 'ALL') list = list.filter(d => d.subCategory === fSub);
+            if (fDetail !== 'ALL') list = list.filter(d => d.detailCategory === fDetail);
             if (kw) {
                 list = list.filter(d =>
                     (d.equipmentName || '').toLowerCase().includes(kw) ||
