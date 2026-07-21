@@ -4051,6 +4051,8 @@
                     startTime: startStr, endTime: endStr,
                     durationMinutes, shiftType: getShiftType(startStr), createdAt: serverTimestamp()
                 });
+                // 등록자(누가 넣었는지)를 데이터 수정 이력에 기록 (양식 초기화 전에 값 읽음)
+                await logEditHistory('고장실적 (등록)', document.getElementById('bd-line').value, document.getElementById('bd-equip').value, `수동 등록 (${document.getElementById('bd-fault-name').value.trim() || '고장명 미입력'})`);
                 showToast("고장 실적이 등록되었습니다."); e.target.reset();
                 document.getElementById('bd-equip').innerHTML = '<option value="">라인을 먼저 선택하세요</option>';
                 document.getElementById('bd-sub-cat').innerHTML = '<option value="">선택</option>';
