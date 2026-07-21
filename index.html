@@ -200,7 +200,12 @@
             function dismissIntro() {
                 if (done) return; done = true;
                 splash.classList.add('intro-out');
-                setTimeout(function () { if (splash && splash.parentNode) splash.parentNode.removeChild(splash); }, 700);
+                setTimeout(function () {
+                    if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+                    // 스플래시가 화면을 가리는 동안 차트가 뒤에서 그려지면 애니메이션이 안 보이므로,
+                    // 스플래시 제거 직후 대시보드 차트를 다시 그려 애니메이션을 눈에 보이게 재생.
+                    if (window.replayDashboardEntrance) window.replayDashboardEntrance();
+                }, 700);
                 window.removeEventListener('keydown', dismissIntro);
             }
             // 클릭/터치/키 입력 시 즉시 스킵
@@ -4466,6 +4471,13 @@
         // 차트 등장 애니메이션: 차트를 그릴 때마다 부드럽게 나타나도록 항상 적용.
         // (열 때, 필터/분류 변경, 데이터 갱신 모두 동일하게 애니메이션)
         const chartAnim = () => ({ duration: 700, easing: 'easeOutQuart' });
+
+        // 인트로 스플래시가 걷힌 뒤 호출됨 → 대시보드를 보고 있으면 차트를 다시 그려 등장 애니메이션을 재생.
+        window.replayDashboardEntrance = () => {
+            if (currentTabId === 'dashboard' && window.debouncedApplyFilterAndRender) {
+                window.debouncedApplyFilterAndRender();
+            }
+        };
 
         // 막대/도넛에 부드러운 그림자를 넣어 입체감(있어보이게)을 주는 플러그인
         const shadowPlugin = {
