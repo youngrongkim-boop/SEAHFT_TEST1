@@ -1439,7 +1439,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithCustomToken, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, setDoc, serverTimestamp, doc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, onSnapshot, addDoc, updateDoc, setDoc, serverTimestamp, doc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // 사용자 실제 API 키 
         const firebaseConfig = { 
@@ -1454,7 +1454,17 @@
         const appId = 'seah-cm-pdm-appid'; 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app, "seahft1");
+        // 오프라인 캐시(IndexedDB) 활성화 → 새로고침 시 캐시 데이터를 즉시 표시하고 최신은 백그라운드 동기화.
+        // 브라우저가 미지원이거나 초기화 실패 시 기존 방식으로 안전하게 폴백.
+        let db;
+        try {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+            }, "seahft1");
+        } catch (e) {
+            console.warn('Firestore 오프라인 캐시 초기화 실패 → 기본 모드로 전환', e);
+            db = getFirestore(app, "seahft1");
+        }
 
         // Constants
         const LINES = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL'];
