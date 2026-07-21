@@ -4479,6 +4479,30 @@
         Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
         Chart.defaults.color = '#64748b';
 
+        // ===== 마우스 호버(오버) 효과 - 전 차트 공통 =====
+        // 커서에 가까운 요소를 감지해 부드럽게 강조 + 호버 전환 애니메이션
+        Chart.defaults.interaction = { mode: 'nearest', intersect: false, axis: 'xy' };
+        Chart.defaults.hover = { mode: 'nearest', intersect: false };
+        Chart.defaults.transitions.active = { animation: { duration: 250, easing: 'easeOutQuad' } };
+        // 막대: 호버 시 진한 테두리로 톡 튀어나오는 느낌
+        Chart.defaults.elements.bar.hoverBorderColor = 'rgba(15,23,42,0.7)';
+        Chart.defaults.elements.bar.hoverBorderWidth = 2;
+        // 도넛/파이 조각: 호버 시 더 크게 튀어나오고 흰 테두리 강조
+        Chart.defaults.elements.arc.hoverOffset = 14;
+        Chart.defaults.elements.arc.hoverBorderColor = '#ffffff';
+        Chart.defaults.elements.arc.hoverBorderWidth = 4;
+        // 선/포인트: 호버 시 포인트가 커지도록
+        Chart.defaults.elements.point.hoverRadius = 6;
+        Chart.defaults.elements.point.hoverBorderWidth = 2;
+        // 툴팁 디자인 개선(어두운 배경, 둥근 모서리, 여백)
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,23,42,0.92)';
+        Chart.defaults.plugins.tooltip.titleColor = '#f8fafc';
+        Chart.defaults.plugins.tooltip.bodyColor = '#e2e8f0';
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+        Chart.defaults.plugins.tooltip.boxPadding = 4;
+        Chart.defaults.plugins.tooltip.titleFont = { weight: 'bold', size: 12 };
+
         // 차트 등장 애니메이션: 차트를 그릴 때마다 부드럽게 나타나도록 항상 적용.
         // (열 때, 필터/분류 변경, 데이터 갱신 모두 동일하게 애니메이션)
         const chartAnim = () => ({ duration: 700, easing: 'easeOutQuart' });
