@@ -862,7 +862,6 @@
                                     <th class="py-2.5 px-3 font-bold border-b border-slate-200">고장명</th>
                                     <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center text-xs w-20">고장시간</th>
                                     <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-14">근무<br>구분</th>
-                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-14">요일<br>구분</th>
                                     <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-12">반복</th>
                                     <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-12 text-blue-600">수정</th>
                                 </tr>
@@ -1622,29 +1621,21 @@
             return (new Date(resultDate.getTime() - offsetMs)).toISOString().split('T')[0];
         }
 
-        // 4. 고장 실적 '주/야간/주말' 태깅 로직
+        // 4. 고장 실적 근무조(1근/2근/3근) 태깅 로직
+        //    1근 07~15시, 2근 15~23시, 3근 23~07시
         function getShiftType(datetimeStr) {
-            if (!datetimeStr) return '주간';
-            const d = new Date(datetimeStr);
-            const day = d.getDay();
-            const hour = d.getHours();
-            
-            if (day === 0 || day === 6) return '주말';
-            if (hour >= 21 || hour < 7) return '야간';
-            return '주간';
-        }
-
-        // 시간대(주간/야간): 21시~다음날 07시 = 야간
-        function getDayNight(datetimeStr) {
-            if (!datetimeStr) return '주간';
+            if (!datetimeStr) return '1근';
             const h = new Date(datetimeStr).getHours();
-            return (h >= 21 || h < 7) ? '야간' : '주간';
+            if (h >= 7 && h < 15) return '1근';
+            if (h >= 15 && h < 23) return '2근';
+            return '3근'; // 23시~07시
         }
-        // 요일(평일/주말)
-        function getWeekType(datetimeStr) {
-            if (!datetimeStr) return '평일';
-            const day = new Date(datetimeStr).getDay();
-            return (day === 0 || day === 6) ? '주말' : '평일';
+        // 근무조 배지 색상 클래스 (1근 파랑 / 2근 주황 / 3근 보라)
+        function shiftBadgeClass(shift) {
+            return shift === '1근' ? 'bg-blue-100 text-blue-700'
+                 : shift === '2근' ? 'bg-amber-100 text-amber-700'
+                 : shift === '3근' ? 'bg-purple-100 text-purple-700'
+                 : 'bg-slate-100 text-slate-600';
         }
         // 반복고장: 설비명 + 대/중/소분류가 모두 동일한 기록들 (발생일시 오름차순)
         function getRepeatOccurrences(item) {
@@ -4189,7 +4180,7 @@
             const dur = item.durationMinutes || 0;
             const durStr = dur >= 60 ? `${Math.floor(dur/60)}시간 ${dur%60}분` : `${dur}분`;
             const isCritical = dur >= 120;
-            const dn = getDayNight(item.startTime), wk = getWeekType(item.startTime);
+            const shift = getShiftType(item.startTime);
 
             let repeatHtml = '';
             if (occ.length >= 2) {
@@ -4210,8 +4201,7 @@
                     <span class="px-2 py-0.5 rounded bg-blue-50 text-brand-700 text-xs font-bold">${item.line || '-'}</span>
                     <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-bold">${item.category || '-'}</span>
                     ${isCritical ? '<span class="px-2 py-0.5 rounded bg-red-600 text-white text-xs font-bold">중대고장</span>' : ''}
-                    <span class="px-2 py-0.5 rounded ${dn === '야간' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} text-xs font-bold">${dn}</span>
-                    <span class="px-2 py-0.5 rounded ${wk === '주말' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'} text-xs font-bold">${wk}</span>
+                    <span class="px-2 py-0.5 rounded ${shiftBadgeClass(shift)} text-xs font-bold">${shift}</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                     ${cell('설비명', item.equipmentName)}
@@ -4266,7 +4256,7 @@
             document.getElementById('bd-list-count').innerText = `총 ${list.length}건`;
 
             if(list.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="8" class="py-12 text-center text-slate-400 text-xs md:text-sm">등록된 고장 실적이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="py-12 text-center text-slate-400 text-xs md:text-sm">등록된 고장 실적이 없습니다.</td></tr>`;
                 document.getElementById('bd-list-pagination').innerHTML = '';
                 return; 
             }
@@ -4283,17 +4273,11 @@
                 const dur = item.durationMinutes || 0;
                 const durStr = dur >= 60 ? `${Math.floor(dur/60)}시간 ${dur%60}분` : `${dur}분`;
                 const isCritical = dur >= 120;
-                const dn = getDayNight(item.startTime);
-                const wk = getWeekType(item.startTime);
+                const shift = getShiftType(item.startTime);
                 const repeatCount = getRepeatOccurrences(item).length;
                 const isRepeat = repeatCount >= 2;
 
-                const dnBadge = dn === '야간'
-                    ? '<span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold">야간</span>'
-                    : '<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold">주간</span>';
-                const wkBadge = wk === '주말'
-                    ? '<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold">주말</span>'
-                    : '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold">평일</span>';
+                const shiftBadge = `<span class="px-1.5 py-0.5 rounded ${shiftBadgeClass(shift)} text-[10px] font-bold">${shift}</span>`;
                 const repeatBadge = isRepeat
                     ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회</span>`
                     : '<span class="text-slate-300">-</span>';
@@ -4304,8 +4288,7 @@
                         <td class="py-2.5 px-3 text-slate-700">${startStr}</td>
                         <td class="py-2.5 px-3 font-semibold text-slate-800">${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
                         <td class="py-2.5 px-2 text-center text-red-500 font-bold text-xs">${durStr}</td>
-                        <td class="py-2.5 px-1.5 text-center">${dnBadge}</td>
-                        <td class="py-2.5 px-1.5 text-center">${wkBadge}</td>
+                        <td class="py-2.5 px-1.5 text-center">${shiftBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${repeatBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">
                             <button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>
@@ -4725,21 +4708,18 @@
             let data = rawBDData;
             if (targetYear) data = data.filter(d => (d.startTime || '').slice(0, 4) === targetYear); // 전역 연도 필터
             if (fLine !== 'ALL') data = data.filter(d => d.line === fLine);
-            // 시간대(주간/야간)와 요일(평일/주말) 각각 집계
-            const counts = { '주간': 0, '야간': 0, '평일': 0, '주말': 0 };
-            data.forEach(d => {
-                counts[getDayNight(d.startTime)]++;
-                counts[getWeekType(d.startTime)]++;
-            });
-            const vals = [counts['주간'], counts['야간'], counts['평일'], counts['주말']];
+            // 근무조(1근/2근/3근)별 집계  ·  1근 07~15 / 2근 15~23 / 3근 23~07
+            const counts = { '1근': 0, '2근': 0, '3근': 0 };
+            data.forEach(d => { counts[getShiftType(d.startTime)]++; });
+            const vals = [counts['1근'], counts['2근'], counts['3근']];
             const hasData = vals.some(v => v > 0);
 
             if (chartInstances['all_shift']) chartInstances['all_shift'].destroy();
             chartInstances['all_shift'] = new Chart(el.getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['주간', '야간', '평일', '주말'],
-                    datasets: [{ data: hasData ? vals : [1, 1, 1, 1], backgroundColor: ['#f59e0b', '#4f46e5', '#0ea5e9', '#ef4444'], borderWidth: 3, borderColor: '#ffffff', hoverOffset: 8 }]
+                    labels: ['1근', '2근', '3근'],
+                    datasets: [{ data: hasData ? vals : [1, 1, 1], backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'], borderWidth: 3, borderColor: '#ffffff', hoverOffset: 8 }]
                 },
                 options: {
                     animation: chartAnim(), responsive: true, maintainAspectRatio: false, cutout: '60%',
