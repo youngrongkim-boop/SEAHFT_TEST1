@@ -64,12 +64,13 @@
         .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
         .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
 
-        /* 차트 등장 리빌: OS의 '동작 줄이기' 설정과 무관하게 항상 재생 (Chart.js 내부 애니메이션 대체/보강) */
-        @keyframes chartReveal {
-            0% { opacity: 0; transform: translateY(10px) scale(0.985); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+        /* 차트 등장 리빌: 좌→우로 쓸어서 채워지듯 나타남 (위험도 막대와 동일한 방향감).
+           clip-path 기반이라 OS '동작 줄이기' 설정과 무관하게 항상 재생됨. */
+        @keyframes chartWipe {
+            0% { clip-path: inset(0 100% 0 0); opacity: 0.55; }
+            100% { clip-path: inset(0 0 0 0); opacity: 1; }
         }
-        .chart-reveal { animation: chartReveal 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+        .chart-reveal { animation: chartWipe 0.9s cubic-bezier(0.22,1,0.36,1) both; }
 
         /* 위험도 막대: 좌→우로 채워지는 애니메이션 (초기 0% → 목표 %로 transition) */
         .risk-bar { width: 0; transition: width 0.9s cubic-bezier(0.22,1,0.36,1); }
@@ -4588,9 +4589,9 @@
         Chart.defaults.plugins.tooltip.boxPadding = 4;
         Chart.defaults.plugins.tooltip.titleFont = { weight: 'bold', size: 12 };
 
-        // 차트 등장 애니메이션: 차트를 그릴 때마다 부드럽게 나타나도록 항상 적용.
-        // (열 때, 필터/분류 변경, 데이터 갱신 모두 동일하게 애니메이션)
-        const chartAnim = () => ({ duration: 700, easing: 'easeOutQuart' });
+        // 차트 등장 효과는 CSS 좌→우 wipe(.chart-reveal)로 통일하므로 Chart.js 내부 애니메이션은 끔.
+        // (호버 전환 애니메이션은 transitions 설정이 담당하므로 영향 없음)
+        const chartAnim = () => false;
 
         // 인트로 스플래시가 걷힌 뒤 호출됨 → 대시보드를 보고 있으면 차트를 다시 그려 등장 애니메이션을 재생.
         window.replayDashboardEntrance = () => {
