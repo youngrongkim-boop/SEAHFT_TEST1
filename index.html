@@ -327,9 +327,10 @@
                 <i data-lucide="activity" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장 예측 · 위험도</span>
             </button>
 
-            <button type="button" onclick="toggleNavLines()" id="nav-lines-toggle" class="w-full flex items-center justify-between px-6 py-2 mt-4 mb-1 text-[11px] font-bold text-brand-500 uppercase tracking-wider hover:text-brand-200 transition-colors sidebar-section-title whitespace-nowrap" title="라인별 현황 펼치기/접기">
-                <span>라인별 현황 (대시보드)</span>
-                <span id="nav-lines-chevron" class="shrink-0 transition-transform duration-200 inline-flex" style="transform: rotate(-90deg)"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
+            <button type="button" onclick="toggleNavLines()" id="nav-lines-toggle" class="nav-btn w-full flex items-center px-6 py-3 mt-4 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 현황 펼치기/접기">
+                <i data-lucide="layers" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i>
+                <span class="sidebar-text whitespace-nowrap transition-opacity duration-300 flex-1 text-left">라인별 현황 (대시보드)</span>
+                <span id="nav-lines-chevron" class="sidebar-text shrink-0 transition-transform duration-200 inline-flex" style="transform: rotate(-90deg)"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
             </button>
             <div class="space-y-0.5 hidden" id="nav-lines-container"></div>
 
