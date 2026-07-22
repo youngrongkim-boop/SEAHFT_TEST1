@@ -3804,6 +3804,7 @@
                 html += `<div class="divide-y divide-slate-50">`;
                 equipList.slice(0, 15).forEach((e, i) => {
                     const lv = levelOf(e.score >= maxEquipScore * 0.66 ? maxScore : (e.score >= maxEquipScore * 0.33 ? maxScore * 0.5 : 0));
+                    const pctEq = maxEquipScore ? Math.round(e.score / maxEquipScore * 100) : 0;
                     html += `<div class="px-4 py-2.5 flex items-center gap-3">
                         <span class="w-6 text-center font-bold ${i === 0 ? 'text-red-600' : 'text-slate-400'}">${i + 1}</span>
                         <div class="min-w-0 flex-1">
@@ -3811,6 +3812,7 @@
                             <div class="flex flex-wrap gap-1.5 text-[10px] mt-1 text-slate-500">
                                 <span>고장 ${e.count}</span><span class="text-red-500">중대 ${e.critical}</span><span>정지 ${Math.round(e.downtime / 60)}h</span><span>${e.lastDays === null ? '' : '최근 ' + e.lastDays + '일 전'}</span>
                             </div>
+                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1.5"><div class="h-full risk-bar ${lv.bar}" data-pct="${pctEq}" style="width:0%"></div></div>
                         </div>
                         <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${lv.badge}">${lv.t}</span>
                     </div>`;
