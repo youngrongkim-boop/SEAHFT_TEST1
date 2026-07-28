@@ -1012,6 +1012,7 @@
                             <i data-lucide="history" class="w-5 h-5 mr-2 text-blue-500"></i> 데이터 수정 이력 (Audit Log)
                         </h3>
                         <div class="flex items-center gap-2">
+                            <input type="text" id="edit-history-search" onkeyup="editHistPage=1; window.debouncedRenderEditHistory()" placeholder="분류, 설비, 내역, 수정자 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <button onclick="window.openEditPinChange()" class="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1 rounded flex items-center gap-1"><i data-lucide="key-round" class="w-3.5 h-3.5"></i>비밀번호 변경</button>
                             <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="history-list-count">총 0건</span>
                         </div>
@@ -1573,6 +1574,7 @@
         window.debouncedApplyFilterAndRender = debounce(() => applyFilterAndRender(), 150);
         window.debouncedRenderCharts = debounce((dbData, pmData) => renderCharts(dbData, pmData), 150);
         window.debouncedRenderPMMasterTable = debounce(() => renderPMMasterTable(), 150);
+        window.debouncedRenderEditHistory = debounce(() => renderEditHistory(), 150);
 
         // Pagination Helper
         function getPaginationHTML(currentPage, totalPages, functionPrefix) {
@@ -3113,18 +3115,32 @@
 
         window.renderEditHistory = () => {
             const tbody = document.getElementById('edit-history-body');
-            document.getElementById('history-list-count').innerText = `총 ${rawEditHistoryData.length}건`;
 
-            if(rawEditHistoryData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">수정 이력이 없습니다.</td></tr>`;
-                document.getElementById('edit-history-pagination').innerHTML = '';
-                return; 
+            const kw = document.getElementById('edit-history-search')?.value.toLowerCase().trim();
+            let filteredList = rawEditHistoryData;
+            if (kw) {
+                filteredList = filteredList.filter(d =>
+                    (d.type || '').toLowerCase().includes(kw) ||
+                    (d.line || '').toLowerCase().includes(kw) ||
+                    (d.equipmentName || '').toLowerCase().includes(kw) ||
+                    (d.details || '').toLowerCase().includes(kw) ||
+                    (d.editorName || '').toLowerCase().includes(kw) ||
+                    (d.editorEmail || '').toLowerCase().includes(kw)
+                );
             }
 
-            const totalPages = Math.ceil(rawEditHistoryData.length / ITEMS_PER_PAGE);
+            document.getElementById('history-list-count').innerText = kw ? `${filteredList.length} / ${rawEditHistoryData.length}건` : `총 ${rawEditHistoryData.length}건`;
+
+            if(filteredList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">${kw ? '검색 결과가 없습니다.' : '수정 이력이 없습니다.'}</td></tr>`;
+                document.getElementById('edit-history-pagination').innerHTML = '';
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
             if (editHistPage > totalPages) editHistPage = Math.max(1, totalPages);
             const start = (editHistPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = rawEditHistoryData.slice(start, start + ITEMS_PER_PAGE);
+            const paginatedList = filteredList.slice(start, start + ITEMS_PER_PAGE);
 
             let html = '';
             paginatedList.forEach(item => {
