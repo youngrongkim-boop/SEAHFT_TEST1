@@ -3513,6 +3513,33 @@
             const completedItems = completedAll.filter(inDonePeriod);
             const boardItems = pendingScope.filter(d => statusOf(d) !== '등록예정');
 
+            // 조치시간(자유 텍스트) → 분 단위 파싱. 예) "1시간 30분"→90, "30분"→30, "45"→45, "1:30"→90
+            const parseActionMinutes = (raw) => {
+                if (!raw) return 0;
+                const s = String(raw).trim();
+                if (!s) return 0;
+                const colon = s.match(/^(\d+)\s*:\s*(\d{1,2})$/);
+                if (colon) return parseInt(colon[1], 10) * 60 + parseInt(colon[2], 10);
+                let total = 0, matched = false;
+                const h = s.match(/([\d.]+)\s*시간/);
+                if (h) { total += parseFloat(h[1]) * 60; matched = true; }
+                const m = s.match(/([\d.]+)\s*분/);
+                if (m) { total += parseFloat(m[1]); matched = true; }
+                if (!matched) { const num = s.replace(/[^\d.]/g, ''); if (num) total = parseFloat(num); } // 단위 없으면 분으로 간주
+                return isNaN(total) ? 0 : Math.round(total);
+            };
+            const fmtMinutes = (mins) => {
+                mins = Math.round(mins || 0);
+                if (mins <= 0) return '0분';
+                const h = Math.floor(mins / 60), m = mins % 60;
+                const parts = [];
+                if (h) parts.push(`${h}시간`);
+                if (m) parts.push(`${m}분`);
+                return parts.join(' ');
+            };
+            const boardTotalMin = boardItems.reduce((s, d) => s + parseActionMinutes(d.actionTime), 0);
+            const boardFilledCount = boardItems.filter(d => parseActionMinutes(d.actionTime) > 0).length;
+
             const actionCell = (item) => `<input type="text" value="${(item.actionTime || '').replace(/"/g, '&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="예:30분" class="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50">`;
             const remarksCell = (item) => `<button onclick="openRemarksModal('${item.id}')" class="text-[10px] font-bold px-2 py-1 rounded border ${item.remarks ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"><i data-lucide="edit-3" class="w-3 h-3 inline mr-0.5"></i>${item.remarks ? '있음' : '작성'}</button>`;
             const resultBtns = (item) => `<div class="flex items-center justify-center gap-1">
@@ -3553,6 +3580,18 @@
             };
 
             let html = '';
+            if (boardItems.length) {
+                html += `<div class="bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <i data-lucide="timer" class="w-5 h-5 shrink-0"></i>
+                        <div class="min-w-0">
+                            <div class="text-[11px] text-white/80 leading-none mb-0.5">예상 점검 소요시간 합계</div>
+                            <div class="text-[11px] text-white/70 leading-none">점검예정·지연 ${boardItems.length}건 중 ${boardFilledCount}건 조치시간 입력됨</div>
+                        </div>
+                    </div>
+                    <div class="text-xl md:text-2xl font-extrabold whitespace-nowrap">${fmtMinutes(boardTotalMin)}</div>
+                </div>`;
+            }
             let boardHasAny = false;
             CYCLE_ORDER.forEach(cycle => {
                 const items = boardItems.filter(d => normalizeCycle(d.cycleType) === cycle)
@@ -3561,12 +3600,14 @@
                 boardHasAny = true;
                 const overdue = items.filter(d => statusOf(d) === '점검지연').length;
                 const due = items.filter(d => statusOf(d) === '점검예정').length;
+                const cycleMin = items.reduce((s, d) => s + parseActionMinutes(d.actionTime), 0);
 
                 html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-bold">${cycle}</span>
                             <span class="text-xs text-slate-500">총 ${items.length}건</span>
+                            ${cycleMin > 0 ? `<span class="text-xs font-bold text-brand-600 flex items-center gap-0.5"><i data-lucide="timer" class="w-3 h-3"></i>${fmtMinutes(cycleMin)}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2 text-[11px] font-bold">
                             ${overdue ? `<span class="text-red-600">● 점검지연 ${overdue}</span>` : ''}
