@@ -3194,6 +3194,17 @@
                 createdAt: serverTimestamp()
             };
 
+            // 중복 항목 검사: 같은 라인 · 설비명 · 작업 세부사항
+            const isDupPM = rawPMData.some(d =>
+                (d.line || '') === data.line &&
+                (d.equipmentName || '').trim() === data.equipmentName.trim() &&
+                (d.taskDetails || '').trim().toLowerCase() === data.taskDetails.toLowerCase()
+            );
+            if (isDupPM && !confirm(`중복 데이터입니다.\n같은 라인·설비·작업 세부사항의 항목이 이미 등록되어 있습니다.\n\n데이터를 입력하겠습니까?`)) {
+                btn.disabled = false; btn.innerText = "점검 항목 생성";
+                return;
+            }
+
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks'), data);
                 showToast("신규 예방점검 항목이 생성되었습니다.");
@@ -4098,7 +4109,20 @@
 
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true; btn.innerText = "등록 중...";
-            
+
+            // 중복 항목 검사: 같은 라인 · 설비명 · 발생일시
+            const bdLine = document.getElementById('bd-line').value;
+            const bdEquip = document.getElementById('bd-equip').value;
+            const isDupBD = rawBDData.some(d =>
+                (d.line || '') === bdLine &&
+                (d.equipmentName || '') === bdEquip &&
+                (d.startTime || '') === startStr
+            );
+            if (isDupBD && !confirm(`중복 데이터입니다.\n같은 라인·설비·발생일시의 고장실적이 이미 등록되어 있습니다.\n\n데이터를 입력하겠습니까?`)) {
+                btn.disabled = false; btn.innerText = "고장 실적 등록";
+                return;
+            }
+
             const start = new Date(startStr), end = new Date(endStr);
             let durationMinutes = Math.round((end - start) / 60000);
             if (durationMinutes < 0) durationMinutes = 0;
