@@ -625,6 +625,7 @@
                     <div id="check-board-line-tabs" class="flex flex-wrap gap-1.5"></div>
                     <span class="hidden sm:inline text-slate-300">|</span>
                     <div id="check-board-cat-tabs" class="flex flex-wrap gap-1.5"></div>
+                    <span id="check-board-time-sum" class="text-[11px] font-bold text-brand-600 flex items-center gap-1 pl-1 whitespace-nowrap"></span>
                     <span id="check-board-date" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
                 </div>
                 <div id="check-board-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
@@ -3579,19 +3580,16 @@
                 </div>`;
             };
 
-            let html = '';
-            if (boardItems.length) {
-                html += `<div class="bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <i data-lucide="timer" class="w-5 h-5 shrink-0"></i>
-                        <div class="min-w-0">
-                            <div class="text-[11px] text-white/80 leading-none mb-0.5">예상 점검 소요시간 합계</div>
-                            <div class="text-[11px] text-white/70 leading-none">점검예정·지연 ${boardItems.length}건 중 ${boardFilledCount}건 조치시간 입력됨</div>
-                        </div>
-                    </div>
-                    <div class="text-xl md:text-2xl font-extrabold whitespace-nowrap">${fmtMinutes(boardTotalMin)}</div>
-                </div>`;
+            const timeSumEl = document.getElementById('check-board-time-sum');
+            if (timeSumEl) {
+                timeSumEl.innerHTML = boardItems.length
+                    ? `<i data-lucide="timer" class="w-3.5 h-3.5"></i>예상 ${fmtMinutes(boardTotalMin)}`
+                    : '';
+                timeSumEl.title = `점검예정·지연 ${boardItems.length}건 중 ${boardFilledCount}건 조치시간 입력됨`;
+                if (window.lucide && boardItems.length) lucide.createIcons({ root: timeSumEl });
             }
+
+            let html = '';
             let boardHasAny = false;
             CYCLE_ORDER.forEach(cycle => {
                 const items = boardItems.filter(d => normalizeCycle(d.cycleType) === cycle)
