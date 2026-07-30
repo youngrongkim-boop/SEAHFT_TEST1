@@ -625,7 +625,6 @@
                     <div id="check-board-line-tabs" class="flex flex-wrap gap-1.5"></div>
                     <span class="hidden sm:inline text-slate-300">|</span>
                     <div id="check-board-cat-tabs" class="flex flex-wrap gap-1.5"></div>
-                    <span id="check-board-time-sum" class="text-[11px] font-bold flex items-center gap-1 whitespace-nowrap"></span>
                     <span id="check-board-date" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
                 </div>
                 <div id="check-board-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
@@ -3538,8 +3537,6 @@
                 if (m) parts.push(`${m}분`);
                 return parts.join(' ');
             };
-            const boardTotalMin = boardItems.reduce((s, d) => s + parseActionMinutes(d.actionTime), 0);
-            const boardFilledCount = boardItems.filter(d => parseActionMinutes(d.actionTime) > 0).length;
 
             const actionCell = (item) => `<input type="text" value="${(item.actionTime || '').replace(/"/g, '&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="예:30분" class="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50">`;
             const remarksCell = (item) => `<button onclick="openRemarksModal('${item.id}')" class="text-[10px] font-bold px-2 py-1 rounded border ${item.remarks ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"><i data-lucide="edit-3" class="w-3 h-3 inline mr-0.5"></i>${item.remarks ? '있음' : '작성'}</button>`;
@@ -3580,32 +3577,6 @@
                 </div>`;
             };
 
-            const timeSumEl = document.getElementById('check-board-time-sum');
-            if (timeSumEl) {
-                // 주기별 예상 소요시간 분리 (목적: 일별 점검이 얼마나 걸릴지) — 일별은 강조, 나머지는 연하게
-                const cycleSums = CYCLE_ORDER.map(cyc => {
-                    const items = boardItems.filter(d => normalizeCycle(d.cycleType) === cyc);
-                    return { cyc, count: items.length, min: items.reduce((s, d) => s + parseActionMinutes(d.actionTime), 0) };
-                }).filter(c => c.count > 0);
-
-                if (cycleSums.length) {
-                    const chips = cycleSums.map(c => {
-                        const daily = c.cyc === '일별';
-                        const cls = daily
-                            ? 'bg-amber-100 text-amber-800 border-amber-300 shadow-sm'
-                            : 'bg-slate-50 text-slate-500 border-slate-200';
-                        return `<span class="border rounded px-1.5 py-0.5 ${daily ? 'font-extrabold' : 'font-semibold'} ${cls}">${c.cyc} ${fmtMinutes(c.min)}</span>`;
-                    }).join('');
-                    timeSumEl.innerHTML = `<i data-lucide="timer" class="w-3.5 h-3.5 text-slate-400 mr-0.5"></i>${chips}`;
-                    timeSumEl.classList.remove('hidden');
-                    if (window.lucide) lucide.createIcons({ root: timeSumEl });
-                } else {
-                    timeSumEl.innerHTML = '';
-                    timeSumEl.classList.add('hidden');
-                }
-                timeSumEl.title = '주기별 예상 점검 소요시간 (미완료 항목의 조치시간 합계)';
-            }
-
             let html = '';
             let boardHasAny = false;
             CYCLE_ORDER.forEach(cycle => {
@@ -3622,7 +3593,7 @@
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-bold">${cycle}</span>
                             <span class="text-xs text-slate-500">총 ${items.length}건</span>
-                            ${cycleMin > 0 ? `<span class="text-xs font-bold text-brand-600 flex items-center gap-0.5"><i data-lucide="timer" class="w-3 h-3"></i>${fmtMinutes(cycleMin)}</span>` : ''}
+                            ${cycleMin > 0 ? `<span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 rounded-md px-2 py-0.5 flex items-center gap-1"><i data-lucide="timer" class="w-3.5 h-3.5"></i>예상 소요시간 ${fmtMinutes(cycleMin)}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2 text-[11px] font-bold">
                             ${overdue ? `<span class="text-red-600">● 점검지연 ${overdue}</span>` : ''}
