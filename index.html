@@ -1995,14 +1995,12 @@
         };
 
         function initCategorySelects() {
-            let mainOptions = '<option value="">선택</option>';
-            let filterMainOptions = '<option value="ALL">대분류 전체</option>';
-            Object.keys(categoryMap).forEach(main => {
-                mainOptions += `<option value="${main}">${main}</option>`;
-                filterMainOptions += `<option value="${main}">${main}</option>`;
-            });
-            document.getElementById('bd-main-cat').innerHTML = mainOptions;
-            document.getElementById('bd-filter-main').innerHTML = filterMainOptions;
+            // 등록 폼 대분류: 설정된 categoryMap + 실제 등록 데이터에서 쓰인 대분류 값의 합집합
+            const mains = new Set(Object.keys(categoryMap));
+            rawBDData.forEach(d => { const m = (d.mainCategory || '').trim(); if (m) mains.add(m); });
+            const sortedMains = Array.from(mains).sort();
+            document.getElementById('bd-main-cat').innerHTML = '<option value="">선택</option>' + sortedMains.map(m => `<option value="${m}">${m}</option>`).join('');
+            document.getElementById('bd-filter-main').innerHTML = '<option value="ALL">대분류 전체</option>' + Object.keys(categoryMap).map(m => `<option value="${m}">${m}</option>`).join('');
         }
 
         window.updateSubCategories = (formType) => {
@@ -2010,9 +2008,12 @@
             const mainVal = document.getElementById('bd-main-cat').value;
             const subSel = document.getElementById('bd-sub-cat');
             const detailSel = document.getElementById('bd-detail-cat');
-            subSel.innerHTML = '<option value="">선택</option>';
             detailSel.innerHTML = '<option value="">선택</option>';
-            if(mainVal && categoryMap[mainVal]) Object.keys(categoryMap[mainVal]).forEach(sub => subSel.innerHTML += `<option value="${sub}">${sub}</option>`);
+            // 중분류: categoryMap + 선택된 대분류로 실제 등록된 중분류 값의 합집합
+            const subs = new Set();
+            if (mainVal && categoryMap[mainVal]) Object.keys(categoryMap[mainVal]).forEach(s => subs.add(s));
+            if (mainVal) rawBDData.forEach(d => { if ((d.mainCategory || '').trim() === mainVal) { const s = (d.subCategory || '').trim(); if (s) subs.add(s); } });
+            subSel.innerHTML = '<option value="">선택</option>' + Array.from(subs).sort().map(s => `<option value="${s}">${s}</option>`).join('');
         };
         
         // 고장 리스트 필터의 대분류/중분류는 "실제 등록된 데이터의 분류값"으로 채운다
@@ -2066,8 +2067,11 @@
             const mainVal = document.getElementById('bd-main-cat').value;
             const subVal = document.getElementById('bd-sub-cat').value;
             const detailSel = document.getElementById('bd-detail-cat');
-            detailSel.innerHTML = '<option value="">선택</option>';
-            if(mainVal && subVal && categoryMap[mainVal][subVal]) categoryMap[mainVal][subVal].forEach(detail => detailSel.innerHTML += `<option value="${detail}">${detail}</option>`);
+            // 소분류: categoryMap + 선택된 대/중분류로 실제 등록된 소분류 값의 합집합
+            const dets = new Set();
+            if (mainVal && subVal && categoryMap[mainVal] && categoryMap[mainVal][subVal]) categoryMap[mainVal][subVal].forEach(dt => dets.add(dt));
+            if (mainVal && subVal) rawBDData.forEach(d => { if ((d.mainCategory || '').trim() === mainVal && (d.subCategory || '').trim() === subVal) { const dt = (d.detailCategory || '').trim(); if (dt) dets.add(dt); } });
+            detailSel.innerHTML = '<option value="">선택</option>' + Array.from(dets).sort().map(dt => `<option value="${dt}">${dt}</option>`).join('');
         };
 
         window.toggleDetailsDropdown = (e) => {
@@ -2169,6 +2173,8 @@
                     } else if (tabId === 'bd-list') {
                         bdListPage = 1;
                         window.debouncedRenderBDList();
+                    } else if (tabId === 'bd-reg') {
+                        initCategorySelects(); // 등록 폼 진입 시 실제 사용된 분류값을 반영
                     }
                 }, 10);
             });
