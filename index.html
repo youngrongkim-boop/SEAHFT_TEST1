@@ -1598,6 +1598,7 @@
         lucide.createIcons();
         initSidebarLines();
         initCategorySelects();
+        initChoseongSearch();
 
         function getLocalTodayString() {
             const d = new Date();
@@ -2073,6 +2074,46 @@
             if (mainVal && subVal) rawBDData.forEach(d => { if ((d.mainCategory || '').trim() === mainVal && (d.subCategory || '').trim() === subVal) { const dt = (d.detailCategory || '').trim(); if (dt) dets.add(dt); } });
             detailSel.innerHTML = '<option value="">선택</option>' + Array.from(dets).sort().map(dt => `<option value="${dt}">${dt}</option>`).join('');
         };
+
+        // ===== 한글 초성 검색: <select> 포커스 상태에서 자음 키 입력 시 해당 초성 항목으로 점프 =====
+        const KO_CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+        // 두벌식 물리 자판 매핑(한/영 상태 무관하게 동작하도록): 물리키 → 자음
+        const QWERTY_TO_JAMO = { r:'ㄱ',R:'ㄲ',s:'ㄴ',e:'ㄷ',E:'ㄸ',f:'ㄹ',a:'ㅁ',q:'ㅂ',Q:'ㅃ',t:'ㅅ',T:'ㅆ',d:'ㅇ',w:'ㅈ',W:'ㅉ',c:'ㅊ',z:'ㅋ',x:'ㅌ',v:'ㅍ',g:'ㅎ' };
+        function getChoseong(ch) {
+            if (!ch) return null;
+            const code = ch.charCodeAt(0) - 0xAC00;
+            if (code < 0 || code > 11171) return null; // 완성형 한글 아님
+            return KO_CHOSEONG[Math.floor(code / 588)];
+        }
+        function attachChoseongSearch(sel) {
+            if (!sel || sel.__choseong) return;
+            sel.__choseong = true;
+            let lastJamo = '', lastIdx = -1;
+            sel.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.altKey || e.metaKey) return;
+                const jamo = KO_CHOSEONG.includes(e.key) ? e.key : QWERTY_TO_JAMO[e.key];
+                if (!jamo) return;
+                const opts = Array.from(sel.options);
+                // 같은 자음 연속 입력 시 다음 후보로 순환
+                const start = ((jamo === lastJamo ? lastIdx : sel.selectedIndex) + 1) || 0;
+                for (let k = 0; k < opts.length; k++) {
+                    const idx = (start + k) % opts.length;
+                    const label = (opts[idx].text || opts[idx].value || '').trim();
+                    if (label && getChoseong(label[0]) === jamo) {
+                        if (sel.selectedIndex !== idx) {
+                            sel.selectedIndex = idx;
+                            sel.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        lastJamo = jamo; lastIdx = idx;
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            });
+        }
+        function initChoseongSearch() {
+            ['bd-line','bd-category','bd-main-cat','bd-sub-cat','bd-detail-cat'].forEach(id => attachChoseongSearch(document.getElementById(id)));
+        }
 
         window.toggleDetailsDropdown = (e) => {
             if(e) e.stopPropagation();
