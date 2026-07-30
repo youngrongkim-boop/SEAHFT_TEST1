@@ -625,7 +625,7 @@
                     <div id="check-board-line-tabs" class="flex flex-wrap gap-1.5"></div>
                     <span class="hidden sm:inline text-slate-300">|</span>
                     <div id="check-board-cat-tabs" class="flex flex-wrap gap-1.5"></div>
-                    <span id="check-board-time-sum" class="text-[11px] font-bold text-brand-600 flex items-center gap-1 pl-1 whitespace-nowrap"></span>
+                    <span id="check-board-time-sum" class="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded-md px-2 py-1 flex items-center gap-1 whitespace-nowrap shadow-sm"></span>
                     <span id="check-board-date" class="text-[11px] text-slate-400 ml-auto pl-2"></span>
                 </div>
                 <div id="check-board-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
@@ -3586,6 +3586,7 @@
                     ? `<i data-lucide="timer" class="w-3.5 h-3.5"></i>예상 ${fmtMinutes(boardTotalMin)}`
                     : '';
                 timeSumEl.title = `점검예정·지연 ${boardItems.length}건 중 ${boardFilledCount}건 조치시간 입력됨`;
+                timeSumEl.classList.toggle('hidden', !boardItems.length);
                 if (window.lucide && boardItems.length) lucide.createIcons({ root: timeSumEl });
             }
 
