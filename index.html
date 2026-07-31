@@ -241,6 +241,24 @@
         </div>
     </div>
 
+    <!-- 라인별 담당자 모달 (예방점검 지연 알림 수신자) -->
+    <div id="line-owner-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-brand-600"></i> 라인별 담당자</h3>
+                <button type="button" onclick="closeLineOwnerModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="px-5 py-3 border-b border-slate-100 shrink-0 bg-brand-50/50">
+                <p class="text-xs text-slate-600 leading-relaxed">라인별 담당자를 지정합니다. 지정된 분에게 <b>점검 마감이 다가오면 미리 알림</b>이 발송됩니다.<br><b class="text-brand-700">담당자는 자기 라인의 고장실적·예방점검을 수정·삭제할 수 있습니다.</b> (다른 라인은 불가)<br>한 라인에 여러 명, 한 사람이 여러 라인을 맡을 수 있습니다.</p>
+            </div>
+            <div id="line-owner-body" class="p-5 space-y-3 overflow-y-auto custom-scroll flex-1"></div>
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <span class="text-[11px] text-slate-400">변경은 즉시 저장됩니다.</span>
+                <button type="button" onclick="closeLineOwnerModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 관리자 설정 모달 -->
     <div id="admin-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
@@ -249,7 +267,7 @@
                 <button type="button" onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="px-5 py-3 border-b border-slate-100 shrink-0 bg-amber-50/60">
-                <p class="text-xs text-slate-600 leading-relaxed">관리자만 <b>데이터 수정·삭제</b>와 <b>데이터 수정 이력</b>에 접근할 수 있습니다.<br>등록(신규 입력)과 조회는 모든 사내 직원이 계속 사용할 수 있습니다.</p>
+                <p class="text-xs text-slate-600 leading-relaxed">관리자는 <b>데이터 수정·삭제</b>와 <b>데이터 수정 이력</b>에 접근할 수 있습니다. 등록(신규 입력)과 조회는 모든 사내 직원이 계속 사용할 수 있습니다.<br><b class="text-amber-700">이 화면과 관리자 추가·해제는 최고관리자만 가능합니다.</b></p>
             </div>
             <div class="p-5 space-y-3 overflow-y-auto custom-scroll flex-1">
                 <div>
@@ -349,12 +367,15 @@
             <button onclick="switchTab('bd-reg')" id="nav-bd-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장실적 등록">
                 <i data-lucide="wrench" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장실적 등록</span>
             </button>
-            <button onclick="switchTab('manual-lib')" id="nav-manual-lib" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="등록된 조치 메뉴얼 모아보기">
-                <i data-lucide="library" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">조치 메뉴얼 자료실</span>
+            <button onclick="switchTab('manual-lib')" id="nav-manual-lib" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="등록된 메뉴얼 모아보기">
+                <i data-lucide="library" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">메뉴얼 자료실</span>
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
-            <button onclick="openAdminModal()" id="nav-admin" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="관리자 계정 등록·삭제">
+            <button data-admin-only onclick="openLineOwnerModal()" id="nav-line-owner" class="hidden nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 예방점검 담당자 지정 (알림 수신자)">
+                <i data-lucide="users" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">라인별 담당자</span>
+            </button>
+            <button data-super-only onclick="openAdminModal()" id="nav-admin" class="hidden nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="관리자 계정 등록·삭제 (최고관리자 전용)">
                 <i data-lucide="shield-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">관리자 설정</span>
             </button>
             <button data-admin-only onclick="window.enterEditHistory()" id="nav-edit-history" class="hidden nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="데이터 수정 이력 (관리자 전용)">
@@ -1015,7 +1036,7 @@
                 </div>
             </div>
 
-            <!-- VIEW: MANUAL LIBRARY (고장실적에 첨부된 조치 메뉴얼 모아보기) -->
+            <!-- VIEW: MANUAL LIBRARY (고장실적에 첨부된 메뉴얼 모아보기) -->
             <div id="view-manual-lib" class="view-section hidden h-full flex-col min-w-0">
                 <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
                     <div class="mb-2.5 shrink-0">
@@ -1037,7 +1058,7 @@
                             <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
                             <input type="text" id="mlib-search" onkeyup="renderManualLibrary()" placeholder="파일명, 설비, 고장명 검색..." class="w-full sm:w-52 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none">
                         </div>
-                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">고장실적에 첨부된 조치 메뉴얼을 모아 보여줍니다. 메뉴얼 추가·삭제는 해당 고장실적의 <b>수정</b> 화면에서 합니다.</p>
+                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">고장실적에 첨부된 메뉴얼을 모아 보여줍니다. 메뉴얼 추가·삭제는 해당 고장실적의 <b>수정</b> 화면에서 합니다.</p>
                     </div>
 
                     <!-- 데스크톱 표 -->
@@ -1072,7 +1093,7 @@
                         </h3>
                         <div class="flex items-center gap-2">
                             <input type="text" id="edit-history-search" onkeyup="editHistPage=1; window.debouncedRenderEditHistory()" placeholder="분류, 설비, 내역, 수정자 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
-                            <button onclick="openAdminModal()" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>관리자 설정</button>
+                            <button data-super-only onclick="openAdminModal()" class="hidden text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>관리자 설정</button>
                             <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="history-list-count">총 0건</span>
                         </div>
                     </div>
@@ -1898,22 +1919,43 @@
         // 관리자 권한
         // ==========================================
         // 관리자 목록은 Firestore(settings/admins)에 이메일 배열로 저장한다.
-        // 목록이 아직 없거나 비어 있으면 아래 기본 관리자로 대체한다 (아무도 못 들어가는 상황 방지).
-        const DEFAULT_ADMINS = ['youngrong.kim@seah.co.kr'];
-        let adminEmails = [...DEFAULT_ADMINS];
+        //
+        // 최고관리자: 목록과 무관하게 항상 관리자이며, 해제할 수 없다.
+        //   - 관리자를 추가/해제할 수 있는 사람은 최고관리자뿐이다.
+        //   - 목록이 통째로 날아가도 최고관리자로는 항상 들어올 수 있다(잠김 방지).
+        //   ※ firestore.rules 의 SUPER_ADMIN 과 반드시 같은 값을 유지할 것.
+        const SUPER_ADMIN = 'youngrong.kim@seah.co.kr';
+        let adminEmails = [SUPER_ADMIN];
         let isAdmin = false;
+        let isSuperAdmin = false;
+        let lineOwners = {}; // 라인별 담당자 { CPL: ['a@seah.co.kr'], ... }
+        let myLines = [];    // 내가 담당자로 지정된 라인 목록
 
         const normEmail = (e) => String(e || '').trim().toLowerCase();
+        const isSuper = (e) => normEmail(e) === SUPER_ADMIN;
 
         function recomputeAdmin() {
             const me = normEmail(currentUser && currentUser.email);
-            isAdmin = !!me && adminEmails.some(a => normEmail(a) === me);
+            isSuperAdmin = !!me && isSuper(me);
+            isAdmin = isSuperAdmin || (!!me && adminEmails.some(a => normEmail(a) === me));
+            // 담당 라인: 그 라인의 데이터에 한해 수정·삭제할 수 있다
+            myLines = !me ? [] : Object.keys(lineOwners).filter(l => (lineOwners[l] || []).some(e => normEmail(e) === me));
             applyAdminUI();
+        }
+
+        // 관리자는 전 라인, 담당자는 자기 라인만 수정 가능
+        const canEditLine = (line) => isAdmin || (!!line && myLines.includes(line));
+
+        function requireLineEdit(line, what) {
+            if (canEditLine(line)) return true;
+            showToast(`${what || '이 작업'}은(는) 관리자 또는 ${line || '해당 라인'} 담당자만 할 수 있습니다.`, 'error');
+            return false;
         }
 
         // 관리자 전용 요소 표시/숨김 + 목록의 수정 버튼 갱신
         function applyAdminUI() {
             document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
+            document.querySelectorAll('[data-super-only]').forEach(el => el.classList.toggle('hidden', !isSuperAdmin));
             if (currentTabId === 'bd-list') window.debouncedRenderBDList();
             if (currentTabId === 'pm-list') window.debouncedRenderPMList();
             if (!isAdmin && currentTabId === 'edit-history') switchTab('dashboard'); // 권한이 회수되면 즉시 이탈
@@ -1924,6 +1966,12 @@
         function requireAdmin(what) {
             if (isAdmin) return true;
             showToast(`${what || '이 작업'}은(는) 관리자만 할 수 있습니다.`, 'error');
+            return false;
+        }
+        // 관리자 명단 자체를 건드리는 동작은 최고관리자만
+        function requireSuperAdmin(what) {
+            if (isSuperAdmin) return true;
+            showToast(`${what || '이 작업'}은(는) 최고관리자만 할 수 있습니다.`, 'error');
             return false;
         }
 
@@ -1939,7 +1987,7 @@
 
         // ----- 관리자 설정 모달 -----
         window.openAdminModal = () => {
-            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            if (!requireSuperAdmin('관리자 설정')) return;
             renderAdminList();
             document.getElementById('admin-new-email').value = '';
             document.getElementById('admin-modal').classList.remove('hidden');
@@ -1953,28 +2001,26 @@
             const me = normEmail(currentUser && currentUser.email);
             document.getElementById('admin-count').innerText = `(${adminEmails.length}명)`;
 
-            // 관리자가 아니면 목록만 보여주고 편집은 막는다
-            const addBtn = document.querySelector('#admin-modal button[onclick="addAdminEmail()"]');
-            const addInput = document.getElementById('admin-new-email');
-            if (addBtn) addBtn.disabled = !isAdmin;
-            if (addInput) { addInput.disabled = !isAdmin; addInput.placeholder = isAdmin ? 'hong.gildong@seah.co.kr' : '관리자만 추가할 수 있습니다'; }
-
-            box.innerHTML = adminEmails.length
-                ? adminEmails.map(em => {
-                    const mine = normEmail(em) === me;
-                    return `<div class="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg ${mine ? 'bg-amber-50 border-amber-200' : ''}">
-                        <i data-lucide="user-round" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                        <span class="text-sm text-slate-700 truncate flex-1">${manualEsc(em)}</span>
-                        ${mine ? '<span class="px-1.5 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 rounded shrink-0">나</span>' : ''}
-                        ${isAdmin ? `<button type="button" onclick="removeAdminEmail('${manualEsc(em)}')" title="관리자 해제" class="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
-                    </div>`;
-                }).join('')
-                : '<p class="text-xs text-slate-400 py-3 text-center">등록된 관리자가 없습니다.</p>';
+            // 최고관리자를 항상 맨 위에 둔다
+            const sorted = adminEmails.slice().sort((a, b) => (isSuper(b) ? 1 : 0) - (isSuper(a) ? 1 : 0) || String(a).localeCompare(String(b)));
+            box.innerHTML = sorted.map(em => {
+                const mine = normEmail(em) === me;
+                const sup = isSuper(em);
+                return `<div class="flex items-center gap-2 px-3 py-2 border rounded-lg ${sup ? 'bg-amber-50 border-amber-300' : mine ? 'bg-slate-50 border-slate-300' : 'border-slate-200'}">
+                    <i data-lucide="${sup ? 'crown' : 'user-round'}" class="w-4 h-4 ${sup ? 'text-amber-600' : 'text-slate-400'} shrink-0"></i>
+                    <span class="text-sm text-slate-700 truncate flex-1">${manualEsc(em)}</span>
+                    ${sup ? '<span class="px-1.5 py-0.5 text-[10px] font-bold text-amber-800 bg-amber-200 rounded shrink-0">최고관리자</span>' : ''}
+                    ${mine ? '<span class="px-1.5 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-200 rounded shrink-0">나</span>' : ''}
+                    ${sup
+                        ? '<span class="w-6 h-6 flex items-center justify-center shrink-0" title="최고관리자는 해제할 수 없습니다"><i data-lucide="lock" class="w-3.5 h-3.5 text-amber-500"></i></span>'
+                        : `<button type="button" onclick="removeAdminEmail('${manualEsc(em)}')" title="관리자 해제" class="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`}
+                </div>`;
+            }).join('');
             if (window.lucide) lucide.createIcons({ root: box });
         };
 
         window.addAdminEmail = async () => {
-            if (!requireAdmin('관리자 추가')) return;
+            if (!requireSuperAdmin('관리자 추가')) return;
             const input = document.getElementById('admin-new-email');
             const em = normEmail(input.value);
             if (!em) return showToast('이메일을 입력하세요.', 'error');
@@ -1989,19 +2035,87 @@
         };
 
         window.removeAdminEmail = async (email) => {
-            if (!requireAdmin('관리자 해제')) return;
+            if (!requireSuperAdmin('관리자 해제')) return;
             const em = normEmail(email);
+            if (isSuper(em)) return showToast('최고관리자는 해제할 수 없습니다.', 'error');
             const next = adminEmails.filter(a => normEmail(a) !== em);
-            // 마지막 한 명까지 지우면 아무도 관리할 수 없게 되므로 막는다
-            if (!next.length) return showToast('관리자는 최소 1명 이상 있어야 합니다.', 'error');
-            const mine = em === normEmail(currentUser && currentUser.email);
-            if (!confirm(mine
-                ? `본인(${em})의 관리자 권한을 해제할까요?\n\n해제하면 수정·삭제와 수정 이력에 접근할 수 없습니다.`
-                : `${em} 의 관리자 권한을 해제할까요?`)) return;
+            if (!confirm(`${em} 의 관리자 권한을 해제할까요?`)) return;
             try {
                 await saveAdminEmails(next);
                 await logEditHistory('관리자 설정', '-', '-', `관리자 해제 (${em})`);
                 showToast('관리자를 해제했습니다.');
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        // ==========================================
+        // 라인별 담당자 (예방점검 지연 알림 수신자)
+        // ==========================================
+        // settings/lineOwners = { lines: { CPL: ['a@seah.co.kr', ...], ... } }
+        window.openLineOwnerModal = () => {
+            if (!requireAdmin('라인별 담당자 설정')) return;
+            renderLineOwners();
+            document.getElementById('line-owner-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+        window.closeLineOwnerModal = () => document.getElementById('line-owner-modal').classList.add('hidden');
+
+        window.renderLineOwners = () => {
+            const box = document.getElementById('line-owner-body');
+            if (!box) return;
+            // 예방점검이 운영되는 라인 기준
+            box.innerHTML = LINES.map(line => {
+                const owners = lineOwners[line] || [];
+                const chips = owners.length
+                    ? owners.map(em => `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 border border-brand-200 text-[11px] font-bold text-brand-700 max-w-full">
+                        <i data-lucide="mail" class="w-3 h-3 shrink-0"></i><span class="truncate">${manualEsc(em)}</span>
+                        <button type="button" onclick="removeLineOwner('${manualEsc(line)}','${manualEsc(em)}')" title="담당 해제" class="text-brand-400 hover:text-red-600 shrink-0 leading-none">&times;</button></span>`).join('')
+                    : '<span class="text-[11px] text-slate-400">지정된 담당자가 없습니다. 지연 알림이 발송되지 않습니다.</span>';
+                return `<div class="border border-slate-200 rounded-lg p-3">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-0.5 rounded bg-brand-600 text-white text-xs font-bold shrink-0">${manualEsc(line)}</span>
+                        <span class="text-[11px] text-slate-400">${owners.length}명</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mb-2">${chips}</div>
+                    <div class="flex gap-2">
+                        <input type="email" id="lo-input-${manualEsc(line)}" placeholder="hong.gildong@seah.co.kr" autocomplete="off"
+                            class="flex-1 border border-slate-300 rounded-md px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-brand-500"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();addLineOwner('${manualEsc(line)}');}">
+                        <button type="button" onclick="addLineOwner('${manualEsc(line)}')" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-md shrink-0">추가</button>
+                    </div>
+                </div>`;
+            }).join('');
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
+        async function saveLineOwners(next) {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'lineOwners'),
+                { lines: next, updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp() });
+        }
+
+        window.addLineOwner = async (line) => {
+            if (!requireAdmin('담당자 추가')) return;
+            const input = document.getElementById(`lo-input-${line}`);
+            const em = normEmail(input && input.value);
+            if (!em) return showToast('이메일을 입력하세요.', 'error');
+            if (!/^[^\s@]+@seah\.co\.kr$/.test(em)) return showToast('@seah.co.kr 회사 계정만 등록할 수 있습니다.', 'error');
+            if ((lineOwners[line] || []).some(a => normEmail(a) === em)) return showToast('이미 등록된 담당자입니다.', 'error');
+            const next = { ...lineOwners, [line]: [...(lineOwners[line] || []), em] };
+            try {
+                await saveLineOwners(next);
+                await logEditHistory('라인별 담당자', line, '-', `담당자 추가 (${em})`);
+                if (input) input.value = '';
+                showToast(`${line} 담당자로 ${em} 을(를) 지정했습니다.`);
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        window.removeLineOwner = async (line, email) => {
+            if (!requireAdmin('담당자 해제')) return;
+            const em = normEmail(email);
+            const next = { ...lineOwners, [line]: (lineOwners[line] || []).filter(a => normEmail(a) !== em) };
+            try {
+                await saveLineOwners(next);
+                await logEditHistory('라인별 담당자', line, '-', `담당자 해제 (${em})`);
+                showToast('담당자를 해제했습니다.');
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
         };
 
@@ -2407,7 +2521,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '조치 메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -2547,9 +2661,16 @@
             });
             const adminsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admins');
             onSnapshot(adminsRef, (snap) => {
-                const saved = (snap.exists() && Array.isArray(snap.data().emails)) ? snap.data().emails.filter(Boolean) : [];
-                adminEmails = saved.length ? saved : [...DEFAULT_ADMINS]; // 비어 있으면 기본 관리자로 복구
+                const saved = (snap.exists() && Array.isArray(snap.data().emails)) ? snap.data().emails.map(normEmail).filter(Boolean) : [];
+                // 최고관리자는 목록에 없거나 목록이 통째로 비어도 항상 포함시킨다
+                adminEmails = [SUPER_ADMIN, ...saved.filter(e => !isSuper(e))];
                 recomputeAdmin();
+            });
+            const lineOwnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'lineOwners');
+            onSnapshot(lineOwnerRef, (snap) => {
+                lineOwners = (snap.exists() && snap.data().lines) ? snap.data().lines : {};
+                recomputeAdmin(); // 담당 라인이 바뀌면 수정 권한도 즉시 반영
+                if (!document.getElementById('line-owner-modal').classList.contains('hidden')) renderLineOwners();
             });
             const equipMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'equipmentMapping');
             onSnapshot(equipMapRef, (snap) => {
@@ -3147,9 +3268,9 @@
         // Single Data Editing Logic (Modals)
         // ==========================================
         window.openPMEditModal = (id) => {
-            if (!requireAdmin('예방점검 수정')) return;
             const item = rawPMData.find(d => d.id === id);
             if(!item) return;
+            if (!requireLineEdit(item.line, '예방점검 수정')) return;
             document.getElementById('edit-pm-id').value = id;
             document.getElementById('edit-pm-line').value = item.line;
             document.getElementById('edit-pm-equip').value = item.equipmentName;
@@ -3171,10 +3292,10 @@
         };
 
         window.deletePMFromEdit = async () => {
-            if (!requireAdmin('예방점검 삭제')) return;
             const id = document.getElementById('edit-pm-id').value;
             if (!currentUser || !id) return;
             const rec = rawPMData.find(d => d.id === id);
+            if (!requireLineEdit(rec && rec.line, '예방점검 삭제')) return;
             if (!confirm(`이 예방점검 항목을 삭제할까요?\n(${rec ? (rec.equipmentName || '') + ' - ' + (rec.taskDetails || '') : ''})`)) return;
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', id));
@@ -3185,10 +3306,12 @@
         };
 
         window.savePMEdit = async () => {
-            if (!requireAdmin('예방점검 수정')) return;
             const id = document.getElementById('edit-pm-id').value;
             const old = rawPMData.find(d => d.id === id);
             if(!old || !currentUser) return;
+            // 원래 라인과 바꾸려는 라인 모두에 권한이 있어야 한다
+            if (!requireLineEdit(old.line, '예방점검 수정')) return;
+            if (!requireLineEdit(document.getElementById('edit-pm-line').value, '다른 라인으로 이동')) return;
 
             const newData = {
                 line: document.getElementById('edit-pm-line').value,
@@ -3221,9 +3344,9 @@
         };
 
         window.openBDEditModal = (id) => {
-            if (!requireAdmin('고장실적 수정')) return;
             const item = rawBDData.find(d => d.id === id);
             if(!item) return;
+            if (!requireLineEdit(item.line, '고장실적 수정')) return;
             document.getElementById('edit-bd-id').value = id;
             document.getElementById('edit-bd-line').value = item.line;
             document.getElementById('edit-bd-equip').value = item.equipmentName;
@@ -3253,10 +3376,10 @@
         };
 
         window.deleteBDFromEdit = async () => {
-            if (!requireAdmin('고장실적 삭제')) return;
             const id = document.getElementById('edit-bd-id').value;
             if (!currentUser || !id) return;
             const rec = rawBDData.find(d => d.id === id);
+            if (!requireLineEdit(rec && rec.line, '고장실적 삭제')) return;
             if (!confirm(`이 고장 실적을 삭제할까요?\n(${rec ? (rec.equipmentName || '') + ' - ' + (rec.faultName || rec.content || '') : ''})`)) return;
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', id));
@@ -3268,10 +3391,12 @@
         };
 
         window.saveBDEdit = async () => {
-            if (!requireAdmin('고장실적 수정')) return;
             const id = document.getElementById('edit-bd-id').value;
             const old = rawBDData.find(d => d.id === id);
             if(!old || !currentUser) return;
+            // 원래 라인과 바꾸려는 라인 모두에 권한이 있어야 한다 (담당 밖으로 옮기기 방지)
+            if (!requireLineEdit(old.line, '고장실적 수정')) return;
+            if (!requireLineEdit(document.getElementById('edit-bd-line').value, '다른 라인으로 이동')) return;
 
             const startStr = document.getElementById('edit-bd-start').value;
             const endStr = document.getElementById('edit-bd-end').value;
@@ -3328,9 +3453,9 @@
         };
 
         window.deletePMResultRow = async (id) => {
-            if (!requireAdmin('점검 실적 삭제')) return;
             if(!currentUser) return showToast('인증이 필요합니다.', 'error');
             const rec = rawPMResultsData.find(r => r.id === id);
+            if (!requireLineEdit(rec && rec.line, '점검 실적 삭제')) return;
             const resultDetails = rec ? `${rec.equipmentName || ''} - ${rec.taskDetails || ''}` : '';
             if(!confirm(`이 예방점검 실적 기록을 정말로 삭제하시겠습니까?\n(${resultDetails})`)) return;
 
@@ -3534,7 +3659,7 @@
                         <td class="py-2.5 px-2 text-center"><input type="text" value="${(item.actionTime || '').replace(/"/g,'&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="예:30분" class="w-20 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50"></td>
                         <td class="py-2.5 px-2 text-center">${actionBtns}</td>
                         <td class="py-2.5 px-2 text-center">
-                            ${isAdmin ? `<button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition p-1 bg-slate-100 hover:bg-blue-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : '<span class="text-slate-300 text-xs">-</span>'}
+                            ${canEditLine(item.line) ? `<button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition p-1 bg-slate-100 hover:bg-blue-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : '<span class="text-slate-300 text-xs">-</span>'}
                         </td>
                     </tr>
                 `;
@@ -3549,7 +3674,7 @@
                                 <span class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold">${normalizeCycle(item.cycleType)}</span>
                                 ${statusBadge}
                             </div>
-                            ${isAdmin ? `<button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
+                            ${canEditLine(item.line) ? `<button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
                         </div>
                         <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.equipmentName}</p>
                         <p class="text-[11px] text-slate-600 leading-snug break-words mt-0.5">${item.taskDetails || ''}</p>
@@ -4704,7 +4829,7 @@
                         <td class="py-2.5 px-1.5 text-center">${shiftBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${repeatBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">
-                            ${isAdmin ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : '<span class="text-slate-300 text-xs">-</span>'}
+                            ${canEditLine(item.line) ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : '<span class="text-slate-300 text-xs">-</span>'}
                         </td>
                     </tr>
                 `;
@@ -4719,7 +4844,7 @@
                                 ${isRepeat ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회 반복</span>` : ''}
                                 ${isCritical ? '<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">중대</span>' : ''}
                             </div>
-                            ${isAdmin ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
+                            ${canEditLine(item.line) ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
                         </div>
                         <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.faultName || '-'}</p>
                         <div class="flex items-center justify-between gap-2 mt-1.5 text-[11px] text-slate-500">
@@ -5360,7 +5485,7 @@
         };
 
         // ==========================================
-        // 조치 메뉴얼 첨부 (고장 실적 1건에 딸린 PDF)
+        // 메뉴얼 첨부 (고장 실적 1건에 딸린 PDF)
         // ==========================================
         // 파일은 Storage `manuals/`에, 목록은 고장 문서의 `manuals` 배열에 저장한다.
         // manuals: [{ name, url, storagePath, size, uploadedBy }]
@@ -5527,7 +5652,7 @@
             if (window.lucide) lucide.createIcons({ root: box });
         };
 
-        // ----- 조치 메뉴얼 자료실 (첨부된 메뉴얼 모아보기) -----
+        // ----- 메뉴얼 자료실 (첨부된 메뉴얼 모아보기) -----
         // 메뉴얼은 고장실적 문서 안에 들어 있으므로, 별도 저장소 없이 rawBDData를 펼쳐서 목록을 만든다.
         function getManualLibraryRows() {
             const rows = [];
