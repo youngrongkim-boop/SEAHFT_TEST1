@@ -1,4 +1,6 @@
-# --- Vercel 저장소에는 index.html 만 올립니다 (현재 구조 유지) ---
+# --- Vercel 저장소에는 index.html 과 api/ 서버리스 함수만 올립니다 ---
+# api/gemini.js 는 Gemini API 키를 브라우저에 노출하지 않기 위한 프록시입니다.
+# (키 자체는 저장소가 아니라 Vercel 환경변수 GEMINI_API_KEY 에 있습니다)
 
 # Firebase 로컬 설정/캐시 (Vercel 저장소엔 불필요)
 .firebase/

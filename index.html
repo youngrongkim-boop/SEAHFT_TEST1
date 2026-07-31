@@ -326,6 +326,9 @@
             <button onclick="switchTab('risk-analysis')" id="nav-risk-analysis" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장 예측 · 위험도">
                 <i data-lucide="activity" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장 예측 · 위험도</span>
             </button>
+            <button onclick="openAIModal()" id="nav-ai" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="등록된 데이터에 자연어로 질문">
+                <i data-lucide="sparkles" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">AI에게 질문하기</span>
+            </button>
 
             <button type="button" onclick="toggleNavLines()" id="nav-lines-toggle" class="nav-btn w-full flex items-center px-6 py-3 mt-4 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 현황 펼치기/접기">
                 <i data-lucide="layers" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i>
@@ -1261,6 +1264,40 @@
                 </div>
             </div>
             <iframe id="manual-viewer-frame" class="flex-1 w-full bg-slate-100" title="메뉴얼 미리보기"></iframe>
+        </div>
+    </div>
+
+    <!-- AI 데이터 분석 모달 (Gemini 자연어 질문) -->
+    <div id="ai-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[135] backdrop-blur-sm p-2 md:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 shrink-0 bg-gradient-to-r from-indigo-50 to-white">
+                <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="sparkles" class="w-5 h-5 mr-2 text-indigo-600"></i> AI 데이터 분석</h3>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="checkAIConnection()" title="API 키·모델 연결 상태 확인" class="px-2 py-1 text-[11px] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded">연결 확인</button>
+                    <button type="button" onclick="clearAIChat()" title="대화 지우기" class="px-2 py-1 text-[11px] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded">대화 지우기</button>
+                    <button type="button" onclick="closeAIModal()" class="text-slate-400 hover:text-slate-700 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+
+            <!-- 분석 범위 -->
+            <div class="px-5 py-2.5 border-b border-slate-100 shrink-0 bg-slate-50 flex flex-wrap items-center gap-2">
+                <span class="text-[11px] font-bold text-slate-500 shrink-0">분석 범위</span>
+                <select id="ai-year" onchange="updateAIScopeInfo()" class="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-500"></select>
+                <select id="ai-line" onchange="updateAIScopeInfo()" class="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-500"></select>
+                <span id="ai-scope-info" class="text-[11px] text-slate-500 font-medium"></span>
+            </div>
+
+            <div id="ai-messages" class="flex-1 overflow-y-auto custom-scroll p-4 md:p-5 space-y-3"></div>
+
+            <div class="px-4 md:px-5 py-3 border-t border-slate-100 shrink-0 bg-white">
+                <div class="flex items-end gap-2">
+                    <textarea id="ai-input" rows="1" placeholder="예: 올해 고장이 가장 잦은 설비 5개는?  (Enter 전송 · Shift+Enter 줄바꿈)"
+                        class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none max-h-32"
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI();}"></textarea>
+                    <button type="button" id="ai-send-btn" onclick="askAI()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shrink-0 transition disabled:opacity-60 flex items-center gap-1"><i data-lucide="send" class="w-4 h-4"></i> 질문</button>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">선택한 범위의 등록 데이터만 근거로 답변합니다. AI 답변은 참고용이며, 중요한 판단은 원본 데이터로 확인하세요.</p>
+            </div>
         </div>
     </div>
 
@@ -4949,6 +4986,280 @@
                 closeCategoryModal();
                 showToast('분류를 저장했습니다.', 'success');
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        // ==========================================
+        // AI 데이터 분석 (Gemini 자연어 질문)
+        // ==========================================
+        // API 키는 브라우저에 두지 않는다. 서버리스 함수(/api/gemini)가 키를 갖고 대신 호출하며,
+        // 그 함수는 Firebase 로그인 토큰을 검증해 사내 계정만 통과시킨다.
+        let aiMessages = [];      // [{role:'user'|'model', text}]
+        let aiBusy = false;
+
+        const AI_EXAMPLES = [
+            '올해 고장이 가장 잦은 설비 5개는?',
+            '정지시간이 가장 긴 라인은 어디이고, 주된 원인은?',
+            '야간에 고장이 더 많이 나는지 교대조별로 비교해줘',
+            '반복해서 터지는 고장이 있으면 찾아서 정리해줘',
+            '예방점검 불량이 고장으로 이어진 사례가 있어?'
+        ];
+
+        // ----- 아주 작은 마크다운 → HTML 변환 (표/목록/굵게 정도만) -----
+        function aiMdToHtml(src) {
+            const esc = (s) => String(s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const inline = (s) => esc(s)
+                .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-slate-100 rounded text-[11px]">$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
+
+            const lines = String(src || '').split('\n');
+            let html = '', list = null;
+            const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                // 표: | a | b |  다음 줄이 |---|
+                if (/^\s*\|.*\|\s*$/.test(line) && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1] || '')) {
+                    closeList();
+                    const cells = (row) => row.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+                    const head = cells(line);
+                    let body = '';
+                    i += 2;
+                    while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+                        body += '<tr>' + cells(lines[i]).map(c => `<td class="px-2 py-1 border-t border-slate-100 align-top">${inline(c)}</td>`).join('') + '</tr>';
+                        i++;
+                    }
+                    i--;
+                    html += `<div class="overflow-x-auto my-2"><table class="text-xs border border-slate-200 rounded w-full">
+                        <thead class="bg-slate-50"><tr>${head.map(c => `<th class="px-2 py-1 text-left font-bold text-slate-600 whitespace-nowrap">${inline(c)}</th>`).join('')}</tr></thead>
+                        <tbody>${body}</tbody></table></div>`;
+                    continue;
+                }
+                const h = /^(#{1,4})\s+(.*)$/.exec(line);
+                if (h) { closeList(); html += `<p class="font-bold text-slate-900 mt-2 mb-1">${inline(h[2])}</p>`; continue; }
+
+                const ul = /^\s*[-*]\s+(.*)$/.exec(line);
+                if (ul) { if (list !== 'ul') { closeList(); html += '<ul class="list-disc pl-5 space-y-0.5 my-1">'; list = 'ul'; } html += `<li>${inline(ul[1])}</li>`; continue; }
+
+                const ol = /^\s*\d+\.\s+(.*)$/.exec(line);
+                if (ol) { if (list !== 'ol') { closeList(); html += '<ol class="list-decimal pl-5 space-y-0.5 my-1">'; list = 'ol'; } html += `<li>${inline(ol[1])}</li>`; continue; }
+
+                if (!line.trim()) { closeList(); continue; }
+                closeList();
+                html += `<p class="my-1">${inline(line)}</p>`;
+            }
+            closeList();
+            return html;
+        }
+
+        // ----- 분석 범위 선택 -----
+        function initAISelects() {
+            const ySel = document.getElementById('ai-year');
+            const years = [...new Set(rawBDData.map(d => (d.startTime || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse();
+            const cur = String(new Date().getFullYear());
+            if (!years.includes(cur)) years.unshift(cur);
+            ySel.innerHTML = years.map(y => `<option value="${y}">${y}년</option>`).join('') + '<option value="ALL">전체 기간</option>';
+            const lSel = document.getElementById('ai-line');
+            lSel.innerHTML = '<option value="ALL">전체 라인</option>' + BD_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+        }
+        window.updateAIScopeInfo = () => {
+            const { bd, pmRes } = getAIScopeData();
+            document.getElementById('ai-scope-info').innerText = `고장 ${bd.length}건 · 점검실적 ${pmRes.length}건을 근거로 답변합니다`;
+        };
+        function getAIScopeData() {
+            const year = document.getElementById('ai-year').value;
+            const line = document.getElementById('ai-line').value;
+            const yearOk = (s) => year === 'ALL' || String(s || '').slice(0, 4) === year;
+            const lineOk = (l) => line === 'ALL' || l === line;
+            return {
+                year, line,
+                bd: rawBDData.filter(d => yearOk(d.startTime) && lineOk(d.line)),
+                pm: rawPMData.filter(d => lineOk(d.line)),
+                pmRes: rawPMResultsData.filter(d => yearOk(d.checkTime) && lineOk(d.line))
+            };
+        }
+
+        // ----- Gemini에 보낼 데이터 요약 만들기 -----
+        // 전체 원본을 보내면 느리고 비싸므로, 집계 + 최근 상세 일부만 압축해서 보낸다.
+        function buildAIContext() {
+            const { year, line, bd, pm, pmRes } = getAIScopeData();
+            const cut = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
+            const mins = (arr) => arr.reduce((s, d) => s + (d.durationMinutes || 0), 0);
+            // key별 {건수, 정지분} 집계를 "이름 건수건/분분" 목록으로
+            const tally = (arr, keyFn, top) => {
+                const m = new Map();
+                arr.forEach(d => {
+                    const k = keyFn(d) || '(미입력)';
+                    const v = m.get(k) || { c: 0, t: 0 };
+                    v.c++; v.t += (d.durationMinutes || 0);
+                    m.set(k, v);
+                });
+                let rows = [...m.entries()].sort((a, b) => b[1].c - a[1].c);
+                if (top) rows = rows.slice(0, top);
+                return rows.map(([k, v]) => `${k} ${v.c}건/${v.t}분`).join(', ');
+            };
+
+            const L = [];
+            L.push(`[분석 범위] ${year === 'ALL' ? '전체 기간' : year + '년'} / ${line === 'ALL' ? '전체 라인' : line} 라인`);
+            L.push(`[집계 기준일] ${getLocalTodayString()}`);
+            L.push('');
+            L.push('## 고장실적 요약');
+            L.push(`- 총 ${bd.length}건, 총 정지시간 ${mins(bd)}분 (${(mins(bd) / 60).toFixed(1)}시간)`);
+            if (bd.length) {
+                L.push(`- 라인별: ${tally(bd, d => d.line)}`);
+                L.push(`- 구분별: ${tally(bd, d => d.category)}`);
+                L.push(`- 교대조별: ${tally(bd, d => d.shiftType)}`);
+                L.push(`- 대분류: ${tally(bd, d => d.mainCategory, 12)}`);
+                L.push(`- 중분류: ${tally(bd, d => d.subCategory, 12)}`);
+                L.push(`- 설비별 상위: ${tally(bd, d => `${d.line}/${d.equipmentName}`, 20)}`);
+                L.push(`- 월별: ${tally(bd, d => (d.startTime || '').slice(0, 7), 0)}`);
+
+                // 같은 설비에서 같은 고장명이 2회 이상 → 반복고장
+                const rep = new Map();
+                bd.forEach(d => {
+                    const k = `${d.line}/${d.equipmentName}/${d.faultName}`;
+                    rep.set(k, (rep.get(k) || 0) + 1);
+                });
+                const repeats = [...rep.entries()].filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 20);
+                if (repeats.length) L.push(`- 반복고장(같은 설비·같은 고장명 2회 이상): ${repeats.map(([k, c]) => `${k} ${c}회`).join(', ')}`);
+            }
+
+            L.push('');
+            L.push('## 고장 상세 (최신순, 최대 300건)');
+            L.push('발생일시 | 라인 | 설비 | 구분 | 대>중>소 | 고장명 | 정지(분) | 발생원인 | 조치내용 | 방지대책 | 메뉴얼');
+            bd.slice(0, 300).forEach(d => {
+                L.push([
+                    (d.startTime || '').replace('T', ' '),
+                    d.line || '', d.equipmentName || '', d.category || '',
+                    `${d.mainCategory || ''}>${d.subCategory || ''}>${d.detailCategory || ''}`,
+                    cut(d.faultName, 40), d.durationMinutes || 0,
+                    cut(d.cause, 70), cut(d.content, 70), cut(d.prevention, 70),
+                    (Array.isArray(d.manuals) && d.manuals.length) ? `${d.manuals.length}건` : ''
+                ].join(' | '));
+            });
+            if (bd.length > 300) L.push(`(이하 ${bd.length - 300}건 생략 — 위 집계에는 전부 반영됨)`);
+
+            L.push('');
+            L.push('## 예방점검');
+            L.push(`- 등록 점검항목 ${pm.length}건 (주기별: ${tally(pm, d => d.cycleType) || '없음'})`);
+            L.push(`- 미점검 ${pm.filter(d => d.status !== '점검').length}건 / 점검완료 ${pm.filter(d => d.status === '점검').length}건`);
+            const bad = pmRes.filter(r => r.result === '불량');
+            L.push(`- 점검 실적 ${pmRes.length}건 (양호 ${pmRes.filter(r => r.result === '양호').length} / 불량 ${bad.length})`);
+            if (bad.length) {
+                L.push('- 불량 판정 목록 (최대 60건) — 점검일시 | 라인 | 설비 | 점검내용 | 특이사항');
+                bad.slice(0, 60).forEach(r => L.push(`  ${(r.checkTime || '').replace('T', ' ')} | ${r.line || ''} | ${r.equipmentName || ''} | ${cut(r.taskDetails, 50)} | ${cut(r.remarks, 50)}`));
+            }
+            return L.join('\n');
+        }
+
+        // ----- 모달 -----
+        window.openAIModal = () => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            initAISelects();
+            updateAIScopeInfo();
+            renderAIMessages();
+            const modal = document.getElementById('ai-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => document.getElementById('ai-input').focus(), 50);
+        };
+        window.closeAIModal = () => {
+            const modal = document.getElementById('ai-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+        window.clearAIChat = () => { aiMessages = []; renderAIMessages(); };
+        window.useAIExample = (i) => {
+            const el = document.getElementById('ai-input');
+            el.value = AI_EXAMPLES[i] || '';
+            el.focus();
+        };
+
+        window.renderAIMessages = () => {
+            const box = document.getElementById('ai-messages');
+            if (!box) return;
+            if (!aiMessages.length) {
+                box.innerHTML = `<div class="text-center py-8">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3"><i data-lucide="sparkles" class="w-6 h-6"></i></div>
+                    <p class="text-sm font-bold text-slate-700">등록된 고장·점검 데이터에 대해 물어보세요</p>
+                    <p class="text-xs text-slate-400 mt-1 mb-4">위에서 고른 범위의 데이터만 근거로 답변합니다.</p>
+                    <div class="flex flex-wrap gap-1.5 justify-center max-w-xl mx-auto">
+                        ${AI_EXAMPLES.map((q, i) => `<button type="button" onclick="useAIExample(${i})" class="px-2.5 py-1.5 text-[11px] font-medium text-slate-600 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-full transition">${q}</button>`).join('')}
+                    </div>
+                </div>`;
+            } else {
+                const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                box.innerHTML = aiMessages.map(m => m.role === 'user'
+                    ? `<div class="flex justify-end"><div class="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-indigo-600 text-white text-sm whitespace-pre-wrap break-words">${esc(m.text)}</div></div>`
+                    : `<div class="flex justify-start"><div class="max-w-[92%] px-3.5 py-2.5 rounded-2xl rounded-bl-sm ${m.error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-slate-100 text-slate-800'} text-sm break-words">${m.pending ? '<span class="inline-flex items-center gap-2 text-slate-500"><i data-lucide="loader" class="w-4 h-4 animate-spin"></i> 분석 중…</span>' : aiMdToHtml(m.text)}</div></div>`
+                ).join('');
+            }
+            if (window.lucide) lucide.createIcons({ root: box });
+            box.scrollTop = box.scrollHeight;
+        };
+
+        // ----- 질문 전송 -----
+        window.askAI = async () => {
+            if (aiBusy) return;
+            const input = document.getElementById('ai-input');
+            const question = input.value.trim();
+            if (!question) return;
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+
+            aiBusy = true;
+            const btn = document.getElementById('ai-send-btn');
+            btn.disabled = true;
+            input.value = '';
+
+            // 직전까지의 대화만 히스토리로 보낸다 (이번 질문은 question으로 따로 전달)
+            const history = aiMessages.filter(m => !m.pending && !m.error).map(m => ({ role: m.role, text: m.text }));
+            aiMessages.push({ role: 'user', text: question });
+            const placeholder = { role: 'model', text: '', pending: true };
+            aiMessages.push(placeholder);
+            renderAIMessages();
+
+            try {
+                const token = await currentUser.getIdToken();
+                const r = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ question, context: buildAIContext(), history })
+                });
+                const j = await r.json().catch(() => ({ error: `응답을 해석할 수 없습니다 (HTTP ${r.status})` }));
+                if (!r.ok) throw new Error(j.error || `요청 실패 (HTTP ${r.status})`);
+                placeholder.text = j.text;
+                placeholder.pending = false;
+            } catch (e) {
+                console.error(e);
+                placeholder.text = `답변을 가져오지 못했습니다.\n\n${e.message}`;
+                placeholder.pending = false;
+                placeholder.error = true;
+            } finally {
+                aiBusy = false;
+                btn.disabled = false;
+                renderAIMessages();
+            }
+        };
+
+        // 설치 확인용: 키가 등록됐는지, 어떤 모델을 쓸 수 있는지
+        window.checkAIConnection = async () => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            showToast('연결 확인 중…');
+            try {
+                const token = await currentUser.getIdToken();
+                const r = await fetch('/api/gemini', { headers: { 'Authorization': `Bearer ${token}` } });
+                const j = await r.json();
+                if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+                const ok = (j.available || []).includes(j.configuredModel);
+                aiMessages.push({
+                    role: 'model',
+                    text: `**연결 확인 결과**\n\n- 설정된 모델: \`${j.configuredModel}\` ${ok ? '(사용 가능)' : '(⚠ 이 키로 사용할 수 없음)'}\n- 사용 가능한 모델 ${(j.available || []).length}종\n\n${ok ? '정상입니다. 바로 질문하세요.' : '`GEMINI_MODEL` 환경변수를 사용 가능한 모델명으로 바꿔야 합니다.'}`
+                });
+                renderAIMessages();
+            } catch (e) {
+                aiMessages.push({ role: 'model', text: `연결 확인 실패\n\n${e.message}`, error: true });
+                renderAIMessages();
+            }
         };
 
         // ==========================================
