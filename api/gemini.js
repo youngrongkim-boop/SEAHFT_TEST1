@@ -1,14 +1,22 @@
 // Gemini 프록시 (Vercel 서버리스 함수)
 //
-// 브라우저에서 Gemini를 직접 부르면 API 키가 소스에 노출되므로, 키는 이 함수의
+// 브라우저에서 Gemini를 직접 부르면 자격증명이 소스에 노출되므로, 인증 정보는 이 함수의
 // 환경변수에만 두고 브라우저는 /api/gemini 를 호출한다.
 //
-// 필요한 환경변수 (Vercel 대시보드 → Settings → Environment Variables)
-//   GEMINI_API_KEY : https://aistudio.google.com/apikey 에서 발급
-//   GEMINI_MODEL   : (선택) 기본값 gemini-2.5-flash
+// 두 가지 호출 경로를 지원한다. 둘 다 설정돼 있으면 Vertex AI 를 쓴다.
+//
+//  1) Vertex AI  (권장 · 사내 인보이스 결제 계정에서 동작)
+//     GCP_SERVICE_ACCOUNT_JSON : 서비스 계정 키 JSON 전체를 한 줄로 붙여넣기
+//     VERTEX_LOCATION          : (선택) 기본값 us-central1
+//
+//  2) AI Studio API 키 (개인/무료 등급용)
+//     GEMINI_API_KEY : https://aistudio.google.com/apikey 에서 발급
+//
+//  공통
+//     GEMINI_MODEL : (선택) 기본값 gemini-2.5-flash
 //
 // 인증: Firebase 로그인 토큰을 검증해 @seah.co.kr 계정만 통과시킨다.
-//       (이 함수 주소는 공개돼 있으므로 검증이 없으면 아무나 키를 소모할 수 있다)
+//       (이 함수 주소는 공개돼 있으므로 검증이 없으면 아무나 호출량을 소모할 수 있다)
 
 const crypto = require('crypto');
 
@@ -18,8 +26,15 @@ const CERT_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@
 const MAX_CONTEXT_CHARS = 200000;
 
 const model = () => process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const vertexLocation = () => process.env.VERTEX_LOCATION || 'us-central1';
 
-// ---- Firebase ID 토큰 검증 (google 공개키로 서명 확인, 외부 패키지 없이) ----
+const b64url = (s) => Buffer.from(String(s).replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+const b64urlEncode = (buf) => Buffer.from(buf).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+// ---------------------------------------------------------------------------
+// Firebase ID 토큰 검증 (구글 공개키로 서명 확인, 외부 패키지 없이)
+// ---------------------------------------------------------------------------
 let certCache = { certs: null, expiresAt: 0 };
 
 async function getCerts() {
@@ -31,8 +46,6 @@ async function getCerts() {
     certCache = { certs, expiresAt: Date.now() + (maxAge ? Number(maxAge[1]) : 3600) * 1000 };
     return certs;
 }
-
-const b64url = (s) => Buffer.from(String(s).replace(/-/g, '+').replace(/_/g, '/'), 'base64');
 
 async function verifyIdToken(token) {
     const parts = String(token || '').split('.');
@@ -61,6 +74,84 @@ async function verifyIdToken(token) {
     return payload;
 }
 
+// ---------------------------------------------------------------------------
+// Vertex AI: 서비스 계정 키로 액세스 토큰을 직접 발급 (google-auth-library 없이)
+// ---------------------------------------------------------------------------
+function serviceAccount() {
+    const raw = process.env.GCP_SERVICE_ACCOUNT_JSON;
+    if (!raw) return null;
+    let sa;
+    try {
+        sa = JSON.parse(raw);
+    } catch (e) {
+        throw new Error('GCP_SERVICE_ACCOUNT_JSON 이 올바른 JSON 이 아닙니다. 키 파일 내용을 그대로 붙여넣었는지 확인하세요.');
+    }
+    if (!sa.client_email || !sa.private_key) throw new Error('서비스 계정 JSON 에 client_email 또는 private_key 가 없습니다.');
+    // 환경변수 편집기에서 줄바꿈이 \n 문자열로 들어간 경우를 복구
+    if (sa.private_key.includes('\\n')) sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+    return sa;
+}
+
+let tokenCache = { token: null, expiresAt: 0 };
+
+async function getAccessToken(sa) {
+    if (tokenCache.token && Date.now() < tokenCache.expiresAt - 60000) return tokenCache.token;
+
+    const now = Math.floor(Date.now() / 1000);
+    const header = b64urlEncode(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+    const claim = b64urlEncode(JSON.stringify({
+        iss: sa.client_email,
+        scope: 'https://www.googleapis.com/auth/cloud-platform',
+        aud: 'https://oauth2.googleapis.com/token',
+        iat: now,
+        exp: now + 3600
+    }));
+    const signature = crypto.createSign('RSA-SHA256').update(`${header}.${claim}`).sign(sa.private_key);
+    const assertion = `${header}.${claim}.${b64urlEncode(signature)}`;
+
+    const r = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            assertion
+        })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(`액세스 토큰 발급 실패: ${j.error_description || j.error || r.status}`);
+
+    tokenCache = { token: j.access_token, expiresAt: Date.now() + (j.expires_in || 3600) * 1000 };
+    return j.access_token;
+}
+
+// 두 경로 모두 요청/응답 형식이 같아서 본문은 그대로 쓰고 호출 주소만 다르다.
+async function callModel(body) {
+    const sa = serviceAccount();
+    if (sa) {
+        const loc = vertexLocation();
+        const token = await getAccessToken(sa);
+        const url = `https://${loc}-aiplatform.googleapis.com/v1/projects/${sa.project_id}/locations/${loc}/publishers/google/models/${model()}:generateContent`;
+        const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(body)
+        });
+        const j = await r.json();
+        return { ok: r.ok, status: r.status, json: j, mode: 'vertex' };
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GCP_SERVICE_ACCOUNT_JSON 또는 GEMINI_API_KEY 중 하나가 설정되어야 합니다.');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model()}:generateContent?key=${apiKey}`;
+    const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    return { ok: r.ok, status: r.status, json: j, mode: 'aistudio' };
+}
+
 const SYSTEM_PROMPT = `당신은 세아씨엠 설비의 예방보전·고장 데이터를 분석하는 설비 엔지니어입니다.
 사용자의 질문에 대해 아래 [데이터]만 근거로 한국어로 답하십시오.
 
@@ -70,6 +161,12 @@ const SYSTEM_PROMPT = `당신은 세아씨엠 설비의 예방보전·고장 데
 - 데이터가 특정 연도/라인으로 걸러져 있으면, 답변의 전제로 그 범위를 먼저 밝히십시오.
 - 답변은 간결하게. 여러 항목을 비교할 때는 마크다운 표를 쓰십시오.
 - 설비 담당자가 바로 행동할 수 있게, 마지막에 필요하면 짧은 제안을 덧붙이십시오.`;
+
+function extractText(j) {
+    const cand = (j.candidates || [])[0];
+    if (!cand) return '';
+    return ((cand.content && cand.content.parts) || []).map(p => p.text).filter(Boolean).join('');
+}
 
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -82,43 +179,47 @@ module.exports = async (req, res) => {
         return res.status(401).json({ error: `인증 실패: ${e.message}` });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    // 설치 확인용. 키가 없어도 진단 정보를 돌려줘야 어디가 잘못됐는지 알 수 있으므로
-    // 키 검사보다 먼저 처리한다. 키 '값'은 절대 내보내지 않고 존재 여부와 길이만 알린다.
+    // ---- 설치 확인 ----
+    // 자격증명이 없어도 진단 정보를 돌려줘야 어디가 잘못됐는지 알 수 있으므로 먼저 처리한다.
+    // 키나 비공개 키 '값'은 절대 내보내지 않는다.
     if (req.method === 'GET') {
+        let sa = null, saError = null;
+        try { sa = serviceAccount(); } catch (e) { saError = e.message; }
+
         const diag = {
-            hasKey: !!apiKey,
-            keyLength: apiKey ? apiKey.length : 0,
-            // 이 배포가 어느 Vercel 프로젝트/커밋인지 (env 변수를 엉뚱한 프로젝트에 넣었는지 확인용)
+            mode: sa ? 'vertex' : (process.env.GEMINI_API_KEY ? 'aistudio' : 'none'),
+            configuredModel: model(),
+            vertex: sa ? { project: sa.project_id, location: vertexLocation(), serviceAccount: sa.client_email } : null,
+            hasKey: !!process.env.GEMINI_API_KEY,
+            keyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
             vercelEnv: process.env.VERCEL_ENV || null,
             vercelUrl: process.env.VERCEL_URL || null,
             gitRepo: process.env.VERCEL_GIT_REPO_SLUG || null,
             gitCommit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
-            // 이름이 비슷한 환경변수가 있으면 오타를 잡을 수 있다 (이름만, 값은 제외)
-            similarKeys: Object.keys(process.env).filter(k => /GEMINI|GENAI|GOOGLE|API_?KEY/i.test(k)).sort()
+            similarKeys: Object.keys(process.env).filter(k => /GEMINI|GENAI|VERTEX|GCP_|GOOGLE|API_?KEY/i.test(k)).sort()
         };
-        if (!apiKey) {
-            return res.status(200).json({ ...diag, error: 'GEMINI_API_KEY가 이 배포에 전달되지 않았습니다.' });
-        }
-        try {
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-            const j = await r.json();
-            if (!r.ok) return res.status(200).json({ ...diag, error: (j.error && j.error.message) || '모델 목록 조회 실패' });
-            return res.status(200).json({
-                ...diag,
-                configuredModel: model(),
-                available: (j.models || [])
-                    .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-                    .map(m => String(m.name).replace(/^models\//, ''))
-            });
-        } catch (e) {
-            return res.status(200).json({ ...diag, error: `모델 목록 조회 실패: ${e.message}` });
-        }
-    }
 
-    if (!apiKey) {
-        return res.status(500).json({ error: 'GEMINI_API_KEY가 설정되지 않았습니다. Vercel 환경변수를 확인하세요.' });
+        if (saError) return res.status(200).json({ ...diag, error: saError });
+        if (diag.mode === 'none') {
+            return res.status(200).json({ ...diag, error: 'GCP_SERVICE_ACCOUNT_JSON 또는 GEMINI_API_KEY 가 이 배포에 전달되지 않았습니다.' });
+        }
+
+        // 실제로 한 번 호출해 봐야 권한·모델 접근까지 확인된다 (아주 짧게)
+        try {
+            const probe = await callModel({
+                contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
+                generationConfig: { maxOutputTokens: 8, temperature: 0 }
+            });
+            if (!probe.ok) {
+                const msg = (probe.json && probe.json.error && probe.json.error.message)
+                    || (Array.isArray(probe.json) && probe.json[0] && probe.json[0].error && probe.json[0].error.message)
+                    || `HTTP ${probe.status}`;
+                return res.status(200).json({ ...diag, error: msg });
+            }
+            return res.status(200).json({ ...diag, ok: true });
+        } catch (e) {
+            return res.status(200).json({ ...diag, error: e.message });
+        }
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST만 지원합니다.' });
@@ -143,28 +244,21 @@ module.exports = async (req, res) => {
     };
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model()}:generateContent?key=${apiKey}`;
-        const r = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-        const j = await r.json();
-
+        const r = await callModel(body);
         if (!r.ok) {
-            const msg = (j.error && j.error.message) || `Gemini 호출 실패 (HTTP ${r.status})`;
+            const msg = (r.json && r.json.error && r.json.error.message)
+                || (Array.isArray(r.json) && r.json[0] && r.json[0].error && r.json[0].error.message)
+                || `모델 호출 실패 (HTTP ${r.status})`;
             return res.status(r.status).json({ error: msg });
         }
-
-        const cand = (j.candidates || [])[0];
-        const text = cand ? ((cand.content && cand.content.parts) || []).map(p => p.text).filter(Boolean).join('') : '';
+        const text = extractText(r.json);
         if (!text) {
-            // 안전 필터 등으로 응답이 비는 경우
-            const reason = (cand && cand.finishReason) || (j.promptFeedback && j.promptFeedback.blockReason) || '알 수 없음';
+            const cand = (r.json.candidates || [])[0];
+            const reason = (cand && cand.finishReason) || (r.json.promptFeedback && r.json.promptFeedback.blockReason) || '알 수 없음';
             return res.status(502).json({ error: `응답이 비어 있습니다. (사유: ${reason})` });
         }
-        return res.status(200).json({ text, usage: j.usageMetadata || null, model: model() });
+        return res.status(200).json({ text, usage: r.json.usageMetadata || null, model: model(), mode: r.mode });
     } catch (e) {
-        return res.status(502).json({ error: `Gemini 호출 실패: ${e.message}` });
+        return res.status(502).json({ error: `모델 호출 실패: ${e.message}` });
     }
 };
