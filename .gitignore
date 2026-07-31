@@ -4,6 +4,7 @@
 .firebase/
 firebase.json
 .firebaserc
+storage.rules
 
 # 에디터 설정
 .vscode/
