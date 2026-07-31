@@ -241,7 +241,26 @@
         </div>
     </div>
 
-    <!-- 라인별 담당자 모달 (예방점검 지연 알림 수신자) -->
+    <!-- 접속 시 예방점검 알림 팝업 -->
+    <div id="pm-alert-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bell-ring" class="w-5 h-5 text-amber-500"></i> 예방점검 알림</h3>
+                <button type="button" onclick="closePMAlert()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p id="pm-alert-scope" class="px-5 pt-3 text-[11px] font-bold text-slate-500 shrink-0"></p>
+            <div id="pm-alert-body" class="px-5 py-3 space-y-4 overflow-y-auto custom-scroll flex-1"></div>
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <button type="button" onclick="dismissPMAlertToday()" class="text-[11px] font-bold text-slate-500 hover:text-slate-700 underline underline-offset-2">오늘 하루 안 보기</button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closePMAlert()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
+                    <button type="button" onclick="goToPMListFromAlert()" class="px-4 py-2 text-sm font-bold text-white bg-brand-600 rounded-md hover:bg-brand-700 flex items-center gap-1"><i data-lucide="list-checks" class="w-4 h-4"></i> 점검 리스트 열기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 라인별 담당자 모달 (담당 라인 수정 권한 + 알림 대상) -->
     <div id="line-owner-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
@@ -249,7 +268,7 @@
                 <button type="button" onclick="closeLineOwnerModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="px-5 py-3 border-b border-slate-100 shrink-0 bg-brand-50/50">
-                <p class="text-xs text-slate-600 leading-relaxed">라인별 담당자를 지정합니다. 지정된 분에게 <b>점검 마감이 다가오면 미리 알림</b>이 발송됩니다.<br><b class="text-brand-700">담당자는 자기 라인의 고장실적·예방점검을 수정·삭제할 수 있습니다.</b> (다른 라인은 불가)<br>한 라인에 여러 명, 한 사람이 여러 라인을 맡을 수 있습니다.</p>
+                <p class="text-xs text-slate-600 leading-relaxed">라인별 담당자를 지정합니다. 담당자가 사이트에 접속하면 <b>자기 라인의 점검지연·마감임박 항목이 팝업</b>으로 표시됩니다.<br><b class="text-brand-700">담당자는 자기 라인의 고장실적·예방점검을 수정·삭제할 수 있습니다.</b> (다른 라인은 불가)<br>한 라인에 여러 명, 한 사람이 여러 라인을 맡을 수 있습니다.</p>
             </div>
             <div id="line-owner-body" class="p-5 space-y-3 overflow-y-auto custom-scroll flex-1"></div>
             <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
@@ -2048,7 +2067,105 @@
         };
 
         // ==========================================
-        // 라인별 담당자 (예방점검 지연 알림 수신자)
+        // 접속 시 예방점검 알림 팝업
+        // ==========================================
+        // 지연(예정일 경과)과 마감 임박 항목을 로그인 직후 한 번 알려준다.
+        // 판정 기준은 화면 곳곳의 지연 표시와 동일하게 맞춘다: status !== '점검' && nextCheckDate < 오늘
+        let lineOwnersLoaded = false; // 담당 라인을 알기 전에 팝업을 띄우면 범위가 틀어진다
+        let pmAlertDone = false;      // 한 세션에 한 번만 시도
+
+        // 주기가 길수록 미리 알려준다 (일별 점검은 당일 알림이 의미 있음)
+        const PM_LEAD_DAYS = { '일별': 0, '주별': 2, '월별': 5, '분기별': 14, '연별': 14 };
+        const daysUntil = (dateStr) => Math.round(
+            (new Date(`${dateStr}T00:00:00`) - new Date(`${getLocalTodayString()}T00:00:00`)) / 86400000);
+
+        function buildPMAlerts() {
+            const todayStr = getLocalTodayString();
+            // 담당 라인이 있으면 그 라인만, 없으면 전체
+            const scoped = myLines.length ? rawPMData.filter(d => myLines.includes(d.line)) : rawPMData;
+            const pending = scoped.filter(d => d.status !== '점검' && d.nextCheckDate);
+
+            const overdue = pending.filter(d => d.nextCheckDate < todayStr)
+                .sort((a, b) => a.nextCheckDate < b.nextCheckDate ? -1 : 1);
+
+            const soon = pending.filter(d => {
+                if (d.nextCheckDate < todayStr) return false;
+                const lead = PM_LEAD_DAYS[normalizeCycle(d.cycleType)] ?? 3;
+                return daysUntil(d.nextCheckDate) <= lead;
+            }).sort((a, b) => a.nextCheckDate < b.nextCheckDate ? -1 : 1);
+
+            return {
+                overdue, soon,
+                scopeLabel: myLines.length ? `${myLines.join(' · ')} 담당 기준` : '전체 라인 기준'
+            };
+        }
+
+        const pmAlertKey = () => `seahcm.pmAlert.${normEmail(currentUser && currentUser.email)}.${getLocalTodayString()}`;
+
+        function maybeShowPMAlert() {
+            if (pmAlertDone || !currentUser || !lineOwnersLoaded || !rawPMData.length) return;
+            pmAlertDone = true;
+            try { if (localStorage.getItem(pmAlertKey())) return; } catch (e) { /* 사생활 보호 모드 등 */ }
+            const data = buildPMAlerts();
+            if (!data.overdue.length && !data.soon.length) return; // 알릴 게 없으면 띄우지 않는다
+            setTimeout(() => renderPMAlert(data), 1200); // 인트로 화면이 끝난 뒤
+        }
+
+        function renderPMAlert(data) {
+            document.getElementById('pm-alert-scope').innerText = data.scopeLabel;
+            const row = (d, tone) => `<div class="flex items-center gap-2 px-2.5 py-2 rounded-lg border ${tone.row}">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${tone.badge}">${manualEsc(d.line || '-')}</span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-slate-800 truncate">${manualEsc(d.equipmentName || '-')}</p>
+                    <p class="text-[11px] text-slate-500 truncate">${manualEsc(d.taskDetails || '')}</p>
+                </div>
+                <span class="text-[11px] font-bold shrink-0 ${tone.text}">${tone.label(d)}</span>
+            </div>`;
+
+            const section = (title, icon, list, tone) => {
+                if (!list.length) return '';
+                const shown = list.slice(0, 10).map(d => row(d, tone)).join('');
+                const more = list.length > 10 ? `<p class="text-[11px] text-slate-400 text-center pt-1">외 ${list.length - 10}건</p>` : '';
+                return `<div>
+                    <p class="text-sm font-bold ${tone.text} mb-1.5 flex items-center gap-1"><i data-lucide="${icon}" class="w-4 h-4"></i> ${title} ${list.length}건</p>
+                    <div class="space-y-1.5">${shown}${more}</div>
+                </div>`;
+            };
+
+            const overdueTone = {
+                row: 'border-red-200 bg-red-50/60', badge: 'bg-red-600 text-white', text: 'text-red-600',
+                label: (d) => `${Math.abs(daysUntil(d.nextCheckDate))}일 지남`
+            };
+            const soonTone = {
+                row: 'border-amber-200 bg-amber-50/60', badge: 'bg-amber-500 text-white', text: 'text-amber-600',
+                label: (d) => { const n = daysUntil(d.nextCheckDate); return n === 0 ? '오늘 마감' : `D-${n}`; }
+            };
+
+            document.getElementById('pm-alert-body').innerHTML =
+                section('점검지연', 'alert-circle', data.overdue, overdueTone) +
+                section('마감 임박', 'clock', data.soon, soonTone);
+
+            const modal = document.getElementById('pm-alert-modal');
+            modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.closePMAlert = () => document.getElementById('pm-alert-modal').classList.add('hidden');
+        window.dismissPMAlertToday = () => {
+            try { localStorage.setItem(pmAlertKey(), '1'); } catch (e) { /* 저장 못 해도 닫히기만 하면 된다 */ }
+            closePMAlert();
+            showToast('오늘은 이 알림을 다시 표시하지 않습니다.');
+        };
+        window.goToPMListFromAlert = () => {
+            closePMAlert();
+            const el = document.getElementById('pm-filter-status');
+            if (el) el.value = 'PENDING';
+            if (myLines.length === 1) window.__pmListLineOverride = myLines[0];
+            switchTab('pm-list');
+        };
+
+        // ==========================================
+        // 라인별 담당자 (담당 라인 수정 권한 + 알림 대상)
         // ==========================================
         // settings/lineOwners = { lines: { CPL: ['a@seah.co.kr', ...], ... } }
         window.openLineOwnerModal = () => {
@@ -2069,7 +2186,7 @@
                     ? owners.map(em => `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 border border-brand-200 text-[11px] font-bold text-brand-700 max-w-full">
                         <i data-lucide="mail" class="w-3 h-3 shrink-0"></i><span class="truncate">${manualEsc(em)}</span>
                         <button type="button" onclick="removeLineOwner('${manualEsc(line)}','${manualEsc(em)}')" title="담당 해제" class="text-brand-400 hover:text-red-600 shrink-0 leading-none">&times;</button></span>`).join('')
-                    : '<span class="text-[11px] text-slate-400">지정된 담당자가 없습니다. 지연 알림이 발송되지 않습니다.</span>';
+                    : '<span class="text-[11px] text-slate-400">지정된 담당자가 없습니다.</span>';
                 return `<div class="border border-slate-200 rounded-lg p-3">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="px-2 py-0.5 rounded bg-brand-600 text-white text-xs font-bold shrink-0">${manualEsc(line)}</span>
@@ -2616,6 +2733,7 @@
                 });
                 updateTaskDetailsCombo();
                 window.debouncedApplyFilterAndRender();
+                maybeShowPMAlert();
             });
             onSnapshot(bdRef, (snapshot) => {
                 // startTime 은 'YYYY-MM-DDTHH:mm' 형식이라 문자열 비교만으로 날짜순 정렬됨.
@@ -2669,8 +2787,10 @@
             const lineOwnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'lineOwners');
             onSnapshot(lineOwnerRef, (snap) => {
                 lineOwners = (snap.exists() && snap.data().lines) ? snap.data().lines : {};
+                lineOwnersLoaded = true;
                 recomputeAdmin(); // 담당 라인이 바뀌면 수정 권한도 즉시 반영
                 if (!document.getElementById('line-owner-modal').classList.contains('hidden')) renderLineOwners();
+                maybeShowPMAlert(); // 담당 라인을 안 뒤에 알림 범위를 정한다
             });
             const equipMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'equipmentMapping');
             onSnapshot(equipMapRef, (snap) => {
