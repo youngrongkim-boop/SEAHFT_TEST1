@@ -7,6 +7,7 @@
 firebase.json
 .firebaserc
 storage.rules
+firestore.rules
 
 # 에디터 설정
 .vscode/

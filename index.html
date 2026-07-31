@@ -241,38 +241,35 @@
         </div>
     </div>
 
-    <!-- 수정이력 접근 비밀번호(PIN) 모달 -->
-    <div id="edit-pin-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-xl p-7 w-full max-w-xs text-center">
-            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-blue-50 flex items-center justify-center"><i data-lucide="lock" class="w-6 h-6 text-blue-500"></i></div>
-            <h3 class="text-base font-bold text-slate-800 mb-1">데이터 수정 이력</h3>
-            <p class="text-xs text-slate-500 mb-5">접근하려면 4자리 비밀번호를 입력하세요.</p>
-            <input type="password" id="edit-pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"
-                   class="w-40 mx-auto text-center tracking-[0.6em] text-2xl font-bold border border-slate-300 rounded-lg py-2.5 px-3 outline-none focus:ring-2 focus:ring-blue-400"
-                   onkeydown="if(event.key==='Enter'){window.verifyEditPin();}">
-            <p id="edit-pin-error" class="hidden text-xs text-red-500 mt-3">비밀번호가 올바르지 않습니다.</p>
-            <div class="flex gap-2 mt-5">
-                <button onclick="window.closeEditPinModal()" class="flex-1 border border-slate-300 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">취소</button>
-                <button onclick="window.verifyEditPin()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold">확인</button>
+    <!-- 관리자 설정 모달 -->
+    <div id="admin-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5 text-amber-600"></i> 관리자 설정</h3>
+                <button type="button" onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-        </div>
-    </div>
-
-    <!-- 수정이력 비밀번호(PIN) 변경 모달 -->
-    <div id="edit-pin-change-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-xl p-7 w-full max-w-xs text-center">
-            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-blue-50 flex items-center justify-center"><i data-lucide="key-round" class="w-6 h-6 text-blue-500"></i></div>
-            <h3 class="text-base font-bold text-slate-800 mb-1">비밀번호 변경</h3>
-            <p class="text-xs text-slate-500 mb-5">새 4자리 비밀번호를 입력하세요.</p>
-            <input type="password" id="edit-pin-new" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="새 비밀번호"
-                   class="w-48 mx-auto block text-center tracking-[0.4em] text-lg font-bold border border-slate-300 rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-blue-400 mb-2">
-            <input type="password" id="edit-pin-new2" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="새 비밀번호 확인"
-                   class="w-48 mx-auto block text-center tracking-[0.4em] text-lg font-bold border border-slate-300 rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-blue-400"
-                   onkeydown="if(event.key==='Enter'){window.saveEditPin();}">
-            <p id="edit-pin-change-error" class="hidden text-xs text-red-500 mt-3"></p>
-            <div class="flex gap-2 mt-5">
-                <button onclick="window.closeEditPinChange()" class="flex-1 border border-slate-300 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">취소</button>
-                <button onclick="window.saveEditPin()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold">저장</button>
+            <div class="px-5 py-3 border-b border-slate-100 shrink-0 bg-amber-50/60">
+                <p class="text-xs text-slate-600 leading-relaxed">관리자만 <b>데이터 수정·삭제</b>와 <b>데이터 수정 이력</b>에 접근할 수 있습니다.<br>등록(신규 입력)과 조회는 모든 사내 직원이 계속 사용할 수 있습니다.</p>
+            </div>
+            <div class="p-5 space-y-3 overflow-y-auto custom-scroll flex-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">관리자 추가</label>
+                    <div class="flex gap-2">
+                        <input type="email" id="admin-new-email" placeholder="hong.gildong@seah.co.kr" autocomplete="off"
+                            class="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();addAdminEmail();}">
+                        <button type="button" onclick="addAdminEmail()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-md shrink-0">추가</button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1.5">회사 구글 계정(<b>@seah.co.kr</b>)만 등록됩니다. 대소문자는 구분하지 않습니다.</p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-600 mb-1.5">등록된 관리자 <span id="admin-count" class="text-slate-400 font-medium"></span></p>
+                    <div id="admin-list" class="space-y-1.5"></div>
+                </div>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <span class="text-[11px] text-slate-400">변경은 즉시 모든 사용자에게 적용됩니다.</span>
+                <button type="button" onclick="closeAdminModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
             </div>
         </div>
     </div>
@@ -352,9 +349,15 @@
             <button onclick="switchTab('bd-reg')" id="nav-bd-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장실적 등록">
                 <i data-lucide="wrench" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장실적 등록</span>
             </button>
+            <button onclick="switchTab('manual-lib')" id="nav-manual-lib" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="등록된 조치 메뉴얼 모아보기">
+                <i data-lucide="library" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">조치 메뉴얼 자료실</span>
+            </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
-            <button onclick="window.enterEditHistory()" id="nav-edit-history" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="데이터 수정 이력">
+            <button onclick="openAdminModal()" id="nav-admin" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="관리자 계정 등록·삭제">
+                <i data-lucide="shield-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">관리자 설정</span>
+            </button>
+            <button data-admin-only onclick="window.enterEditHistory()" id="nav-edit-history" class="hidden nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="데이터 수정 이력 (관리자 전용)">
                 <i data-lucide="history" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">데이터 수정 이력</span>
             </button>
         </nav>
@@ -453,7 +456,7 @@
                                     <button type="button" id="target-metric-count" onclick="setTargetMetric('count')" class="px-2 py-1 bg-indigo-500 text-white">건수</button>
                                     <button type="button" id="target-metric-time" onclick="setTargetMetric('time')" class="px-2 py-1 bg-white text-slate-500">정지시간</button>
                                 </span>
-                                <button type="button" onclick="openTargetModal()" class="text-xs font-bold text-white bg-slate-700 hover:bg-slate-800 px-3 py-1.5 rounded-md flex items-center gap-1"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i> 목표 설정</button>
+                                <button type="button" data-admin-only onclick="openTargetModal()" class="hidden text-xs font-bold text-white bg-slate-700 hover:bg-slate-800 px-3 py-1.5 rounded-md flex items-center gap-1"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i> 목표 설정</button>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
@@ -637,7 +640,7 @@
             <div id="view-risk-analysis" class="view-section hidden h-full flex-col min-w-0 pb-4">
                 <div class="flex flex-wrap items-center gap-2 mb-3 shrink-0">
                     <div id="risk-line-tabs" class="flex flex-wrap gap-1.5"></div>
-                    <button onclick="openEquipMapModal()" class="text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-2.5 py-1.5 rounded flex items-center gap-1 ml-auto"><i data-lucide="link" class="w-3.5 h-3.5"></i>설비명 매핑</button>
+                    <button data-admin-only onclick="openEquipMapModal()" class="hidden text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-2.5 py-1.5 rounded flex items-center gap-1 ml-auto"><i data-lucide="link" class="w-3.5 h-3.5"></i>설비명 매핑</button>
                     <span id="risk-period-label" class="text-[11px] text-slate-400 pl-1"></span>
                 </div>
                 <div id="risk-content" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
@@ -672,7 +675,7 @@
                             </select>
                             <input type="text" id="pm-search-keyword" onkeyup="pmListPage=1; debouncedRenderPMList()" placeholder="작업내용, 기준 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-list-count">총 0건</span>
-                            <button onclick="openPMMasterModal()" class="ml-auto flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                            <button data-admin-only onclick="openPMMasterModal()" class="hidden ml-auto flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
                                 <i data-lucide="database" class="w-3.5 h-3.5 mr-1.5"></i> 일괄 관리
                             </button>
                         </div>
@@ -849,7 +852,7 @@
                 <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
                     <div class="mb-2.5 shrink-0">
                         <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
-                            <button onclick="openBDMasterModal()" class="flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                            <button data-admin-only onclick="openBDMasterModal()" class="hidden flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
                                 <i data-lucide="database" class="w-3.5 h-3.5 mr-1.5"></i> 일괄 관리
                             </button>
                             <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded" id="bd-list-count">총 0건</span>
@@ -1012,6 +1015,54 @@
                 </div>
             </div>
 
+            <!-- VIEW: MANUAL LIBRARY (고장실적에 첨부된 조치 메뉴얼 모아보기) -->
+            <div id="view-manual-lib" class="view-section hidden h-full flex-col min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
+                    <div class="mb-2.5 shrink-0">
+                        <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded" id="mlib-count">총 0건</span>
+                            <span class="text-[11px] md:text-xs font-bold text-slate-400 mr-1"><i data-lucide="filter" class="w-3.5 h-3.5 inline"></i></span>
+                            <select id="mlib-filter-year" onchange="renderManualLibrary()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none bg-white font-bold text-emerald-700">
+                                <option value="ALL">전체 연도</option>
+                            </select>
+                            <select id="mlib-filter-line" onchange="renderManualLibrary()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none bg-white font-medium min-w-[70px]">
+                                <option value="ALL">전체 라인</option>
+                            </select>
+                            <select id="mlib-filter-category" onchange="renderManualLibrary()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none bg-white font-medium">
+                                <option value="ALL">전/기 구분</option><option value="기계">기계</option><option value="전기">전기</option>
+                            </select>
+                            <select id="mlib-filter-main" onchange="renderManualLibrary()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none bg-white font-medium">
+                                <option value="ALL">대분류 전체</option>
+                            </select>
+                            <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
+                            <input type="text" id="mlib-search" onkeyup="renderManualLibrary()" placeholder="파일명, 설비, 고장명 검색..." class="w-full sm:w-52 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">고장실적에 첨부된 조치 메뉴얼을 모아 보여줍니다. 메뉴얼 추가·삭제는 해당 고장실적의 <b>수정</b> 화면에서 합니다.</p>
+                    </div>
+
+                    <!-- 데스크톱 표 -->
+                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded-lg w-full custom-scroll relative hidden md:block">
+                        <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
+                            <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">메뉴얼 파일</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">라인</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">설비</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">고장명</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">분류 (대 › 중 › 소)</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">고장일시</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center w-20">크기</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center w-32">보기</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mlib-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                    <!-- 모바일 카드 -->
+                    <div id="mlib-cards" class="md:hidden flex-1 overflow-y-auto custom-scroll space-y-2 pb-2"></div>
+                </div>
+            </div>
+
             <!-- VIEW: EDIT HISTORY (Audit Log) -->
             <div id="view-edit-history" class="view-section hidden h-full flex-col min-w-0 pb-4">
                 <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
@@ -1021,7 +1072,7 @@
                         </h3>
                         <div class="flex items-center gap-2">
                             <input type="text" id="edit-history-search" onkeyup="editHistPage=1; window.debouncedRenderEditHistory()" placeholder="분류, 설비, 내역, 수정자 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
-                            <button onclick="window.openEditPinChange()" class="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1 rounded flex items-center gap-1"><i data-lucide="key-round" class="w-3.5 h-3.5"></i>비밀번호 변경</button>
+                            <button onclick="openAdminModal()" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>관리자 설정</button>
                             <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded" id="history-list-count">총 0건</span>
                         </div>
                     </div>
@@ -1843,88 +1894,115 @@
             } catch(e) { console.error("History logging failed", e); }
         }
 
-        // ===== 수정이력 접근 PIN (평문 대신 SHA-256 해시만 코드에 보관) =====
-        // 소스(F12)에는 해시만 노출되며 원래 PIN은 드러나지 않습니다.
-        // 기본 PIN은 "2580". 운영 중에는 window.__setEditHistoryPin('새PIN') 으로 변경(해시가 Firestore에 저장되어 이 기본값을 대체).
-        const DEFAULT_EDIT_PIN_HASH = 'ed946f65d2c785d90e827c5ffd879ce3b49c68d4c88013074176a7e73bc58bcf';
-        let editHistoryPinHash = DEFAULT_EDIT_PIN_HASH; // Firestore에 설정이 있으면 그 값으로 대체됨
-        let editHistoryUnlocked = false; // 이번 방문(페이지 로드) 동안 잠금 해제 여부
+        // ==========================================
+        // 관리자 권한
+        // ==========================================
+        // 관리자 목록은 Firestore(settings/admins)에 이메일 배열로 저장한다.
+        // 목록이 아직 없거나 비어 있으면 아래 기본 관리자로 대체한다 (아무도 못 들어가는 상황 방지).
+        const DEFAULT_ADMINS = ['youngrong.kim@seah.co.kr'];
+        let adminEmails = [...DEFAULT_ADMINS];
+        let isAdmin = false;
 
-        async function sha256Hex(str) {
-            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        const normEmail = (e) => String(e || '').trim().toLowerCase();
+
+        function recomputeAdmin() {
+            const me = normEmail(currentUser && currentUser.email);
+            isAdmin = !!me && adminEmails.some(a => normEmail(a) === me);
+            applyAdminUI();
+        }
+
+        // 관리자 전용 요소 표시/숨김 + 목록의 수정 버튼 갱신
+        function applyAdminUI() {
+            document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
+            if (currentTabId === 'bd-list') window.debouncedRenderBDList();
+            if (currentTabId === 'pm-list') window.debouncedRenderPMList();
+            if (!isAdmin && currentTabId === 'edit-history') switchTab('dashboard'); // 권한이 회수되면 즉시 이탈
+            if (!document.getElementById('admin-modal').classList.contains('hidden')) renderAdminList();
+        }
+
+        // 관리자 전용 동작 앞에 두는 공통 관문
+        function requireAdmin(what) {
+            if (isAdmin) return true;
+            showToast(`${what || '이 작업'}은(는) 관리자만 할 수 있습니다.`, 'error');
+            return false;
+        }
+
+        async function saveAdminEmails(next) {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admins'),
+                { emails: next, updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp() });
         }
 
         window.enterEditHistory = () => {
-            if (editHistoryUnlocked) { switchTab('edit-history'); return; }
-            const modal = document.getElementById('edit-pin-modal');
-            const inp = document.getElementById('edit-pin-input');
-            const err = document.getElementById('edit-pin-error');
-            if (err) err.classList.add('hidden');
-            if (inp) inp.value = '';
-            modal.classList.remove('hidden');
+            if (!requireAdmin('데이터 수정 이력 조회')) return;
+            switchTab('edit-history');
+        };
+
+        // ----- 관리자 설정 모달 -----
+        window.openAdminModal = () => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            renderAdminList();
+            document.getElementById('admin-new-email').value = '';
+            document.getElementById('admin-modal').classList.remove('hidden');
             if (window.lucide) lucide.createIcons();
-            setTimeout(() => inp && inp.focus(), 50);
         };
-        window.closeEditPinModal = () => {
-            document.getElementById('edit-pin-modal').classList.add('hidden');
+        window.closeAdminModal = () => document.getElementById('admin-modal').classList.add('hidden');
+
+        window.renderAdminList = () => {
+            const box = document.getElementById('admin-list');
+            if (!box) return;
+            const me = normEmail(currentUser && currentUser.email);
+            document.getElementById('admin-count').innerText = `(${adminEmails.length}명)`;
+
+            // 관리자가 아니면 목록만 보여주고 편집은 막는다
+            const addBtn = document.querySelector('#admin-modal button[onclick="addAdminEmail()"]');
+            const addInput = document.getElementById('admin-new-email');
+            if (addBtn) addBtn.disabled = !isAdmin;
+            if (addInput) { addInput.disabled = !isAdmin; addInput.placeholder = isAdmin ? 'hong.gildong@seah.co.kr' : '관리자만 추가할 수 있습니다'; }
+
+            box.innerHTML = adminEmails.length
+                ? adminEmails.map(em => {
+                    const mine = normEmail(em) === me;
+                    return `<div class="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg ${mine ? 'bg-amber-50 border-amber-200' : ''}">
+                        <i data-lucide="user-round" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <span class="text-sm text-slate-700 truncate flex-1">${manualEsc(em)}</span>
+                        ${mine ? '<span class="px-1.5 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 rounded shrink-0">나</span>' : ''}
+                        ${isAdmin ? `<button type="button" onclick="removeAdminEmail('${manualEsc(em)}')" title="관리자 해제" class="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+                    </div>`;
+                }).join('')
+                : '<p class="text-xs text-slate-400 py-3 text-center">등록된 관리자가 없습니다.</p>';
+            if (window.lucide) lucide.createIcons({ root: box });
         };
-        window.verifyEditPin = async () => {
-            const inp = document.getElementById('edit-pin-input');
-            const err = document.getElementById('edit-pin-error');
-            const val = (inp.value || '').trim();
-            if (!/^\d{4}$/.test(val)) { err.textContent = '4자리 숫자를 입력하세요.'; err.classList.remove('hidden'); return; }
-            const h = await sha256Hex(val);
-            if (h === editHistoryPinHash) {
-                editHistoryUnlocked = true;
-                window.closeEditPinModal();
-                switchTab('edit-history');
-            } else {
-                err.textContent = '비밀번호가 올바르지 않습니다.';
-                err.classList.remove('hidden');
-                inp.value = ''; inp.focus();
-            }
-        };
-        // 공통: 새 PIN을 해시로 Firestore에 저장 (기본값 대체, 평문 미저장)
-        async function persistEditPin(newPin) {
-            const hash = await sha256Hex(String(newPin));
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'editHistoryPin'),
-                { hash, updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp() });
-            editHistoryPinHash = hash;
-        }
-        // 관리자용: 콘솔에서 PIN 변경
-        window.__setEditHistoryPin = async (newPin) => {
-            if (!/^\d{4}$/.test(String(newPin || ''))) { console.warn('4자리 숫자 PIN을 입력하세요.'); return; }
-            if (!currentUser) { console.warn('로그인 후 실행하세요.'); return; }
-            await persistEditPin(newPin);
-            console.log('수정이력 PIN이 변경되었습니다.');
-        };
-        // UI: 비밀번호 변경 모달
-        window.openEditPinChange = () => {
-            const err = document.getElementById('edit-pin-change-error');
-            if (err) err.classList.add('hidden');
-            document.getElementById('edit-pin-new').value = '';
-            document.getElementById('edit-pin-new2').value = '';
-            document.getElementById('edit-pin-change-modal').classList.remove('hidden');
-            if (window.lucide) lucide.createIcons();
-            setTimeout(() => document.getElementById('edit-pin-new').focus(), 50);
-        };
-        window.closeEditPinChange = () => {
-            document.getElementById('edit-pin-change-modal').classList.add('hidden');
-        };
-        window.saveEditPin = async () => {
-            const err = document.getElementById('edit-pin-change-error');
-            const p1 = (document.getElementById('edit-pin-new').value || '').trim();
-            const p2 = (document.getElementById('edit-pin-new2').value || '').trim();
-            const fail = (msg) => { err.textContent = msg; err.classList.remove('hidden'); };
-            if (!/^\d{4}$/.test(p1)) return fail('4자리 숫자를 입력하세요.');
-            if (p1 !== p2) return fail('두 입력이 일치하지 않습니다.');
-            if (!currentUser) return fail('로그인이 필요합니다.');
+
+        window.addAdminEmail = async () => {
+            if (!requireAdmin('관리자 추가')) return;
+            const input = document.getElementById('admin-new-email');
+            const em = normEmail(input.value);
+            if (!em) return showToast('이메일을 입력하세요.', 'error');
+            if (!/^[^\s@]+@seah\.co\.kr$/.test(em)) return showToast('@seah.co.kr 회사 계정만 등록할 수 있습니다.', 'error');
+            if (adminEmails.some(a => normEmail(a) === em)) return showToast('이미 등록된 관리자입니다.', 'error');
             try {
-                await persistEditPin(p1);
-                window.closeEditPinChange();
-                showToast('수정이력 비밀번호가 변경되었습니다.', 'success');
-            } catch (e) { console.error(e); fail('저장에 실패했습니다.'); }
+                await saveAdminEmails([...adminEmails, em]);
+                await logEditHistory('관리자 설정', '-', '-', `관리자 추가 (${em})`);
+                input.value = '';
+                showToast(`${em} 을(를) 관리자로 등록했습니다.`);
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        window.removeAdminEmail = async (email) => {
+            if (!requireAdmin('관리자 해제')) return;
+            const em = normEmail(email);
+            const next = adminEmails.filter(a => normEmail(a) !== em);
+            // 마지막 한 명까지 지우면 아무도 관리할 수 없게 되므로 막는다
+            if (!next.length) return showToast('관리자는 최소 1명 이상 있어야 합니다.', 'error');
+            const mine = em === normEmail(currentUser && currentUser.email);
+            if (!confirm(mine
+                ? `본인(${em})의 관리자 권한을 해제할까요?\n\n해제하면 수정·삭제와 수정 이력에 접근할 수 없습니다.`
+                : `${em} 의 관리자 권한을 해제할까요?`)) return;
+            try {
+                await saveAdminEmails(next);
+                await logEditHistory('관리자 설정', '-', '-', `관리자 해제 (${em})`);
+                showToast('관리자를 해제했습니다.');
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
         };
 
         // KPI Card Deep Linking
@@ -2287,6 +2365,8 @@
                         window.debouncedRenderBDList();
                     } else if (tabId === 'bd-reg') {
                         initCategorySelects(); // 등록 폼 진입 시 실제 사용된 분류값을 반영
+                    } else if (tabId === 'manual-lib') {
+                        renderManualLibrary();
                     }
                 }, 10);
             });
@@ -2327,7 +2407,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '조치 메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -2386,9 +2466,12 @@
                 document.getElementById('login-overlay').classList.add('hidden');
                 document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 md:mr-2"></span><span class="hidden md:inline text-slate-500 mr-2">${user.email || ''}</span><button onclick="window.__logout()" title="로그아웃" class="text-slate-400 hover:text-red-500"><i data-lucide="log-out" class="w-4 h-4"></i></button>`;
                 if (window.lucide) lucide.createIcons();
+                recomputeAdmin(); // 관리자 목록 도착 전에도 기본값 기준으로 먼저 판정
                 loadFirestoreData();
             } else {
                 currentUser = null;
+                isAdmin = false;
+                applyAdminUI();
                 document.getElementById('login-overlay').classList.remove('hidden');
                 document.getElementById('auth-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-300 mr-1.5 md:mr-2"></span>`;
             }
@@ -2429,6 +2512,7 @@
                 });
                 // 상세 모달이 열려 있으면 최신 내용(첨부 메뉴얼 포함)으로 갱신
                 if (activeBDDetailId && !document.getElementById('bd-detail-modal').classList.contains('hidden')) renderBDDetail(activeBDDetailId);
+                if (currentTabId === 'manual-lib') renderManualLibrary();
                 window.debouncedApplyFilterAndRender();
             });
             onSnapshot(pmResRef, (snapshot) => {
@@ -2461,9 +2545,11 @@
                 } else faultTargets = {};
                 if (currentTabId === 'dashboard' && currentLineFilter === 'ALL') window.debouncedApplyFilterAndRender();
             });
-            const editPinRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'editHistoryPin');
-            onSnapshot(editPinRef, (snap) => {
-                editHistoryPinHash = (snap.exists() && snap.data().hash) ? snap.data().hash : DEFAULT_EDIT_PIN_HASH;
+            const adminsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admins');
+            onSnapshot(adminsRef, (snap) => {
+                const saved = (snap.exists() && Array.isArray(snap.data().emails)) ? snap.data().emails.filter(Boolean) : [];
+                adminEmails = saved.length ? saved : [...DEFAULT_ADMINS]; // 비어 있으면 기본 관리자로 복구
+                recomputeAdmin();
             });
             const equipMapRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'equipmentMapping');
             onSnapshot(equipMapRef, (snap) => {
@@ -2665,6 +2751,7 @@
         // PM Master Edit Mode (일괄 관리)
         // ==========================================
         window.openPMMasterModal = () => {
+            if (!requireAdmin('예방점검 일괄 관리')) return;
             const modal = document.getElementById('pm-master-edit-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => document.getElementById('pm-master-edit-modal-content').classList.remove('scale-95'), 10);
@@ -2910,6 +2997,7 @@
         window.changeBDMasterPage = (page) => { bdMasterPage = page; renderBDMasterTable(); };
 
         window.openBDMasterModal = () => {
+            if (!requireAdmin('고장실적 일괄 관리')) return;
             const modal = document.getElementById('bd-master-edit-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => document.getElementById('bd-master-edit-modal-content').classList.remove('scale-95'), 10);
@@ -3059,6 +3147,7 @@
         // Single Data Editing Logic (Modals)
         // ==========================================
         window.openPMEditModal = (id) => {
+            if (!requireAdmin('예방점검 수정')) return;
             const item = rawPMData.find(d => d.id === id);
             if(!item) return;
             document.getElementById('edit-pm-id').value = id;
@@ -3082,6 +3171,7 @@
         };
 
         window.deletePMFromEdit = async () => {
+            if (!requireAdmin('예방점검 삭제')) return;
             const id = document.getElementById('edit-pm-id').value;
             if (!currentUser || !id) return;
             const rec = rawPMData.find(d => d.id === id);
@@ -3095,6 +3185,7 @@
         };
 
         window.savePMEdit = async () => {
+            if (!requireAdmin('예방점검 수정')) return;
             const id = document.getElementById('edit-pm-id').value;
             const old = rawPMData.find(d => d.id === id);
             if(!old || !currentUser) return;
@@ -3130,6 +3221,7 @@
         };
 
         window.openBDEditModal = (id) => {
+            if (!requireAdmin('고장실적 수정')) return;
             const item = rawBDData.find(d => d.id === id);
             if(!item) return;
             document.getElementById('edit-bd-id').value = id;
@@ -3161,6 +3253,7 @@
         };
 
         window.deleteBDFromEdit = async () => {
+            if (!requireAdmin('고장실적 삭제')) return;
             const id = document.getElementById('edit-bd-id').value;
             if (!currentUser || !id) return;
             const rec = rawBDData.find(d => d.id === id);
@@ -3175,6 +3268,7 @@
         };
 
         window.saveBDEdit = async () => {
+            if (!requireAdmin('고장실적 수정')) return;
             const id = document.getElementById('edit-bd-id').value;
             const old = rawBDData.find(d => d.id === id);
             if(!old || !currentUser) return;
@@ -3234,6 +3328,7 @@
         };
 
         window.deletePMResultRow = async (id) => {
+            if (!requireAdmin('점검 실적 삭제')) return;
             if(!currentUser) return showToast('인증이 필요합니다.', 'error');
             const rec = rawPMResultsData.find(r => r.id === id);
             const resultDetails = rec ? `${rec.equipmentName || ''} - ${rec.taskDetails || ''}` : '';
@@ -3439,7 +3534,7 @@
                         <td class="py-2.5 px-2 text-center"><input type="text" value="${(item.actionTime || '').replace(/"/g,'&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="예:30분" class="w-20 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50"></td>
                         <td class="py-2.5 px-2 text-center">${actionBtns}</td>
                         <td class="py-2.5 px-2 text-center">
-                            <button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition p-1 bg-slate-100 hover:bg-blue-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                            ${isAdmin ? `<button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition p-1 bg-slate-100 hover:bg-blue-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : '<span class="text-slate-300 text-xs">-</span>'}
                         </td>
                     </tr>
                 `;
@@ -3454,7 +3549,7 @@
                                 <span class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold">${normalizeCycle(item.cycleType)}</span>
                                 ${statusBadge}
                             </div>
-                            <button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                            ${isAdmin ? `<button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
                         </div>
                         <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.equipmentName}</p>
                         <p class="text-[11px] text-slate-600 leading-snug break-words mt-0.5">${item.taskDetails || ''}</p>
@@ -4030,6 +4125,7 @@
             } catch (e) { console.error(e); showToast('매핑 저장 실패', 'error'); }
         }
         window.openEquipMapModal = () => {
+            if (!requireAdmin('설비명 매핑 관리')) return;
             if (riskLine !== 'ALL') mapModalLine = riskLine;
             if (!BD_LINES.includes(mapModalLine)) mapModalLine = BD_LINES[0];
             activeMapGroupId = null;
@@ -4608,7 +4704,7 @@
                         <td class="py-2.5 px-1.5 text-center">${shiftBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${repeatBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">
-                            <button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                            ${isAdmin ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : '<span class="text-slate-300 text-xs">-</span>'}
                         </td>
                     </tr>
                 `;
@@ -4623,7 +4719,7 @@
                                 ${isRepeat ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회 반복</span>` : ''}
                                 ${isCritical ? '<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">중대</span>' : ''}
                             </div>
-                            <button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                            ${isAdmin ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
                         </div>
                         <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.faultName || '-'}</p>
                         <div class="flex items-center justify-between gap-2 mt-1.5 text-[11px] text-slate-500">
@@ -4915,6 +5011,7 @@
             return `<div class="flex items-center justify-between gap-1 px-2 py-1.5 rounded text-xs cursor-pointer ${selected ? 'bg-blue-100 text-blue-800 font-bold' : 'hover:bg-slate-50 text-slate-700'}" onclick="selectCategory('${level}','${e}')"><span class="truncate">${label}</span><button type="button" onclick="event.stopPropagation();removeCategoryItem('${level}','${e}')" class="w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0 leading-none">&times;</button></div>`;
         }
         window.openCategoryModal = () => {
+            // 분류는 고장실적 '등록'에 필요하므로(새 소분류가 없으면 등록 불가) 전 직원에게 열어 둔다.
             catDraft = JSON.parse(JSON.stringify(categoryMap));
             const mains = Object.keys(catDraft);
             catSelMain = mains.length ? mains[0] : null;
@@ -5430,6 +5527,109 @@
             if (window.lucide) lucide.createIcons({ root: box });
         };
 
+        // ----- 조치 메뉴얼 자료실 (첨부된 메뉴얼 모아보기) -----
+        // 메뉴얼은 고장실적 문서 안에 들어 있으므로, 별도 저장소 없이 rawBDData를 펼쳐서 목록을 만든다.
+        function getManualLibraryRows() {
+            const rows = [];
+            rawBDData.forEach(d => {
+                (Array.isArray(d.manuals) ? d.manuals : []).forEach((mn, idx) => {
+                    if (!mn || !mn.url) return;
+                    rows.push({
+                        bdId: d.id, idx, name: mn.name || '(파일명 없음)', size: mn.size || 0, uploadedBy: mn.uploadedBy || '',
+                        line: d.line || '', equipmentName: d.equipmentName || '', faultName: d.faultName || '',
+                        category: d.category || '', mainCategory: d.mainCategory || '', subCategory: d.subCategory || '',
+                        detailCategory: d.detailCategory || '', startTime: d.startTime || ''
+                    });
+                });
+            });
+            return rows; // rawBDData가 이미 최신순이라 별도 정렬 불필요
+        }
+
+        // 필터 select를 실제 첨부가 있는 데이터 기준으로 채운다 (선택값은 가능하면 유지)
+        function refreshManualLibFilters(rows) {
+            const fill = (id, values, allLabel) => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const prev = sel.value;
+                sel.innerHTML = `<option value="ALL">${allLabel}</option>` + values.map(v => `<option value="${manualEsc(v)}">${manualEsc(v)}</option>`).join('');
+                sel.value = (prev === 'ALL' || values.includes(prev)) ? prev : 'ALL';
+            };
+            fill('mlib-filter-year', [...new Set(rows.map(r => r.startTime.slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse(), '전체 연도');
+            fill('mlib-filter-line', [...new Set(rows.map(r => r.line).filter(Boolean))].sort(), '전체 라인');
+            fill('mlib-filter-main', [...new Set(rows.map(r => r.mainCategory).filter(Boolean))].sort(), '대분류 전체');
+        }
+
+        window.renderManualLibrary = () => {
+            const tbody = document.getElementById('mlib-body');
+            const cards = document.getElementById('mlib-cards');
+            if (!tbody || !cards) return;
+
+            const all = getManualLibraryRows();
+            refreshManualLibFilters(all);
+
+            const fYear = document.getElementById('mlib-filter-year').value;
+            const fLine = document.getElementById('mlib-filter-line').value;
+            const fCat = document.getElementById('mlib-filter-category').value;
+            const fMain = document.getElementById('mlib-filter-main').value;
+            const kw = (document.getElementById('mlib-search').value || '').trim().toLowerCase();
+
+            let list = all;
+            if (fYear !== 'ALL') list = list.filter(r => r.startTime.slice(0, 4) === fYear);
+            if (fLine !== 'ALL') list = list.filter(r => r.line === fLine);
+            if (fCat !== 'ALL') list = list.filter(r => r.category === fCat);
+            if (fMain !== 'ALL') list = list.filter(r => r.mainCategory === fMain);
+            if (kw) {
+                list = list.filter(r => [r.name, r.equipmentName, r.faultName, r.mainCategory, r.subCategory, r.detailCategory, r.uploadedBy]
+                    .join(' ').toLowerCase().includes(kw));
+            }
+
+            const totalMB = list.reduce((s, r) => s + (r.size || 0), 0) / 1024 / 1024;
+            document.getElementById('mlib-count').innerText = `총 ${list.length}건${list.length ? ` · ${totalMB.toFixed(1)}MB` : ''}`;
+
+            if (!list.length) {
+                const msg = all.length
+                    ? '조건에 맞는 메뉴얼이 없습니다.'
+                    : '첨부된 메뉴얼이 없습니다. 고장실적 등록 화면의 [메뉴얼 첨부]로 PDF를 올려보세요.';
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-slate-400 py-10 text-sm">${msg}</td></tr>`;
+                cards.innerHTML = `<p class="text-center text-slate-400 py-10 text-sm">${msg}</p>`;
+                return;
+            }
+
+            const sizeStr = (b) => b ? `${(b / 1024 / 1024).toFixed(1)}MB` : '-';
+            tbody.innerHTML = list.map(r => `<tr class="hover:bg-emerald-50/50">
+                <td class="py-2 px-3">
+                    <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="flex items-center gap-1.5 font-bold text-emerald-700 hover:underline max-w-[260px]">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${manualEsc(r.name)}</span>
+                    </button>
+                    ${r.uploadedBy ? `<span class="block text-[10px] text-slate-400 mt-0.5 pl-5">${manualEsc(r.uploadedBy)}</span>` : ''}
+                </td>
+                <td class="py-2 px-3 font-bold text-brand-600">${manualEsc(r.line)}</td>
+                <td class="py-2 px-3">${manualEsc(r.equipmentName)}</td>
+                <td class="py-2 px-3">${manualEsc(r.faultName) || '-'}</td>
+                <td class="py-2 px-3 text-slate-500 text-xs">${manualEsc([r.mainCategory, r.subCategory, r.detailCategory].filter(Boolean).join(' › ')) || '-'}</td>
+                <td class="py-2 px-3 text-slate-600">${r.startTime.replace('T', ' ').slice(0, 16) || '-'}</td>
+                <td class="py-2 px-2 text-center text-slate-500 text-xs">${sizeStr(r.size)}</td>
+                <td class="py-2 px-2 text-center">
+                    <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded">열기</button>
+                    <button type="button" onclick="openBDDetail('${r.bdId}')" title="이 메뉴얼이 첨부된 고장 상세" class="px-2 py-1 text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded">고장</button>
+                </td>
+            </tr>`).join('');
+
+            cards.innerHTML = list.map(r => `<div class="p-3 border border-slate-200 rounded-lg bg-white">
+                <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="flex items-center gap-1.5 font-bold text-emerald-700 text-sm w-full text-left">
+                    <i data-lucide="file-text" class="w-4 h-4 shrink-0"></i><span class="truncate">${manualEsc(r.name)}</span>
+                </button>
+                <p class="text-[11px] text-slate-500 mt-1.5"><b class="text-brand-600">${manualEsc(r.line)}</b> · ${manualEsc(r.equipmentName)} · ${r.startTime.replace('T', ' ').slice(0, 16)}</p>
+                <p class="text-[11px] text-slate-500">${manualEsc(r.faultName) || '-'} <span class="text-slate-400">${manualEsc([r.mainCategory, r.subCategory, r.detailCategory].filter(Boolean).join(' › '))}</span></p>
+                <div class="flex gap-1.5 mt-2">
+                    <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="flex-1 py-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded">열기</button>
+                    <button type="button" onclick="openBDDetail('${r.bdId}')" class="flex-1 py-1.5 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded">고장 상세</button>
+                </div>
+            </div>`).join('');
+
+            if (window.lucide) lucide.createIcons({ root: document.getElementById('view-manual-lib') });
+        };
+
         // 수정 저장 시 목록에서 빠진 기존 첨부의 실제 파일을 정리
         async function deleteRemovedManualFiles(oldList, keptList) {
             const kept = new Set(keptList.map(m => m.storagePath).filter(Boolean));
@@ -5489,6 +5689,7 @@
         };
 
         window.openTargetModal = () => {
+            if (!requireAdmin('목표 설정')) return;
             const yearSel = document.getElementById('target-modal-year');
             fillYearSelect(yearSel, targetYear || String(new Date().getFullYear()));
             renderTargetModalRows(yearSel.value);
