@@ -241,6 +241,48 @@
         </div>
     </div>
 
+    <!-- 메뉴얼 등록 / 수정 모달 (자료실에서 직접 등록) -->
+    <div id="manual-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 id="mreg-title-head" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-plus" class="w-5 h-5 text-emerald-600"></i> 메뉴얼 등록</h3>
+                <button type="button" onclick="closeManualRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4 overflow-y-auto custom-scroll flex-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">메뉴얼 제목 <span class="text-red-500">*</span></label>
+                    <input type="text" id="mreg-title" maxlength="80" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500" placeholder="예: 유압펌프 압력저하 조치 표준서">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">PDF 파일 <span class="text-red-500">*</span></label>
+                    <div id="mreg-file-box" class="border border-slate-300 rounded-md p-3 bg-slate-50"></div>
+                    <input type="file" id="mreg-file" accept="application/pdf,.pdf" class="hidden" onchange="onManualRegFilePicked(this)">
+                    <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">PDF만 등록됩니다 (최대 20MB). <b>PPT는 파워포인트에서 [파일 → 다른 이름으로 저장 → PDF]</b>로 변환해 올려주세요.</p>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-slate-600">연결할 고장실적 <span class="font-normal text-slate-400">(선택 · 나중에 지정 가능)</span></label>
+                        <button type="button" id="mreg-unlink-btn" onclick="clearManualRegLink()" class="hidden text-[11px] font-bold text-slate-500 hover:text-red-600">연결 해제</button>
+                    </div>
+                    <div id="mreg-linked" class="mb-2"></div>
+                    <input type="text" id="mreg-bd-search" oninput="renderManualRegBDResults()" placeholder="설비명, 고장명, 라인으로 검색..." class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                    <div id="mreg-bd-results" class="mt-1.5 max-h-52 overflow-y-auto custom-scroll space-y-1"></div>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <button type="button" id="mreg-delete-btn" onclick="deleteManualDoc()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" onclick="closeManualRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
+                    <button type="button" id="mreg-save-btn" onclick="saveManualDoc()" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-60">등록</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 접속 시 예방점검 알림 팝업 -->
     <div id="pm-alert-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] flex flex-col overflow-hidden">
@@ -1060,8 +1102,14 @@
                 <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
                     <div class="mb-2.5 shrink-0">
                         <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <button onclick="openManualRegModal()" class="flex items-center px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                                <i data-lucide="file-plus" class="w-3.5 h-3.5 mr-1.5"></i> 메뉴얼 등록
+                            </button>
                             <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded" id="mlib-count">총 0건</span>
                             <span class="text-[11px] md:text-xs font-bold text-slate-400 mr-1"><i data-lucide="filter" class="w-3.5 h-3.5 inline"></i></span>
+                            <select id="mlib-filter-link" onchange="renderManualLibrary()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none bg-white font-medium">
+                                <option value="ALL">연결 상태 전체</option><option value="LINKED">고장 연결됨</option><option value="UNLINKED">미연결</option>
+                            </select>
                             <select id="mlib-filter-year" onchange="renderManualLibrary()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none bg-white font-bold text-emerald-700">
                                 <option value="ALL">전체 연도</option>
                             </select>
@@ -1077,7 +1125,7 @@
                             <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
                             <input type="text" id="mlib-search" onkeyup="renderManualLibrary()" placeholder="파일명, 설비, 고장명 검색..." class="w-full sm:w-52 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none">
                         </div>
-                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">고장실적에 첨부된 메뉴얼을 모아 보여줍니다. 메뉴얼 추가·삭제는 해당 고장실적의 <b>수정</b> 화면에서 합니다.</p>
+                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed"><b>메뉴얼 등록</b>으로 여기서 직접 올릴 수 있습니다. 고장실적 연결은 선택이며, 나중에 <b>수정</b>으로 지정해도 됩니다. 고장 등록 화면에서 첨부한 메뉴얼도 함께 표시됩니다.</p>
                     </div>
 
                     <!-- 데스크톱 표 -->
@@ -1700,6 +1748,7 @@
         let pendingPMResult = null; // 실적 등록 대기 { taskId, resultType }
         let catDraft = {}, catSelMain = null, catSelSub = null; // 분류 관리 모달 작업용
         let activeBDDetailId = null; // 현재 열려 있는 고장 상세의 문서 id (내용 갱신 시 재렌더용)
+        let rawManualDocs = []; // 자료실에서 직접 등록한 메뉴얼 (고장 연결은 선택)
         let bdRegManuals = [];  // 등록 폼에서 첨부 대기 중인 파일 [File]
         let bdEditManuals = []; // 수정 모달의 첨부 목록 [{name, url, storagePath, size} | {file}] (저장 시 확정)
         let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
@@ -2783,6 +2832,12 @@
                 // 최고관리자는 목록에 없거나 목록이 통째로 비어도 항상 포함시킨다
                 adminEmails = [SUPER_ADMIN, ...saved.filter(e => !isSuper(e))];
                 recomputeAdmin();
+            });
+            const manualDocRef = collection(db, 'artifacts', appId, 'public', 'data', 'manuals');
+            onSnapshot(manualDocRef, (snapshot) => {
+                rawManualDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (currentTabId === 'manual-lib') renderManualLibrary();
+                if (activeBDDetailId && !document.getElementById('bd-detail-modal').classList.contains('hidden')) renderBDDetail(activeBDDetailId);
             });
             const lineOwnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'lineOwners');
             onSnapshot(lineOwnerRef, (snap) => {
@@ -4839,10 +4894,14 @@
                 </div>`;
             }
             const cell = (label, value, cls = '') => `<div class="${cls}"><dt class="text-[11px] font-bold text-slate-400 mb-0.5">${label}</dt><dd class="text-sm text-slate-800 whitespace-pre-wrap break-words">${value || '-'}</dd></div>`;
-            // 방지대책 옆 메뉴얼 버튼: 이 고장 건에 첨부된 PDF (첨부가 없으면 버튼 자체를 숨김)
+            // 방지대책 옆 메뉴얼 버튼: 이 고장 건에 첨부된 PDF + 자료실에서 이 고장에 연결한 메뉴얼
             const attached = Array.isArray(item.manuals) ? item.manuals : [];
+            const linkedDocs = rawManualDocs.filter(m => m.bdId === item.id && m.url);
             const manualBtnsHtml = attached.map((mn, i) =>
-                `<button type="button" onclick="openBDManual('${item.id}',${i})" title="${manualEsc(mn.name)}" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition max-w-[220px]"><i data-lucide="book-open" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${manualEsc(mn.name)}</span></button>`).join('');
+                `<button type="button" onclick="openBDManual('${item.id}',${i})" title="${manualEsc(mn.name)}" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition max-w-[220px]"><i data-lucide="book-open" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${manualEsc(mn.name)}</span></button>`
+            ).concat(linkedDocs.map(m =>
+                `<button type="button" onclick="openManualUrl('${manualEsc(m.url)}','${manualEsc(m.title || m.name)}')" title="${manualEsc(m.title || m.name)} (자료실)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition max-w-[220px]"><i data-lucide="library" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${manualEsc(m.title || m.name)}</span></button>`
+            )).join('');
             body.innerHTML = `
                 ${repeatHtml}
                 <div class="flex items-center gap-1.5 mb-4 flex-wrap">
@@ -5787,21 +5846,49 @@
 
         // ----- 메뉴얼 자료실 (첨부된 메뉴얼 모아보기) -----
         // 메뉴얼은 고장실적 문서 안에 들어 있으므로, 별도 저장소 없이 rawBDData를 펼쳐서 목록을 만든다.
+        // 고장 정보를 행에 채워 넣는다 (연결이 없거나 고장이 삭제됐으면 빈 값)
+        function manualBDFields(bdId) {
+            const d = bdId ? rawBDData.find(x => x.id === bdId) : null;
+            if (!d) return { linked: false, line: '', equipmentName: '', faultName: '', category: '', mainCategory: '', subCategory: '', detailCategory: '', startTime: '' };
+            return {
+                linked: true, line: d.line || '', equipmentName: d.equipmentName || '', faultName: d.faultName || '',
+                category: d.category || '', mainCategory: d.mainCategory || '', subCategory: d.subCategory || '',
+                detailCategory: d.detailCategory || '', startTime: d.startTime || ''
+            };
+        }
+
+        // 자료실 목록 = 자료실에서 직접 등록한 메뉴얼 + 고장실적에 첨부된 메뉴얼
         function getManualLibraryRows() {
             const rows = [];
+            rawManualDocs.forEach(m => {
+                if (!m.url) return;
+                rows.push({
+                    src: 'doc', docId: m.id, bdId: m.bdId || null,
+                    title: m.title || m.name || '(제목 없음)', name: m.name || '', url: m.url,
+                    size: m.size || 0, uploadedBy: m.uploadedBy || '',
+                    createdAtSec: (m.createdAt && m.createdAt.seconds) || 0,
+                    ...manualBDFields(m.bdId)
+                });
+            });
             rawBDData.forEach(d => {
                 (Array.isArray(d.manuals) ? d.manuals : []).forEach((mn, idx) => {
                     if (!mn || !mn.url) return;
                     rows.push({
-                        bdId: d.id, idx, name: mn.name || '(파일명 없음)', size: mn.size || 0, uploadedBy: mn.uploadedBy || '',
-                        line: d.line || '', equipmentName: d.equipmentName || '', faultName: d.faultName || '',
-                        category: d.category || '', mainCategory: d.mainCategory || '', subCategory: d.subCategory || '',
-                        detailCategory: d.detailCategory || '', startTime: d.startTime || ''
+                        src: 'bd', bdId: d.id, idx,
+                        title: mn.name || '(파일명 없음)', name: mn.name || '', url: mn.url,
+                        size: mn.size || 0, uploadedBy: mn.uploadedBy || '', createdAtSec: 0,
+                        ...manualBDFields(d.id)
                     });
                 });
             });
-            return rows; // rawBDData가 이미 최신순이라 별도 정렬 불필요
+            // 미연결(작업이 필요한 것)을 위로, 그 다음 고장일시 최신순
+            return rows.sort((a, b) => (a.linked ? 1 : 0) - (b.linked ? 1 : 0)
+                || (a.startTime < b.startTime ? 1 : a.startTime > b.startTime ? -1 : 0));
         }
+
+        // 자료실 등록분의 수정·삭제 권한: 관리자 · 등록한 본인 · 연결된 고장의 라인 담당자
+        const canEditManualDoc = (row) => row.src === 'doc' && (
+            isAdmin || normEmail(row.uploadedBy) === normEmail(currentUser && currentUser.email) || canEditLine(row.line));
 
         // 필터 select를 실제 첨부가 있는 데이터 기준으로 채운다 (선택값은 가능하면 유지)
         function refreshManualLibFilters(rows) {
@@ -5829,15 +5916,18 @@
             const fLine = document.getElementById('mlib-filter-line').value;
             const fCat = document.getElementById('mlib-filter-category').value;
             const fMain = document.getElementById('mlib-filter-main').value;
+            const fLink = document.getElementById('mlib-filter-link').value;
             const kw = (document.getElementById('mlib-search').value || '').trim().toLowerCase();
 
             let list = all;
+            if (fLink === 'LINKED') list = list.filter(r => r.linked);
+            if (fLink === 'UNLINKED') list = list.filter(r => !r.linked);
             if (fYear !== 'ALL') list = list.filter(r => r.startTime.slice(0, 4) === fYear);
             if (fLine !== 'ALL') list = list.filter(r => r.line === fLine);
             if (fCat !== 'ALL') list = list.filter(r => r.category === fCat);
             if (fMain !== 'ALL') list = list.filter(r => r.mainCategory === fMain);
             if (kw) {
-                list = list.filter(r => [r.name, r.equipmentName, r.faultName, r.mainCategory, r.subCategory, r.detailCategory, r.uploadedBy]
+                list = list.filter(r => [r.title, r.name, r.equipmentName, r.faultName, r.mainCategory, r.subCategory, r.detailCategory, r.uploadedBy]
                     .join(' ').toLowerCase().includes(kw));
             }
 
@@ -5847,45 +5937,256 @@
             if (!list.length) {
                 const msg = all.length
                     ? '조건에 맞는 메뉴얼이 없습니다.'
-                    : '첨부된 메뉴얼이 없습니다. 고장실적 등록 화면의 [메뉴얼 첨부]로 PDF를 올려보세요.';
+                    : '등록된 메뉴얼이 없습니다. 위 [메뉴얼 등록]으로 PDF를 올려보세요.';
                 tbody.innerHTML = `<tr><td colspan="8" class="text-center text-slate-400 py-10 text-sm">${msg}</td></tr>`;
                 cards.innerHTML = `<p class="text-center text-slate-400 py-10 text-sm">${msg}</p>`;
                 return;
             }
 
             const sizeStr = (b) => b ? `${(b / 1024 / 1024).toFixed(1)}MB` : '-';
-            tbody.innerHTML = list.map(r => `<tr class="hover:bg-emerald-50/50">
+            // 열기: 자료실 등록분은 URL로, 고장 첨부분은 인덱스로 연다
+            const openCall = (r) => r.src === 'doc'
+                ? `openManualUrl('${manualEsc(r.url)}','${manualEsc(r.title)}')`
+                : `openBDManual('${r.bdId}',${r.idx})`;
+            const unlinkedBadge = '<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">미연결</span>';
+            const srcBadge = (r) => r.src === 'bd'
+                ? '<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold" title="고장실적 등록 화면에서 첨부한 파일입니다">고장첨부</span>' : '';
+
+            tbody.innerHTML = list.map(r => `<tr class="hover:bg-emerald-50/50 ${r.linked ? '' : 'bg-amber-50/30'}">
                 <td class="py-2 px-3">
-                    <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="flex items-center gap-1.5 font-bold text-emerald-700 hover:underline max-w-[260px]">
-                        <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${manualEsc(r.name)}</span>
+                    <button type="button" onclick="${openCall(r)}" class="flex items-center gap-1.5 font-bold text-emerald-700 hover:underline max-w-[280px]">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${manualEsc(r.title)}</span>
                     </button>
-                    ${r.uploadedBy ? `<span class="block text-[10px] text-slate-400 mt-0.5 pl-5">${manualEsc(r.uploadedBy)}</span>` : ''}
+                    <span class="block text-[10px] text-slate-400 mt-0.5 pl-5">${r.src === 'doc' && r.name && r.name !== r.title ? manualEsc(r.name) + ' · ' : ''}${manualEsc(r.uploadedBy)}</span>
                 </td>
-                <td class="py-2 px-3 font-bold text-brand-600">${manualEsc(r.line)}</td>
-                <td class="py-2 px-3">${manualEsc(r.equipmentName)}</td>
+                <td class="py-2 px-3 font-bold text-brand-600">${r.linked ? manualEsc(r.line) : unlinkedBadge}</td>
+                <td class="py-2 px-3">${manualEsc(r.equipmentName) || '-'}</td>
                 <td class="py-2 px-3">${manualEsc(r.faultName) || '-'}</td>
                 <td class="py-2 px-3 text-slate-500 text-xs">${manualEsc([r.mainCategory, r.subCategory, r.detailCategory].filter(Boolean).join(' › ')) || '-'}</td>
                 <td class="py-2 px-3 text-slate-600">${r.startTime.replace('T', ' ').slice(0, 16) || '-'}</td>
-                <td class="py-2 px-2 text-center text-slate-500 text-xs">${sizeStr(r.size)}</td>
-                <td class="py-2 px-2 text-center">
-                    <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded">열기</button>
-                    <button type="button" onclick="openBDDetail('${r.bdId}')" title="이 메뉴얼이 첨부된 고장 상세" class="px-2 py-1 text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded">고장</button>
+                <td class="py-2 px-2 text-center text-slate-500 text-xs">${sizeStr(r.size)} ${srcBadge(r)}</td>
+                <td class="py-2 px-2 text-center whitespace-nowrap">
+                    <button type="button" onclick="${openCall(r)}" class="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded">열기</button>
+                    ${r.src === 'doc' && canEditManualDoc(r)
+                        ? `<button type="button" onclick="openManualRegModal('${r.docId}')" class="px-2 py-1 text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded">수정</button>` : ''}
+                    ${r.linked ? `<button type="button" onclick="openBDDetail('${r.bdId}')" title="연결된 고장 상세" class="px-2 py-1 text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded">고장</button>` : ''}
                 </td>
             </tr>`).join('');
 
-            cards.innerHTML = list.map(r => `<div class="p-3 border border-slate-200 rounded-lg bg-white">
-                <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="flex items-center gap-1.5 font-bold text-emerald-700 text-sm w-full text-left">
-                    <i data-lucide="file-text" class="w-4 h-4 shrink-0"></i><span class="truncate">${manualEsc(r.name)}</span>
+            cards.innerHTML = list.map(r => `<div class="p-3 border rounded-lg ${r.linked ? 'border-slate-200 bg-white' : 'border-amber-200 bg-amber-50/40'}">
+                <button type="button" onclick="${openCall(r)}" class="flex items-center gap-1.5 font-bold text-emerald-700 text-sm w-full text-left">
+                    <i data-lucide="file-text" class="w-4 h-4 shrink-0"></i><span class="truncate">${manualEsc(r.title)}</span>
                 </button>
-                <p class="text-[11px] text-slate-500 mt-1.5"><b class="text-brand-600">${manualEsc(r.line)}</b> · ${manualEsc(r.equipmentName)} · ${r.startTime.replace('T', ' ').slice(0, 16)}</p>
-                <p class="text-[11px] text-slate-500">${manualEsc(r.faultName) || '-'} <span class="text-slate-400">${manualEsc([r.mainCategory, r.subCategory, r.detailCategory].filter(Boolean).join(' › '))}</span></p>
+                ${r.linked
+                    ? `<p class="text-[11px] text-slate-500 mt-1.5"><b class="text-brand-600">${manualEsc(r.line)}</b> · ${manualEsc(r.equipmentName)} · ${r.startTime.replace('T', ' ').slice(0, 16)}</p>
+                       <p class="text-[11px] text-slate-500">${manualEsc(r.faultName) || '-'} <span class="text-slate-400">${manualEsc([r.mainCategory, r.subCategory, r.detailCategory].filter(Boolean).join(' › '))}</span></p>`
+                    : `<p class="text-[11px] mt-1.5">${unlinkedBadge} <span class="text-slate-500">연결된 고장실적이 없습니다.</span></p>`}
                 <div class="flex gap-1.5 mt-2">
-                    <button type="button" onclick="openBDManual('${r.bdId}',${r.idx})" class="flex-1 py-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded">열기</button>
-                    <button type="button" onclick="openBDDetail('${r.bdId}')" class="flex-1 py-1.5 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded">고장 상세</button>
+                    <button type="button" onclick="${openCall(r)}" class="flex-1 py-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded">열기</button>
+                    ${r.src === 'doc' && canEditManualDoc(r)
+                        ? `<button type="button" onclick="openManualRegModal('${r.docId}')" class="flex-1 py-1.5 text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded">수정</button>` : ''}
+                    ${r.linked ? `<button type="button" onclick="openBDDetail('${r.bdId}')" class="flex-1 py-1.5 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded">고장 상세</button>` : ''}
                 </div>
             </div>`).join('');
 
             if (window.lucide) lucide.createIcons({ root: document.getElementById('view-manual-lib') });
+        };
+
+        // ----- 자료실 직접 등록 / 수정 -----
+        // 등록은 전 직원 가능(등록 성격). 수정·삭제는 canEditManualDoc 기준.
+        let manualRegState = { mode: 'create', docId: null, file: null, bdId: null, busy: false };
+
+        window.openManualRegModal = (docId) => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            const doc0 = docId ? rawManualDocs.find(m => m.id === docId) : null;
+            if (docId && !doc0) return showToast('메뉴얼을 찾을 수 없습니다.', 'error');
+            if (doc0) {
+                const row = getManualLibraryRows().find(r => r.src === 'doc' && r.docId === docId);
+                if (row && !canEditManualDoc(row)) return showToast('이 메뉴얼을 수정할 권한이 없습니다.', 'error');
+            }
+
+            manualRegState = doc0
+                ? { mode: 'edit', docId, file: { name: doc0.name, url: doc0.url, storagePath: doc0.storagePath, size: doc0.size }, bdId: doc0.bdId || null, busy: false }
+                : { mode: 'create', docId: null, file: null, bdId: null, busy: false };
+
+            document.getElementById('mreg-title-head').innerHTML = manualRegState.mode === 'edit'
+                ? '<i data-lucide="file-pen" class="w-5 h-5 text-blue-600"></i> 메뉴얼 수정'
+                : '<i data-lucide="file-plus" class="w-5 h-5 text-emerald-600"></i> 메뉴얼 등록';
+            document.getElementById('mreg-title').value = doc0 ? (doc0.title || '') : '';
+            document.getElementById('mreg-save-btn').innerText = manualRegState.mode === 'edit' ? '저장' : '등록';
+            document.getElementById('mreg-delete-btn').classList.toggle('hidden', manualRegState.mode !== 'edit');
+            document.getElementById('mreg-delete-btn').classList.toggle('flex', manualRegState.mode === 'edit');
+            document.getElementById('mreg-bd-search').value = '';
+
+            renderManualRegFile();
+            renderManualRegLink();
+            renderManualRegBDResults();
+            document.getElementById('manual-reg-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeManualRegModal = () => {
+            // 등록을 취소하면 방금 올린 파일은 어디에도 연결되지 않으므로 지운다
+            if (manualRegState.mode === 'create' && manualRegState.file && manualRegState.file.storagePath) {
+                deleteManualObject(manualRegState.file.storagePath);
+            }
+            manualRegState = { mode: 'create', docId: null, file: null, bdId: null, busy: false };
+            document.getElementById('manual-reg-modal').classList.add('hidden');
+        };
+
+        window.pickManualRegFile = () => document.getElementById('mreg-file').click();
+
+        window.onManualRegFilePicked = async (input) => {
+            const file = (input.files || [])[0];
+            input.value = '';
+            if (!file || !validateManualFile(file)) return;
+            manualRegState.busy = true;
+            manualRegState.file = { name: file.name, size: file.size, uploading: true, pct: 0 };
+            renderManualRegFile();
+            // 제목이 비어 있으면 파일명(확장자 제외)을 기본 제목으로 넣어준다
+            const titleEl = document.getElementById('mreg-title');
+            if (!titleEl.value.trim()) titleEl.value = file.name.replace(/\.pdf$/i, '');
+            try {
+                const meta = await uploadManualFile(file, (pct) => { manualRegState.file.pct = pct; renderManualRegFile(); });
+                manualRegState.file = meta;
+            } catch (e) {
+                console.error(e);
+                manualRegState.file = null;
+                showToast(manualStorageErrorMessage(e), 'error');
+            } finally {
+                manualRegState.busy = false;
+                renderManualRegFile();
+            }
+        };
+
+        window.removeManualRegFile = async () => {
+            const f = manualRegState.file;
+            if (!f || f.uploading) return;
+            manualRegState.file = null;
+            renderManualRegFile();
+            if (manualRegState.mode === 'create') await deleteManualObject(f.storagePath);
+        };
+
+        function renderManualRegFile() {
+            const box = document.getElementById('mreg-file-box');
+            const f = manualRegState.file;
+            if (!f) {
+                box.innerHTML = `<button type="button" onclick="pickManualRegFile()" class="w-full py-2 text-sm font-bold text-emerald-700 bg-white border border-emerald-300 border-dashed rounded-md hover:bg-emerald-50 flex items-center justify-center gap-1.5"><i data-lucide="upload" class="w-4 h-4"></i> PDF 파일 선택</button>`;
+            } else if (f.uploading) {
+                box.innerHTML = `<div class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="loader" class="w-4 h-4 animate-spin shrink-0"></i><span class="truncate flex-1">${manualEsc(f.name)}</span><span class="font-bold shrink-0">${f.pct}%</span></div>`;
+            } else {
+                const size = f.size ? ` · ${(f.size / 1024 / 1024).toFixed(1)}MB` : '';
+                box.innerHTML = `<div class="flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <button type="button" onclick="openManualUrl('${manualEsc(f.url)}','${manualEsc(f.name)}')" class="text-sm text-slate-700 truncate flex-1 text-left hover:underline">${manualEsc(f.name)}<span class="text-slate-400">${size}</span></button>
+                    <button type="button" onclick="removeManualRegFile()" title="${manualRegState.mode === 'edit' ? '파일 교체' : '파일 취소'}" class="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                </div>`;
+            }
+            if (window.lucide) lucide.createIcons({ root: box });
+        }
+
+        function renderManualRegLink() {
+            const box = document.getElementById('mreg-linked');
+            const btn = document.getElementById('mreg-unlink-btn');
+            const d = manualRegState.bdId ? rawBDData.find(x => x.id === manualRegState.bdId) : null;
+            btn.classList.toggle('hidden', !manualRegState.bdId);
+            if (!manualRegState.bdId) {
+                box.innerHTML = '<p class="text-[11px] text-slate-400">연결하지 않아도 자료실에 등록됩니다. 아래에서 검색해 선택하세요.</p>';
+                return;
+            }
+            box.innerHTML = d
+                ? `<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                    <i data-lucide="link" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-slate-800 truncate"><span class="text-brand-600">${manualEsc(d.line)}</span> · ${manualEsc(d.equipmentName)} · ${manualEsc(d.faultName) || '고장명 없음'}</p>
+                        <p class="text-[11px] text-slate-500">${(d.startTime || '').replace('T', ' ').slice(0, 16)}</p>
+                    </div>
+                </div>`
+                : '<p class="text-[11px] text-red-500">연결된 고장실적을 찾을 수 없습니다. (삭제되었을 수 있습니다)</p>';
+            if (window.lucide) lucide.createIcons({ root: box });
+        }
+
+        window.clearManualRegLink = () => { manualRegState.bdId = null; renderManualRegLink(); renderManualRegBDResults(); };
+        window.selectManualRegBD = (bdId) => { manualRegState.bdId = bdId; renderManualRegLink(); renderManualRegBDResults(); };
+
+        window.renderManualRegBDResults = () => {
+            const box = document.getElementById('mreg-bd-results');
+            const kw = (document.getElementById('mreg-bd-search').value || '').trim().toLowerCase();
+            let list = rawBDData;
+            if (kw) {
+                list = list.filter(d => [d.line, d.equipmentName, d.faultName, d.mainCategory, d.subCategory, d.detailCategory, d.startTime]
+                    .join(' ').toLowerCase().includes(kw));
+            }
+            const shown = list.slice(0, 15);
+            if (!shown.length) {
+                box.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-3">검색 결과가 없습니다.</p>';
+                return;
+            }
+            box.innerHTML = shown.map(d => {
+                const on = d.id === manualRegState.bdId;
+                return `<button type="button" onclick="selectManualRegBD('${d.id}')" class="w-full text-left px-2.5 py-1.5 rounded-md border text-xs transition ${on ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200 hover:bg-slate-50'}">
+                    <span class="font-bold text-brand-600">${manualEsc(d.line)}</span>
+                    <span class="font-semibold text-slate-800">${manualEsc(d.equipmentName)}</span>
+                    <span class="text-slate-600">· ${manualEsc(d.faultName) || '고장명 없음'}</span>
+                    <span class="block text-[10px] text-slate-400">${(d.startTime || '').replace('T', ' ').slice(0, 16)} · ${manualEsc([d.mainCategory, d.subCategory, d.detailCategory].filter(Boolean).join(' › '))}</span>
+                </button>`;
+            }).join('') + (list.length > 15 ? `<p class="text-[10px] text-slate-400 text-center pt-1">검색 결과 ${list.length}건 중 15건 표시 — 검색어를 좁혀 주세요</p>` : '');
+        };
+
+        window.saveManualDoc = async () => {
+            if (manualRegState.busy) return showToast('파일 업로드가 끝난 뒤 저장해 주세요.', 'error');
+            const title = document.getElementById('mreg-title').value.trim();
+            if (!title) return showToast('메뉴얼 제목을 입력하세요.', 'error');
+            const f = manualRegState.file;
+            if (!f || !f.url) return showToast('PDF 파일을 선택하세요.', 'error');
+
+            const btn = document.getElementById('mreg-save-btn');
+            btn.disabled = true;
+            const bd = manualRegState.bdId ? rawBDData.find(x => x.id === manualRegState.bdId) : null;
+            // line 은 보안 규칙에서 담당자 판정에 쓰이므로 함께 저장한다
+            const payload = { title, bdId: manualRegState.bdId || null, line: bd ? (bd.line || '') : '' };
+
+            try {
+                if (manualRegState.mode === 'edit') {
+                    const old = rawManualDocs.find(m => m.id === manualRegState.docId);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'manuals', manualRegState.docId), {
+                        ...payload, name: f.name, url: f.url, storagePath: f.storagePath, size: f.size,
+                        updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp()
+                    });
+                    // 파일을 교체했으면 예전 파일 정리
+                    if (old && old.storagePath && old.storagePath !== f.storagePath) await deleteManualObject(old.storagePath);
+                    await logEditHistory('메뉴얼 (수정)', payload.line || '-', bd ? bd.equipmentName : '-', `${title}${bd ? ' → 고장 연결' : ' (미연결)'}`);
+                    showToast('메뉴얼을 수정했습니다.');
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'manuals'), {
+                        ...payload, name: f.name, url: f.url, storagePath: f.storagePath, size: f.size,
+                        uploadedBy: (currentUser && currentUser.email) || '', createdAt: serverTimestamp()
+                    });
+                    await logEditHistory('메뉴얼 (등록)', payload.line || '-', bd ? bd.equipmentName : '-', `${title}${bd ? ' → 고장 연결' : ' (미연결)'}`);
+                    showToast(bd ? '메뉴얼을 등록하고 고장에 연결했습니다.' : '메뉴얼을 등록했습니다. (고장 미연결)');
+                }
+                manualRegState.file = null; // 정리 로직이 파일을 지우지 않도록
+                closeManualRegModal();
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        window.deleteManualDoc = async () => {
+            const m = rawManualDocs.find(x => x.id === manualRegState.docId);
+            if (!m) return;
+            if (!confirm(`'${m.title || m.name}' 메뉴얼을 삭제할까요?\n\n파일도 함께 삭제되며 되돌릴 수 없습니다.`)) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'manuals', m.id));
+                await deleteManualObject(m.storagePath);
+                await logEditHistory('메뉴얼 (삭제)', m.line || '-', '-', m.title || m.name || '');
+                manualRegState.file = null;
+                closeManualRegModal();
+                showToast('메뉴얼을 삭제했습니다.');
+            } catch (e) { console.error(e); showToast('삭제 실패', 'error'); }
         };
 
         // 수정 저장 시 목록에서 빠진 기존 첨부의 실제 파일을 정리
