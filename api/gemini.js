@@ -83,25 +83,42 @@ module.exports = async (req, res) => {
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'GEMINI_API_KEY가 설정되지 않았습니다. Vercel 환경변수를 확인하세요.' });
-    }
 
-    // 설치 확인용: 이 키로 쓸 수 있는 모델 목록
+    // 설치 확인용. 키가 없어도 진단 정보를 돌려줘야 어디가 잘못됐는지 알 수 있으므로
+    // 키 검사보다 먼저 처리한다. 키 '값'은 절대 내보내지 않고 존재 여부와 길이만 알린다.
     if (req.method === 'GET') {
+        const diag = {
+            hasKey: !!apiKey,
+            keyLength: apiKey ? apiKey.length : 0,
+            // 이 배포가 어느 Vercel 프로젝트/커밋인지 (env 변수를 엉뚱한 프로젝트에 넣었는지 확인용)
+            vercelEnv: process.env.VERCEL_ENV || null,
+            vercelUrl: process.env.VERCEL_URL || null,
+            gitRepo: process.env.VERCEL_GIT_REPO_SLUG || null,
+            gitCommit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
+            // 이름이 비슷한 환경변수가 있으면 오타를 잡을 수 있다 (이름만, 값은 제외)
+            similarKeys: Object.keys(process.env).filter(k => /GEMINI|GENAI|GOOGLE|API_?KEY/i.test(k)).sort()
+        };
+        if (!apiKey) {
+            return res.status(200).json({ ...diag, error: 'GEMINI_API_KEY가 이 배포에 전달되지 않았습니다.' });
+        }
         try {
             const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             const j = await r.json();
-            if (!r.ok) return res.status(r.status).json({ error: (j.error && j.error.message) || '모델 목록 조회 실패' });
+            if (!r.ok) return res.status(200).json({ ...diag, error: (j.error && j.error.message) || '모델 목록 조회 실패' });
             return res.status(200).json({
+                ...diag,
                 configuredModel: model(),
                 available: (j.models || [])
                     .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
                     .map(m => String(m.name).replace(/^models\//, ''))
             });
         } catch (e) {
-            return res.status(502).json({ error: `모델 목록 조회 실패: ${e.message}` });
+            return res.status(200).json({ ...diag, error: `모델 목록 조회 실패: ${e.message}` });
         }
+    }
+
+    if (!apiKey) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY가 설정되지 않았습니다. Vercel 환경변수를 확인하세요.' });
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST만 지원합니다.' });

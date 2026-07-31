@@ -5592,11 +5592,24 @@
                 const r = await fetch('/api/gemini', { headers: { 'Authorization': `Bearer ${token}` } });
                 const j = await r.json();
                 if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-                const ok = (j.available || []).includes(j.configuredModel);
-                aiMessages.push({
-                    role: 'model',
-                    text: `**연결 확인 결과**\n\n- 설정된 모델: \`${j.configuredModel}\` ${ok ? '(사용 가능)' : '(⚠ 이 키로 사용할 수 없음)'}\n- 사용 가능한 모델 ${(j.available || []).length}종\n\n${ok ? '정상입니다. 바로 질문하세요.' : '`GEMINI_MODEL` 환경변수를 사용 가능한 모델명으로 바꿔야 합니다.'}`
-                });
+
+                // 어느 배포에서 실행됐는지 함께 보여준다 (환경변수를 다른 프로젝트에 넣은 경우를 잡기 위함)
+                const where = [
+                    `- 배포: \`${j.vercelUrl || '알 수 없음'}\` (${j.vercelEnv || '?'})`,
+                    `- 저장소: \`${j.gitRepo || '알 수 없음'}\` · 커밋 \`${j.gitCommit || '?'}\``,
+                    `- API 키: ${j.hasKey ? `있음 (${j.keyLength}자)` : '**없음**'}`,
+                    `- 이름이 비슷한 환경변수: ${(j.similarKeys || []).length ? '`' + j.similarKeys.join('`, `') + '`' : '없음'}`
+                ].join('\n');
+
+                if (!j.hasKey || j.error) {
+                    aiMessages.push({ role: 'model', error: true, text: `**연결 확인 실패**\n\n${j.error || '키 없음'}\n\n**진단 정보**\n${where}` });
+                } else {
+                    const ok = (j.available || []).includes(j.configuredModel);
+                    aiMessages.push({
+                        role: 'model',
+                        text: `**연결 확인 결과**\n\n- 설정된 모델: \`${j.configuredModel}\` ${ok ? '(사용 가능)' : '(⚠ 이 키로 사용할 수 없음)'}\n- 사용 가능한 모델 ${(j.available || []).length}종\n${where}\n\n${ok ? '정상입니다. 바로 질문하세요.' : '사용 가능한 모델: `' + (j.available || []).slice(0, 12).join('`, `') + '`'}`
+                    });
+                }
                 renderAIMessages();
             } catch (e) {
                 aiMessages.push({ role: 'model', text: `연결 확인 실패\n\n${e.message}`, error: true });
