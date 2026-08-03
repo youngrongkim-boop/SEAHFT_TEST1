@@ -5476,6 +5476,7 @@
 
         const AI_EXAMPLES = [
             '이번 달 보고서 써줘',
+            '2026년 CGL 라인 고장 보고서',
             '고장이 가장 잦은 설비 10개',
             '정지시간이 긴 라인은?',
             '지연된 예방점검 알려줘',
@@ -5774,25 +5775,58 @@
                 const y = base.getFullYear(), mo = parseInt(m[1], 10);
                 if (mo >= 1 && mo <= 12) return { label: `${y}년 ${mo}월`, from: `${y}-${String(mo).padStart(2, '0')}-01`, to: iso(new Date(y, mo, 0)) };
             }
+            // 연도만 쓴 경우 ("2026년", "26년") → 그 해 1/1~12/31.
+            // 위의 월·주·일 패턴이 모두 지나간 뒤이므로 여기서는 연도 표현만 남는다.
+            if ((m = /(?:^|[^\d])((?:19|20)\d{2}) ?년/.exec(q))) {
+                const y = parseInt(m[1], 10);
+                return { label: `${y}년`, from: `${y}-01-01`, to: `${y}-12-31` };
+            }
+            if ((m = /(?:^|[^\d])(\d{2}) ?년/.exec(q))) {
+                const yy = parseInt(m[1], 10);
+                // "5년 이상 된 설비" 같은 기간(연차) 표현과 구분하려고 20~40 → 2020~2040 만 연도로 본다
+                if (yy >= 20 && yy <= 40) { const y = 2000 + yy; return { label: `${y}년`, from: `${y}-01-01`, to: `${y}-12-31` }; }
+            }
             return null;
         }
 
-        // 모달 상단 범위(연도·라인) + 질문 속 기간 표현을 합친 분석 대상
+        // 질문 안에 라인 이름이 있으면 그 라인으로 본다 (대소문자 무시, 단어 단위로 매칭)
+        function laPickLine(q) {
+            const cand = (typeof NAV_LINES !== 'undefined' && NAV_LINES.length) ? NAV_LINES : LINES;
+            const up = String(q || '').toUpperCase();
+            let best = '';
+            (cand || []).forEach(l => {
+                const L = String(l || '').toUpperCase();
+                if (!L) return;
+                const esc = L.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // CGL 이 CGL2 · ACGL 안에 잘못 걸리지 않도록 앞뒤가 영숫자가 아닐 때만
+                if (new RegExp(`(^|[^A-Z0-9])${esc}($|[^A-Z0-9])`).test(up) && L.length > best.length) best = l;
+            });
+            return best || null;
+        }
+
+        // 모달 상단 범위(연도·라인) + 질문 속 기간·라인 표현을 합친 분석 대상.
+        // 질문에 쓴 표현이 상단 드롭다운보다 우선한다.
         function laScope(q) {
             const base = getAIScopeData();
-            const lineLabel = base.line === 'ALL' ? '전체 라인' : `${base.line} 라인`;
+            const qLine = laPickLine(q);
+            const line = qLine || base.line;
+            const lineLabel = line === 'ALL' ? '전체 라인' : `${line} 라인`;
             const p = laPeriod(q);
-            if (!p) return { ...base, lineLabel, periodLabel: base.year === 'ALL' ? '전체 기간' : `${base.year}년` };
 
-            // 질문에 기간이 있으면 그쪽을 따른다 (연도 필터와 충돌하지 않도록 원본에서 다시 거른다)
-            const lineOk = (l) => base.line === 'ALL' || l === base.line;
-            const inR = (s) => { const ds = String(s || '').slice(0, 10); return !!ds && ds >= p.from && ds <= p.to; };
+            // 질문에 라인·기간이 모두 없으면 상단 범위를 그대로 쓴다
+            if (!qLine && !p) return { ...base, line, lineLabel, periodLabel: base.year === 'ALL' ? '전체 기간' : `${base.year}년` };
+
+            const lineOk = (l) => line === 'ALL' || l === line;
+            const dateOk = p
+                ? (s) => { const ds = String(s || '').slice(0, 10); return !!ds && ds >= p.from && ds <= p.to; }
+                : (s) => base.year === 'ALL' || String(s || '').slice(0, 4) === base.year;
+            const periodLabel = p ? `${p.label} (${p.from} ~ ${p.to})` : (base.year === 'ALL' ? '전체 기간' : `${base.year}년`);
+
             return {
-                year: base.year, line: base.line, lineLabel,
-                periodLabel: `${p.label} (${p.from} ~ ${p.to})`,
-                bd: rawBDData.filter(d => lineOk(d.line) && inR(d.startTime)),
+                year: base.year, line, lineLabel, periodLabel,
+                bd: rawBDData.filter(d => lineOk(d.line) && dateOk(d.startTime)),
                 pm: rawPMData.filter(d => lineOk(d.line)),
-                pmRes: rawPMResultsData.filter(d => lineOk(d.line) && inR(pmResultTimeStr(d)))
+                pmRes: rawPMResultsData.filter(d => lineOk(d.line) && dateOk(pmResultTimeStr(d)))
             };
         }
         const laHead = (sc) => `**분석 범위** ${sc.periodLabel} · ${sc.lineLabel} · 기준일 ${getLocalTodayString()}`;
@@ -6118,8 +6152,10 @@
             return L.join('\n');
         }
 
-        // 종합 보고서
-        function laReportAnswer(q, sc) {
+        // 보고서. mode = 'bd'(고장만) | 'pm'(예방점검만) | 'all'(종합)
+        // "고장 보고서"라고 물었는데 예방점검 섹션이 따라 나오지 않도록 종류를 나눈다.
+        function laReportAnswer(q, sc, mode) {
+            mode = mode || 'all';
             const today = getLocalTodayString();
             const { bd, pm, pmRes } = sc;
             const totM = bd.reduce((a, d) => a + (d.durationMinutes || 0), 0);
@@ -6127,22 +6163,71 @@
             const pending = pm.filter(d => d.status !== '점검');
             const overdue = pending.filter(d => d.nextCheckDate && d.nextCheckDate < today);
             const bad = pmRes.filter(r => r.result === '불량');
+            const withBD = mode !== 'pm', withPM = mode !== 'bd';
 
             const L = [];
-            L.push('# 설비 관리 보고서');
+            L.push(mode === 'bd' ? '# 고장실적 보고서' : mode === 'pm' ? '# 예방점검 보고서' : '# 설비 관리 보고서');
             L.push(`**범위** ${sc.periodLabel} · ${sc.lineLabel}  |  **작성일** ${today}`);
             L.push('');
             L.push('## 1. 요약');
             L.push(laTable(['항목', '값'], [
-                ['고장 건수', `${laNum(bd.length)}건`],
-                ['총 정지시간', laMin(totM)],
-                ['건당 평균 정지시간', bd.length ? laMin(totM / bd.length) : '-'],
-                ['중대고장 (2시간 이상)', `${laNum(severe.length)}건 (${laPct(severe.length, bd.length)})`],
-                ['예방점검 항목', `${laNum(pm.length)}건`],
-                ['점검 지연', `${laNum(overdue.length)}건`],
-                ['점검 실적', `${laNum(pmRes.length)}건`],
-                ['점검 불량', `${laNum(bad.length)}건 (불량률 ${laPct(bad.length, pmRes.length)})`]
+                ...(withBD ? [
+                    ['고장 건수', `${laNum(bd.length)}건`],
+                    ['총 정지시간', laMin(totM)],
+                    ['건당 평균 정지시간', bd.length ? laMin(totM / bd.length) : '-'],
+                    ['최장 정지시간', bd.length ? laMin(bd.reduce((a, d) => Math.max(a, d.durationMinutes || 0), 0)) : '-'],
+                    ['중대고장 (2시간 이상)', `${laNum(severe.length)}건 (${laPct(severe.length, bd.length)})`],
+                    ['고장 설비 수', `${laNum(new Set(bd.map(d => `${d.line}/${d.equipmentName}`)).size)}대`]
+                ] : []),
+                ...(withPM ? [
+                    ['예방점검 항목', `${laNum(pm.length)}건`],
+                    ['점검 지연', `${laNum(overdue.length)}건`],
+                    ['점검 실적', `${laNum(pmRes.length)}건`],
+                    ['점검 불량', `${laNum(bad.length)}건 (불량률 ${laPct(bad.length, pmRes.length)})`]
+                ] : [])
             ]));
+
+            if (mode === 'pm') {
+                // 예방점검 전용: 주기별 → 라인별 → 지연 목록 → 불량 목록
+                L.push('');
+                L.push('## 2. 주기별 현황');
+                L.push(laTable(['주기', '전체', '미점검', '지연'], ['일별', '주별', '월별', '분기별', '연별'].map(c => {
+                    const all = pm.filter(d => normalizeCycle(d.cycleType) === c);
+                    if (!all.length) return null;
+                    return [c, `${laNum(all.length)}건`, `${laNum(all.filter(d => d.status !== '점검').length)}건`,
+                        `${laNum(all.filter(d => d.status !== '점검' && d.nextCheckDate && d.nextCheckDate < today).length)}건`];
+                }).filter(Boolean)));
+
+                if (sc.line === 'ALL') {
+                    L.push('');
+                    L.push('## 3. 라인별 현황');
+                    L.push(laTable(['라인', '전체', '미점검', '지연', '완료율'], laSort(laGroup(pm, d => d.line), 'count').map(([k, v]) => [
+                        k, `${laNum(v.count)}건`,
+                        `${laNum(v.items.filter(d => d.status !== '점검').length)}건`,
+                        `${laNum(v.items.filter(d => d.status !== '점검' && d.nextCheckDate && d.nextCheckDate < today).length)}건`,
+                        laPct(v.items.filter(d => d.status === '점검').length, v.count)
+                    ])));
+                }
+
+                L.push('');
+                L.push(`## 4. 지연된 점검 (${laNum(overdue.length)}건)`);
+                if (!overdue.length) L.push('지연된 점검이 없습니다.');
+                else L.push(laTable(['예정일', '경과', '라인', '설비', '주기', '점검 내용'],
+                    overdue.slice().sort((a, b) => String(a.nextCheckDate).localeCompare(String(b.nextCheckDate))).slice(0, 40).map(d =>
+                        [d.nextCheckDate, `${Math.round((new Date(today) - new Date(d.nextCheckDate)) / 86400000)}일`,
+                         d.line, d.equipmentName, normalizeCycle(d.cycleType), d.taskDetails])));
+
+                L.push('');
+                L.push(`## 5. 점검 불량 (${laNum(bad.length)}건)`);
+                if (!bad.length) L.push('불량 판정이 없습니다.');
+                else L.push(laTable(['점검일시', '라인', '설비', '점검 내용', '특이사항', '점검자'],
+                    bad.slice().sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a))).slice(0, 40).map(r =>
+                        [pmResultTimeStr(r), r.line, r.equipmentName, r.taskDetails, r.remarks, r.checkedByName])));
+
+                L.push('');
+                L.push('_등록된 데이터를 집계한 결과입니다._');
+                return L.join('\n');
+            }
 
             L.push('');
             L.push('## 2. 고장 현황');
@@ -6188,6 +6273,30 @@
                 const [line, eq, fault] = k.split(LA_SEP);
                 return [line, eq, fault, `${v.count}회`, laMin(v.mins)];
             })));
+
+            if (mode === 'bd') {
+                // 고장 전용: 예방점검 섹션 대신 중대고장·고장 상세를 싣는다
+                L.push('');
+                L.push(`## 4. 중대고장 내역 (2시간 이상 · ${laNum(severe.length)}건)`);
+                if (!severe.length) L.push('중대고장이 없습니다.');
+                else L.push(laTable(['발생일시', '라인', '설비', '고장명', '정지시간', '발생원인', '조치내용'],
+                    severe.slice().sort((a, b) => (b.durationMinutes || 0) - (a.durationMinutes || 0)).slice(0, 30).map(d =>
+                        [String(d.startTime || '').replace('T', ' '), d.line, d.equipmentName, d.faultName,
+                         laMin(d.durationMinutes), d.cause, d.content])));
+
+                L.push('');
+                L.push(`## 5. 고장 상세 (${laNum(bd.length)}건${bd.length > 200 ? ' 중 최근 200건' : ''})`);
+                if (!bd.length) L.push('해당 고장이 없습니다.');
+                else L.push(laTable(['No', '발생일시', '라인', '설비', '구분', '분류(대>중>소)', '고장명', '정지시간', '발생원인', '조치내용'],
+                    bd.slice().sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || ''))).slice(0, 200)
+                        .map((d, i) => [i + 1, String(d.startTime || '').replace('T', ' '), d.line, d.equipmentName, d.category,
+                            [d.mainCategory, d.subCategory, d.detailCategory].filter(Boolean).join(' > '),
+                            d.faultName, laMin(d.durationMinutes), d.cause, d.content])));
+
+                L.push('');
+                L.push('_등록된 데이터를 집계한 결과입니다. 미입력 항목은 (미입력)으로 처리됩니다._');
+                return L.join('\n');
+            }
 
             L.push('');
             L.push('## 4. 예방점검 현황');
@@ -6243,10 +6352,11 @@
             return [
                 prefix ? `${prefix}\n` : '',
                 '## 이렇게 물어보세요',
-                '등록된 고장·예방점검 데이터를 직접 집계해 답합니다. 상단의 **연도·라인**이 기본 범위이고, 질문에 기간을 쓰면 그쪽이 우선합니다.',
+                '등록된 고장·예방점검 데이터를 직접 집계해 답합니다. 상단의 **연도·라인**이 기본 범위이고, **질문에 기간이나 라인을 쓰면 그쪽이 우선**합니다.',
                 '',
-                '**보고서**',
-                '- 이번 달 보고서 써줘 / 지난달 보고서 / 2026년 7월 보고서',
+                '**보고서** — 고장/예방점검을 붙이면 그 영역만 나옵니다',
+                '- 2026년 CGL 라인 고장 보고서',
+                '- 이번 달 보고서 써줘 / 지난달 예방점검 보고서 / 2026년 7월 보고서',
                 '',
                 '**순위 · 집계**',
                 '- 고장이 가장 잦은 설비 상위 10개',
@@ -6262,7 +6372,8 @@
                 '- 반복되는 고장 찾아줘 / 중대고장 목록',
                 '- 미입력 항목 찾아줘',
                 '',
-                '**기간 표현** 오늘 · 어제 · 이번 주 · 지난주 · 이번 달 · 지난달 · 최근 30일 · 최근 3개월 · 7월 · 2026년 7월',
+                '**기간 표현** 오늘 · 어제 · 이번 주 · 지난주 · 이번 달 · 지난달 · 최근 30일 · 최근 3개월 · 7월 · 2026년 7월 · 2026년(26년)',
+                '**라인 표현** 질문에 라인 이름(CGL, CPL …)을 쓰면 그 라인만 집계합니다. 대소문자는 상관없습니다.',
                 '',
                 '_답변 아래의 버튼으로 **복사 · 엑셀 · 인쇄(PDF)** 할 수 있습니다._'
             ].filter(Boolean).join('\n');
@@ -6275,7 +6386,12 @@
             const sc = laScope(q);
 
             if (/뭘 ?할 ?수|무엇을 ?할 ?수|어떤 ?기능|도움말|사용법|어떻게 ?물어|help/i.test(q)) return laHelpAnswer('');
-            if (/보고서|리포트|report|브리핑|정리해 ?줘|보고 ?자료/i.test(q)) return laReportAnswer(q, sc);
+            if (/보고서|리포트|report|브리핑|정리해 ?줘|보고 ?자료/i.test(q)) {
+                // "고장 보고서" / "예방점검 보고서" 는 해당 영역만, 그 외에는 종합 보고서
+                const wantBD = /고장|정지|다운타임|breakdown/i.test(q);
+                const wantPM = /예방 ?점검|점검|실적|불량/.test(q);
+                return laReportAnswer(q, sc, wantBD && !wantPM ? 'bd' : (wantPM && !wantBD ? 'pm' : 'all'));
+            }
             if (/점검자|누가 ?점검|점검 ?담당/.test(q)) return laInspectorAnswer(q, sc);
             if (/미입력|누락|빠진|안 ?적|미분류|분류 ?안|입력 ?상태|데이터 ?품질/.test(q)) return laQualityAnswer(q, sc);
             if (/반복|재발|되풀이|또 ?터/.test(q)) return laRepeatAnswer(q, sc);
