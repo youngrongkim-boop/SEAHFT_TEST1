@@ -831,7 +831,10 @@
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-res-count">총 0건</span>
                             <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200" id="pm-res-summary"></span>
                             <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded hidden transition font-bold">특정 항목 필터 해제</button>
-                            <button onclick="exportPMHistoryToExcel()" class="ml-auto bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center">
+                            <button onclick="openPMResultReport()" class="ml-auto bg-brand-600 hover:bg-brand-700 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center" title="현재 조회 조건으로 보고서를 만들어 인쇄합니다">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1"></i> 보고서 생성
+                            </button>
+                            <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center">
                                 <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
                             </button>
                         </div>
@@ -988,6 +991,9 @@
                             </select>
                             <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
                             <input type="text" id="bd-search-keyword" onkeyup="bdListPage=1; debouncedRenderBDList()" placeholder="설비, 조치내용 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                            <button onclick="openBDReport()" class="bg-brand-600 hover:bg-brand-700 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center shrink-0" title="현재 조회 조건으로 보고서를 만들어 인쇄합니다">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1"></i> 보고서 생성
+                            </button>
                         </div>
                     </div>
 
@@ -1432,6 +1438,25 @@
                 </div>
             </div>
             <iframe id="manual-viewer-frame" class="flex-1 w-full bg-slate-100" title="메뉴얼 미리보기"></iframe>
+        </div>
+    </div>
+
+    <!-- 보고서 미리보기 모달 (리스트 화면의 필터 결과를 보고서로) -->
+    <div id="report-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[145] backdrop-blur-sm p-2 md:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-slate-200 shrink-0 bg-slate-50">
+                <h3 id="report-modal-title" class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="file-text" class="w-5 h-5 mr-2 text-brand-600"></i> 보고서</h3>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="printReport()" class="px-3 py-1.5 text-[11px] md:text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-lg flex items-center gap-1 shadow-sm"><i data-lucide="printer" class="w-3.5 h-3.5"></i> 인쇄 · PDF</button>
+                    <button type="button" onclick="exportReport()" class="px-3 py-1.5 text-[11px] md:text-xs font-bold text-emerald-700 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-lg flex items-center gap-1"><i data-lucide="download" class="w-3.5 h-3.5"></i> 엑셀</button>
+                    <button type="button" onclick="copyReport()" class="px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-600 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg flex items-center gap-1"><i data-lucide="copy" class="w-3.5 h-3.5"></i> 복사</button>
+                    <button type="button" onclick="closeReportModal()" class="text-slate-400 hover:text-slate-700 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            <div id="report-modal-body" class="flex-1 overflow-y-auto custom-scroll p-4 md:p-6 text-sm text-slate-800 bg-white"></div>
+            <div class="px-4 md:px-5 py-2 border-t border-slate-100 shrink-0 bg-slate-50">
+                <p class="text-[10px] text-slate-400">화면에 적용된 조회 조건 그대로 집계했습니다. 조건을 바꾸고 다시 [보고서]를 누르면 새로 만들어집니다.</p>
+            </div>
         </div>
     </div>
 
@@ -4978,18 +5003,17 @@
             if (window.lucide) lucide.createIcons({ root: body });
         };
 
-        window.renderBDList = () => {
-            const tbody = document.getElementById('bd-list-body');
-
-            refreshBDFilterCats(); // 필터 대/중분류를 실제 등록 데이터 기준으로 동기화
-
-            const fYear = document.getElementById('bd-filter-year').value;
-            const fLine = document.getElementById('bd-filter-line').value;
-            const fCat = document.getElementById('bd-filter-category').value;
-            const fMain = document.getElementById('bd-filter-main').value;
-            const fSub = document.getElementById('bd-filter-sub').value;
-            const fDetail = document.getElementById('bd-filter-detail')?.value || 'ALL';
-            const kw = document.getElementById('bd-search-keyword')?.value.toLowerCase();
+        // 고장실적 리스트의 화면 필터를 적용한 목록. 리스트 렌더와 보고서 생성이 함께 쓴다.
+        // (DOM을 건드리는 refreshBDFilterCats는 호출부에 두어 순수 조회로 유지)
+        function getFilteredBDList() {
+            const val = (id, dflt) => (document.getElementById(id)?.value ?? dflt);
+            const fYear = val('bd-filter-year', 'ALL');
+            const fLine = val('bd-filter-line', 'ALL');
+            const fCat = val('bd-filter-category', 'ALL');
+            const fMain = val('bd-filter-main', 'ALL');
+            const fSub = val('bd-filter-sub', 'ALL');
+            const fDetail = val('bd-filter-detail', 'ALL');
+            const kw = String(val('bd-search-keyword', '')).toLowerCase();
 
             let list = rawBDData;
             if (fYear !== 'ALL') list = list.filter(d => (d.startTime || '').slice(0, 4) === fYear);
@@ -5011,6 +5035,15 @@
                     Object.values(d.spec || {}).join(' ').toLowerCase().includes(kw)
                 );
             }
+            return list;
+        }
+
+        window.renderBDList = () => {
+            const tbody = document.getElementById('bd-list-body');
+
+            refreshBDFilterCats(); // 필터 대/중분류를 실제 등록 데이터 기준으로 동기화
+
+            const list = getFilteredBDList();
 
             document.getElementById('bd-list-count').innerText = `총 ${list.length}건`;
 
@@ -6297,8 +6330,12 @@
 
         window.laExportAnswer = (idx) => {
             const m = aiMessages[idx];
-            if (!m) return;
-            const tables = laExtractTables(m.text);
+            if (m) laExportMarkdown(m.text);
+        };
+
+        // 마크다운 안의 표들을 시트로 나눠 엑셀로 저장
+        function laExportMarkdown(md, fileBase) {
+            const tables = laExtractTables(md);
             if (!tables.length) return showToast('표로 된 내용이 없어 엑셀로 만들 수 없습니다.', 'error');
             const wb = XLSX.utils.book_new();
             const used = new Set();
@@ -6308,13 +6345,17 @@
                 used.add(name);
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([t.head, ...t.rows]), name);
             });
-            XLSX.writeFile(wb, `Seah_Report_${getLocalTodayString()}.xlsx`);
+            XLSX.writeFile(wb, `${fileBase || 'Seah_Report'}_${getLocalTodayString()}.xlsx`);
             showToast(`표 ${tables.length}개를 엑셀로 저장했습니다.`);
-        };
+        }
 
         window.laPrintAnswer = (idx) => {
             const m = aiMessages[idx];
-            if (!m) return;
+            if (m) laPrintMarkdown(m.text);
+        };
+
+        // 마크다운을 인쇄용 문서로 새 창에 띄운다 (Tailwind 없이 자체 스타일)
+        function laPrintMarkdown(md, docTitle) {
             const w = window.open('', '_blank');
             if (!w) return showToast('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 시도하세요.', 'error');
             const css = `
@@ -6333,15 +6374,197 @@
                 @media print{body{padding:0} table{page-break-inside:auto} tr{page-break-inside:avoid}}
             `;
             const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8">`
-                + `<title>설비 관리 보고서 ${getLocalTodayString()}</title><style>${css}</style></head><body>`
-                + aiMdToHtml(m.text)
+                + `<title>${docTitle || '설비 관리 보고서'} ${getLocalTodayString()}</title><style>${css}</style></head><body>`
+                + aiMdToHtml(md)
                 + `<div class="doc-foot">세아씨엠 설비 관리 시스템 · 출력 ${getLocalTodayString()} · 등록 데이터 집계 결과</div>`
                 + `</body></html>`;
             w.document.open();
             w.document.write(html);
             w.document.close();
             setTimeout(() => { try { w.focus(); w.print(); } catch (e) { console.error(e); } }, 400);
+        }
+
+        // ==========================================
+        // 리스트 화면 보고서 — 화면에 걸린 필터 그대로 보고서를 만든다
+        // ==========================================
+        let currentReport = { title: '보고서', md: '', file: 'Seah_Report' };
+
+        window.openReportModal = (title, md, file) => {
+            currentReport = { title, md, file: file || 'Seah_Report' };
+            document.getElementById('report-modal-title').innerText = title;
+            const body = document.getElementById('report-modal-body');
+            body.innerHTML = aiMdToHtml(md);
+            body.scrollTop = 0;
+            const modal = document.getElementById('report-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons();
         };
+        window.closeReportModal = () => {
+            const modal = document.getElementById('report-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+        window.printReport = () => laPrintMarkdown(currentReport.md, currentReport.title);
+        window.exportReport = () => laExportMarkdown(currentReport.md, currentReport.file);
+        window.copyReport = async () => {
+            try { await navigator.clipboard.writeText(currentReport.md || ''); showToast('보고서를 복사했습니다.'); }
+            catch (e) { console.error(e); showToast('복사에 실패했습니다.', 'error'); }
+        };
+
+        // 화면에 걸린 필터를 사람이 읽는 문장으로
+        function reportFilterLine(pairs) {
+            const on = pairs.filter(([, v]) => v && v !== 'ALL' && String(v).trim());
+            return on.length ? on.map(([k, v]) => `${k} **${v}**`).join(' · ') : '조건 없음 (전체)';
+        }
+        const REPORT_ROW_CAP = 1000; // 인쇄 문서가 지나치게 길어지지 않도록 상세 표 상한
+
+        // ----- 예방점검 실적 보고서 -----
+        window.buildPMResultReport = () => {
+            const list = getFilteredPMHistory();
+            const val = (id) => document.getElementById(id)?.value || 'ALL';
+            const cond = reportFilterLine([
+                ['라인', val('pm-res-filter-line')], ['설비', val('pm-res-filter-equip')],
+                ['구분', val('pm-res-filter-category')], ['주기', val('pm-res-filter-cycle')],
+                ['결과', val('pm-res-filter-result')],
+                ['기간', { ALL: '', TODAY: '오늘', WEEK: '이번 주', MONTH: '이번 달', YEAR: '올해' }[val('pm-res-filter-period')] || ''],
+                ['검색어', document.getElementById('pm-res-search')?.value.trim()]
+            ]);
+
+            const L = [];
+            L.push('# 예방점검 실적 보고서');
+            L.push(`**조회 조건** ${cond}`);
+            L.push(`**대상** 총 ${laNum(list.length)}건  |  **출력일** ${getLocalTodayString()}`);
+            L.push('');
+            if (!list.length) { L.push('조건에 맞는 점검 실적이 없습니다.'); return L.join('\n'); }
+
+            const bad = list.filter(r => r.result === '불량');
+            const dates = list.map(r => r._when).filter(Boolean).sort();
+            const equipSet = new Set(list.map(r => `${r.line}/${r.equipmentName}`));
+
+            L.push('## 1. 요약');
+            L.push(laTable(['항목', '값'], [
+                ['점검 실적', `${laNum(list.length)}건`],
+                ['양호', `${laNum(list.length - bad.length)}건`],
+                ['불량', `${laNum(bad.length)}건`],
+                ['불량률', laPct(bad.length, list.length)],
+                ['점검 설비 수', `${laNum(equipSet.size)}대`],
+                ['점검 기간', dates.length ? `${dates[0].slice(0, 10)} ~ ${dates[dates.length - 1].slice(0, 10)}` : '-']
+            ]));
+
+            const section = (title, keyFn, headLabel, top) => {
+                const g = laGroup(list, keyFn);
+                let rows = laSort(g, 'count');
+                if (top) rows = rows.slice(0, top);
+                L.push('');
+                L.push(title);
+                L.push(laTable([headLabel, '실적', '양호', '불량', '불량률'], rows.map(([k, v]) => {
+                    const b = v.items.filter(d => d.result === '불량').length;
+                    return [k, `${laNum(v.count)}건`, `${laNum(v.count - b)}건`, `${laNum(b)}건`, laPct(b, v.count)];
+                })));
+            };
+            section('## 2. 라인별', d => d.line, '라인');
+            section('## 3. 구분별', d => d._category, '구분');
+            section('## 4. 주기별', d => d._cycle, '주기');
+            section('## 5. 설비별 (상위 20)', d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`, '설비', 20);
+            section('## 6. 점검자별', d => d.checkedByName || '(이름 미기록)', '점검자');
+
+            L.push('');
+            L.push(`## 7. 불량 내역 (${laNum(bad.length)}건)`);
+            if (!bad.length) L.push('불량 판정이 없습니다.');
+            else L.push(laTable(['점검일시', '라인', '설비', '구분', '주기', '점검 내용', '특이사항', '점검자'],
+                bad.slice(0, REPORT_ROW_CAP).map(r => [r._when, r.line, r.equipmentName, r._category, r._cycle, r.taskDetails, r.remarks, r.checkedByName])));
+
+            L.push('');
+            L.push(`## 8. 실적 상세 (${laNum(list.length)}건${list.length > REPORT_ROW_CAP ? ` 중 ${laNum(REPORT_ROW_CAP)}건 표시` : ''})`);
+            L.push(laTable(['No', '점검일시', '라인', '설비', '구분', '주기', '점검 내용', '점검기준', '결과', '특이사항', '점검자'],
+                list.slice(0, REPORT_ROW_CAP).map((r, i) => [i + 1, r._when, r.line, r.equipmentName, r._category, r._cycle, r.taskDetails, r._criteria, r.result, r.remarks, r.checkedByName])));
+            if (list.length > REPORT_ROW_CAP) L.push(`\n_상세 표는 ${laNum(REPORT_ROW_CAP)}건까지만 실었습니다. 위 집계에는 ${laNum(list.length)}건 전부 반영되어 있습니다._`);
+
+            L.push('');
+            L.push('_화면에 적용된 조회 조건으로 만든 보고서입니다._');
+            return L.join('\n');
+        };
+        window.openPMResultReport = () => openReportModal('예방점검 실적 보고서', buildPMResultReport(), 'Seah_PM_Result_Report');
+
+        // ----- 고장실적 보고서 -----
+        window.buildBDReport = () => {
+            const list = getFilteredBDList();
+            const val = (id) => document.getElementById(id)?.value || 'ALL';
+            const cond = reportFilterLine([
+                ['연도', val('bd-filter-year')], ['라인', val('bd-filter-line')], ['구분', val('bd-filter-category')],
+                ['대분류', val('bd-filter-main')], ['중분류', val('bd-filter-sub')], ['소분류', val('bd-filter-detail')],
+                ['검색어', document.getElementById('bd-search-keyword')?.value.trim()]
+            ]);
+            const totM = list.reduce((a, d) => a + (d.durationMinutes || 0), 0);
+
+            const L = [];
+            L.push('# 고장실적 보고서');
+            L.push(`**조회 조건** ${cond}`);
+            L.push(`**대상** 총 ${laNum(list.length)}건 · 총 정지시간 ${laMin(totM)}  |  **출력일** ${getLocalTodayString()}`);
+            L.push('');
+            if (!list.length) { L.push('조건에 맞는 고장실적이 없습니다.'); return L.join('\n'); }
+
+            const severe = list.filter(d => (d.durationMinutes || 0) >= 120);
+            const dates = list.map(d => String(d.startTime || '')).filter(Boolean).sort();
+            const equipSet = new Set(list.map(d => `${d.line}/${d.equipmentName}`));
+            const maxD = list.reduce((a, d) => Math.max(a, d.durationMinutes || 0), 0);
+
+            L.push('## 1. 요약');
+            L.push(laTable(['항목', '값'], [
+                ['고장 건수', `${laNum(list.length)}건`],
+                ['총 정지시간', laMin(totM)],
+                ['건당 평균 정지시간', laMin(totM / list.length)],
+                ['최장 정지시간', laMin(maxD)],
+                ['중대고장 (2시간 이상)', `${laNum(severe.length)}건 (${laPct(severe.length, list.length)})`],
+                ['고장 설비 수', `${laNum(equipSet.size)}대`],
+                ['발생 기간', dates.length ? `${dates[0].slice(0, 10)} ~ ${dates[dates.length - 1].slice(0, 10)}` : '-']
+            ]));
+
+            const section = (title, keyFn, headLabel, top, sortByKey) => {
+                const g = laGroup(list, keyFn);
+                let rows = sortByKey ? [...g.entries()].sort((a, b) => a[0].localeCompare(b[0])) : laSort(g, 'count');
+                if (top) rows = rows.slice(0, top);
+                L.push('');
+                L.push(title);
+                L.push(laTable([headLabel, '건수', '정지시간', '비중'], rows.map(([k, v]) =>
+                    [k, `${laNum(v.count)}건`, laMin(v.mins), laPct(v.count, list.length)])));
+            };
+            section('## 2. 라인별', d => d.line, '라인');
+            section('## 3. 구분별 (전기/기계)', d => d.category, '구분');
+            section('## 4. 대분류별', d => d.mainCategory, '대분류', 15);
+            section('## 5. 중분류별 (상위 15)', d => d.subCategory, '중분류', 15);
+            section('## 6. 설비별 (상위 20)', d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`, '설비', 20);
+            section('## 7. 교대조별', d => d.shiftType, '교대조');
+            section('## 8. 월별 추이', d => (d.startTime || '').slice(0, 7), '월', 0, true);
+
+            L.push('');
+            L.push('## 9. 반복 고장 (같은 설비 · 같은 고장명 2회 이상)');
+            const rep = laSort(laGroup(list, laRepeatKey), 'count').filter(([, v]) => v.count >= 2);
+            if (!rep.length) L.push('반복 발생한 고장이 없습니다.');
+            else L.push(laTable(['라인', '설비', '고장명', '횟수', '총 정지시간'], rep.slice(0, 30).map(([k, v]) => {
+                const [line, eq, fault] = k.split(LA_SEP);
+                return [line, eq, fault, `${v.count}회`, laMin(v.mins)];
+            })));
+
+            L.push('');
+            L.push(`## 10. 중대고장 내역 (${laNum(severe.length)}건)`);
+            if (!severe.length) L.push('중대고장이 없습니다.');
+            else L.push(laTable(['발생일시', '라인', '설비', '고장명', '정지시간', '발생원인', '조치내용'],
+                severe.slice().sort((a, b) => (b.durationMinutes || 0) - (a.durationMinutes || 0)).slice(0, REPORT_ROW_CAP)
+                    .map(d => [String(d.startTime || '').replace('T', ' '), d.line, d.equipmentName, d.faultName, laMin(d.durationMinutes), d.cause, d.content])));
+
+            L.push('');
+            L.push(`## 11. 고장 상세 (${laNum(list.length)}건${list.length > REPORT_ROW_CAP ? ` 중 ${laNum(REPORT_ROW_CAP)}건 표시` : ''})`);
+            L.push(laTable(['No', '발생일시', '라인', '설비', '구분', '분류(대>중>소)', '고장명', '정지시간', '발생원인', '조치내용', '방지대책'],
+                list.slice(0, REPORT_ROW_CAP).map((d, i) => [i + 1, String(d.startTime || '').replace('T', ' '), d.line, d.equipmentName, d.category,
+                    [d.mainCategory, d.subCategory, d.detailCategory].filter(Boolean).join(' > '),
+                    d.faultName, laMin(d.durationMinutes), d.cause, d.content, d.prevention])));
+            if (list.length > REPORT_ROW_CAP) L.push(`\n_상세 표는 ${laNum(REPORT_ROW_CAP)}건까지만 실었습니다. 위 집계에는 ${laNum(list.length)}건 전부 반영되어 있습니다._`);
+
+            L.push('');
+            L.push('_화면에 적용된 조회 조건으로 만든 보고서입니다._');
+            return L.join('\n');
+        };
+        window.openBDReport = () => openReportModal('고장실적 보고서', buildBDReport(), 'Seah_BD_Report');
 
         // ----- 질문 전송 -----
         window.askAI = async () => {
