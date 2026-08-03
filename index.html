@@ -1459,12 +1459,12 @@
 
             <div class="px-4 md:px-5 py-3 border-t border-slate-100 shrink-0 bg-white">
                 <div class="flex items-end gap-2">
-                    <textarea id="ai-input" rows="1" placeholder="예: 올해 고장이 가장 잦은 설비 5개는?  (Enter 전송 · Shift+Enter 줄바꿈)"
+                    <textarea id="ai-input" rows="1" placeholder="예: 이번 달 보고서 써줘 / 고장 잦은 설비 10개 / 지연된 점검  (Enter 전송 · Shift+Enter 줄바꿈)"
                         class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none max-h-32"
                         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI();}"></textarea>
                     <button type="button" id="ai-send-btn" onclick="askAI()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shrink-0 transition disabled:opacity-60 flex items-center gap-1"><i data-lucide="send" class="w-4 h-4"></i> 질문</button>
                 </div>
-                <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">선택한 범위의 등록 데이터만 근거로 답변합니다. AI 답변은 참고용이며, 중요한 판단은 원본 데이터로 확인하세요.</p>
+                <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">선택한 범위의 등록 데이터를 직접 집계해 답변합니다(외부 전송 없음). 해석이 필요한 자유 질문은 AI 연동이 열린 뒤 동작합니다. 중요한 판단은 원본 데이터로 확인하세요.</p>
             </div>
         </div>
     </div>
@@ -5442,11 +5442,18 @@
         let aiBusy = false;
 
         const AI_EXAMPLES = [
-            '올해 고장이 가장 잦은 설비 5개는?',
-            '정지시간이 가장 긴 라인은 어디이고, 주된 원인은?',
-            '야간에 고장이 더 많이 나는지 교대조별로 비교해줘',
-            '반복해서 터지는 고장이 있으면 찾아서 정리해줘',
-            '예방점검 불량이 고장으로 이어진 사례가 있어?'
+            '이번 달 보고서 써줘',
+            '고장이 가장 잦은 설비 10개',
+            '정지시간이 긴 라인은?',
+            '지연된 예방점검 알려줘',
+            '불량 판정 목록 보여줘',
+            '반복되는 고장 찾아줘',
+            '대분류별 고장 통계',
+            '월별 추이 보여줘',
+            '점검자별 실적',
+            '미입력 항목 찾아줘',
+            '중대고장 목록',
+            '뭘 할 수 있어?'
         ];
 
         // ----- 아주 작은 마크다운 → HTML 변환 (표/목록/굵게 정도만) -----
@@ -5627,20 +5634,713 @@
                 box.innerHTML = `<div class="text-center py-8">
                     <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3"><i data-lucide="sparkles" class="w-6 h-6"></i></div>
                     <p class="text-sm font-bold text-slate-700">등록된 고장·점검 데이터에 대해 물어보세요</p>
-                    <p class="text-xs text-slate-400 mt-1 mb-4">위에서 고른 범위의 데이터만 근거로 답변합니다.</p>
+                    <p class="text-xs text-slate-400 mt-1 mb-4">위 범위의 데이터를 직접 집계해 답합니다. 보고서·순위·점검현황·설비이력을 바로 뽑을 수 있고,<br class="hidden sm:block">답변은 <b>복사 · 엑셀 · 인쇄(PDF)</b> 로 꺼내 쓸 수 있습니다.</p>
                     <div class="flex flex-wrap gap-1.5 justify-center max-w-xl mx-auto">
                         ${AI_EXAMPLES.map((q, i) => `<button type="button" onclick="useAIExample(${i})" class="px-2.5 py-1.5 text-[11px] font-medium text-slate-600 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-full transition">${q}</button>`).join('')}
                     </div>
                 </div>`;
             } else {
                 const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                box.innerHTML = aiMessages.map(m => m.role === 'user'
+                // 완료된 답변에는 복사·엑셀·인쇄 버튼을 붙인다 (보고서를 그대로 꺼내 쓰기 위함)
+                const actions = (i) => `<div class="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-200">
+                    <button type="button" onclick="laCopyAnswer(${i})" class="px-2 py-1 text-[11px] font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-300 rounded flex items-center gap-1"><i data-lucide="copy" class="w-3 h-3"></i> 복사</button>
+                    <button type="button" onclick="laExportAnswer(${i})" class="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-white hover:bg-emerald-50 border border-emerald-300 rounded flex items-center gap-1"><i data-lucide="download" class="w-3 h-3"></i> 엑셀</button>
+                    <button type="button" onclick="laPrintAnswer(${i})" class="px-2 py-1 text-[11px] font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-300 rounded flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> 인쇄 · PDF</button>
+                </div>`;
+                const badge = `<div class="text-[10px] font-bold text-indigo-500 mb-1.5 flex items-center gap-1"><i data-lucide="database" class="w-3 h-3"></i> 등록 데이터 집계</div>`;
+
+                box.innerHTML = aiMessages.map((m, i) => m.role === 'user'
                     ? `<div class="flex justify-end"><div class="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-indigo-600 text-white text-sm whitespace-pre-wrap break-words">${esc(m.text)}</div></div>`
-                    : `<div class="flex justify-start"><div class="max-w-[92%] px-3.5 py-2.5 rounded-2xl rounded-bl-sm ${m.error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-slate-100 text-slate-800'} text-sm break-words">${m.pending ? '<span class="inline-flex items-center gap-2 text-slate-500"><i data-lucide="loader" class="w-4 h-4 animate-spin"></i> 분석 중…</span>' : aiMdToHtml(m.text)}</div></div>`
+                    : `<div class="flex justify-start"><div class="max-w-[92%] px-3.5 py-2.5 rounded-2xl rounded-bl-sm ${m.error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-slate-100 text-slate-800'} text-sm break-words">${m.pending
+                        ? '<span class="inline-flex items-center gap-2 text-slate-500"><i data-lucide="loader" class="w-4 h-4 animate-spin"></i> 분석 중…</span>'
+                        : `${m.local ? badge : ''}${aiMdToHtml(m.text)}${m.error ? '' : actions(i)}`}</div></div>`
                 ).join('');
             }
             if (window.lucide) lucide.createIcons({ root: box });
             box.scrollTop = box.scrollHeight;
+        };
+
+        // ==========================================
+        // 로컬 분석 엔진 — 외부 API 없이 등록된 데이터만으로 답변한다.
+        // Vertex/AI Studio 연동이 열리기 전에도 질문 기능이 동작하게 하는 것이 목적이고,
+        // 연동이 열리면 로컬이 못 알아듣는 자유 질문만 /api/gemini 로 자동으로 넘어간다.
+        // ==========================================
+        const laCell = (v) => String(v ?? '').replace(/\|/g, '/').replace(/\s+/g, ' ').trim() || '-';
+        const laMin = (m) => { m = Math.round(m || 0); return m < 60 ? `${m}분` : `${Math.floor(m / 60).toLocaleString()}시간 ${m % 60}분`; };
+        const laPct = (a, b) => b ? `${(a / b * 100).toFixed(1)}%` : '-';
+        const laNum = (n) => Number(n || 0).toLocaleString();
+
+        function laTable(head, rows) {
+            if (!rows || !rows.length) return '_해당하는 데이터가 없습니다._';
+            return [`| ${head.join(' | ')} |`, `|${head.map(() => ' --- ').join('|')}|`,
+                    ...rows.map(r => `| ${r.map(laCell).join(' | ')} |`)].join('\n');
+        }
+        // key별 {건수, 정지분, 원본} 집계
+        function laGroup(arr, keyFn) {
+            const m = new Map();
+            (arr || []).forEach(d => {
+                const k = String(keyFn(d) ?? '').trim() || '(미입력)';
+                const v = m.get(k) || { count: 0, mins: 0, items: [] };
+                v.count++; v.mins += (d.durationMinutes || 0); v.items.push(d);
+                m.set(k, v);
+            });
+            return m;
+        }
+        function laSort(map, metric) {
+            return [...map.entries()].sort((a, b) => metric === 'mins'
+                ? (b[1].mins - a[1].mins) || (b[1].count - a[1].count)
+                : (b[1].count - a[1].count) || (b[1].mins - a[1].mins));
+        }
+
+        // 질문에서 집계 기준(그룹핑 축)을 고른다. 구체적인 것부터 검사한다.
+        function laPickDim(q) {
+            if (/월별|추이|추세|월 ?단위/.test(q)) return { label: '월', fn: d => (d.startTime || '').slice(0, 7) };
+            if (/대분류/.test(q))                  return { label: '대분류', fn: d => d.mainCategory };
+            if (/중분류/.test(q))                  return { label: '중분류', fn: d => d.subCategory };
+            if (/소분류/.test(q))                  return { label: '소분류', fn: d => d.detailCategory };
+            if (/고장명|증상|현상/.test(q))        return { label: '고장명', fn: d => d.faultName };
+            if (/설비|호기|기계명/.test(q))        return { label: '설비', fn: d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}` };
+            if (/라인|공정/.test(q))               return { label: '라인', fn: d => d.line };
+            if (/교대|근무조|조별|주간|야간/.test(q)) return { label: '교대조', fn: d => d.shiftType };
+            if (/구분별|전기.{0,2}기계/.test(q))   return { label: '구분', fn: d => d.category };
+            return { label: '설비', fn: d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}` };
+        }
+
+        // 질문에 담긴 기간 표현을 해석한다. (없으면 null → 모달 상단의 연도 범위를 그대로 쓴다)
+        function laPeriod(q) {
+            const today = getLocalTodayString();
+            const iso = (dt) => { const off = dt.getTimezoneOffset() * 60000; return new Date(dt - off).toISOString().slice(0, 10); };
+            const base = new Date(today);
+            const shift = (n) => { const d = new Date(base); d.setDate(d.getDate() + n); return iso(d); };
+            let m;
+
+            if (/오늘/.test(q)) return { label: '오늘', from: today, to: today };
+            if (/어제/.test(q)) return { label: '어제', from: shift(-1), to: shift(-1) };
+            if (/이번 ?주|금주/.test(q)) { const w = new Date(base); w.setDate(w.getDate() - w.getDay()); return { label: '이번 주', from: iso(w), to: today }; }
+            if (/지난 ?주|저번 ?주|전주/.test(q)) {
+                const w = new Date(base); w.setDate(w.getDate() - w.getDay() - 7);
+                const e = new Date(w); e.setDate(e.getDate() + 6);
+                return { label: '지난 주', from: iso(w), to: iso(e) };
+            }
+            if (/이번 ?달|금월|당월|이달/.test(q)) return { label: '이번 달', from: today.slice(0, 7) + '-01', to: today };
+            if (/지난 ?달|저번 ?달|전월/.test(q)) {
+                const s = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+                const e = new Date(base.getFullYear(), base.getMonth(), 0);
+                return { label: '지난 달', from: iso(s), to: iso(e) };
+            }
+            if ((m = /최근 ?(\d+) ?개월/.exec(q))) {
+                const s = new Date(base.getFullYear(), base.getMonth() - parseInt(m[1], 10), base.getDate());
+                return { label: `최근 ${m[1]}개월`, from: iso(s), to: today };
+            }
+            if ((m = /최근 ?(\d+) ?일/.exec(q))) return { label: `최근 ${m[1]}일`, from: shift(-(parseInt(m[1], 10) - 1)), to: today };
+            if ((m = /(\d{4}) ?[-.년] ?(\d{1,2}) ?월/.exec(q))) {
+                const y = parseInt(m[1], 10), mo = parseInt(m[2], 10);
+                return { label: `${y}년 ${mo}월`, from: `${y}-${String(mo).padStart(2, '0')}-01`, to: iso(new Date(y, mo, 0)) };
+            }
+            if ((m = /(?:^|[^\d])(\d{1,2}) ?월/.exec(q)) && !/개월/.test(q)) {
+                const y = base.getFullYear(), mo = parseInt(m[1], 10);
+                if (mo >= 1 && mo <= 12) return { label: `${y}년 ${mo}월`, from: `${y}-${String(mo).padStart(2, '0')}-01`, to: iso(new Date(y, mo, 0)) };
+            }
+            return null;
+        }
+
+        // 모달 상단 범위(연도·라인) + 질문 속 기간 표현을 합친 분석 대상
+        function laScope(q) {
+            const base = getAIScopeData();
+            const lineLabel = base.line === 'ALL' ? '전체 라인' : `${base.line} 라인`;
+            const p = laPeriod(q);
+            if (!p) return { ...base, lineLabel, periodLabel: base.year === 'ALL' ? '전체 기간' : `${base.year}년` };
+
+            // 질문에 기간이 있으면 그쪽을 따른다 (연도 필터와 충돌하지 않도록 원본에서 다시 거른다)
+            const lineOk = (l) => base.line === 'ALL' || l === base.line;
+            const inR = (s) => { const ds = String(s || '').slice(0, 10); return !!ds && ds >= p.from && ds <= p.to; };
+            return {
+                year: base.year, line: base.line, lineLabel,
+                periodLabel: `${p.label} (${p.from} ~ ${p.to})`,
+                bd: rawBDData.filter(d => lineOk(d.line) && inR(d.startTime)),
+                pm: rawPMData.filter(d => lineOk(d.line)),
+                pmRes: rawPMResultsData.filter(d => lineOk(d.line) && inR(pmResultTimeStr(d)))
+            };
+        }
+        const laHead = (sc) => `**분석 범위** ${sc.periodLabel} · ${sc.lineLabel} · 기준일 ${getLocalTodayString()}`;
+        const laNoBD = (sc) => `${laHead(sc)}\n\n이 범위에 등록된 **고장 데이터가 없습니다.** 상단의 연도·라인 범위를 넓혀서 다시 물어보세요.`;
+
+        // ---------- 개별 분석 ----------
+
+        // 순위·집계: "고장 잦은 설비 top10", "정지시간 긴 라인", "대분류별 통계", "월별 추이"
+        function laRankAnswer(q, sc) {
+            if (!sc.bd.length) return laNoBD(sc);
+            const dim = laPickDim(q);
+            const metric = /정지|다운타임|다운 ?타임/.test(q) ? 'mins' : 'count';
+            let top = 10;
+            let m = /상위 ?(\d+)|top ?(\d+)|(\d+) ?(?:개|건|위)/i.exec(q);
+            if (m) top = Math.min(50, Math.max(1, parseInt(m[1] || m[2] || m[3], 10)));
+            const isMonth = dim.label === '월';
+            if (isMonth) top = 60;
+
+            const g = laGroup(sc.bd, dim.fn);
+            let rows = laSort(g, metric);
+            if (isMonth) rows.sort((a, b) => a[0].localeCompare(b[0])); // 추이는 시간순
+            rows = rows.slice(0, top);
+
+            const totC = sc.bd.length;
+            const totM = sc.bd.reduce((a, d) => a + (d.durationMinutes || 0), 0);
+            const body = rows.map(([k, v], i) => [
+                isMonth ? k : i + 1,
+                isMonth ? '' : k,
+                `${laNum(v.count)}건`,
+                laMin(v.mins),
+                metric === 'mins' ? laPct(v.mins, totM) : laPct(v.count, totC)
+            ].filter((_, idx) => !(isMonth && idx === 1)));
+
+            const head = isMonth ? ['월', '건수', '정지시간', '비중'] : ['순위', dim.label, '건수', '정지시간', '비중'];
+            const L = [];
+            L.push(`## ${dim.label}별 고장 ${isMonth ? '추이' : '순위'} (${metric === 'mins' ? '정지시간' : '건수'} 기준)`);
+            L.push(laHead(sc));
+            L.push('');
+            L.push(`전체 **${laNum(totC)}건** · 총 정지시간 **${laMin(totM)}** · ${dim.label} 종류 ${laNum(g.size)}개`);
+            L.push('');
+            L.push(laTable(head, body));
+            if (!isMonth && g.size > rows.length) L.push(`\n_${dim.label} ${laNum(g.size)}개 중 상위 ${rows.length}개만 표시했습니다. "상위 30개"처럼 개수를 지정할 수 있습니다._`);
+            return L.join('\n');
+        }
+
+        // 예방점검 현황: 지연·미점검·완료율·주기별
+        function laPmStatusAnswer(q, sc) {
+            const today = getLocalTodayString();
+            const pm = sc.pm;
+            if (!pm.length) return `${laHead(sc)}\n\n등록된 **예방점검 항목이 없습니다.**`;
+            const done = pm.filter(d => d.status === '점검');
+            const pending = pm.filter(d => d.status !== '점검');
+            const overdue = pending.filter(d => d.nextCheckDate && d.nextCheckDate < today);
+
+            const L = [];
+            L.push('## 예방점검 현황');
+            L.push(laHead(sc));
+            L.push('');
+            L.push(laTable(['항목', '값'], [
+                ['등록 점검항목', `${laNum(pm.length)}건`],
+                ['점검완료', `${laNum(done.length)}건 (완료율 ${laPct(done.length, pm.length)})`],
+                ['미점검', `${laNum(pending.length)}건`],
+                ['점검지연 (예정일 경과)', `${laNum(overdue.length)}건`]
+            ]));
+
+            L.push('');
+            L.push('### 주기별');
+            const cycles = ['일별', '주별', '월별', '분기별', '연별'];
+            L.push(laTable(['주기', '전체', '미점검', '지연'], cycles.map(c => {
+                const all = pm.filter(d => normalizeCycle(d.cycleType) === c);
+                if (!all.length) return null;
+                return [c, `${laNum(all.length)}건`,
+                    `${laNum(all.filter(d => d.status !== '점검').length)}건`,
+                    `${laNum(all.filter(d => d.status !== '점검' && d.nextCheckDate && d.nextCheckDate < today).length)}건`];
+            }).filter(Boolean)));
+
+            if (sc.line === 'ALL') {
+                L.push('');
+                L.push('### 라인별');
+                const byLine = laSort(laGroup(pm, d => d.line), 'count');
+                L.push(laTable(['라인', '전체', '미점검', '지연', '완료율'], byLine.map(([k, v]) => [
+                    k, `${laNum(v.count)}건`,
+                    `${laNum(v.items.filter(d => d.status !== '점검').length)}건`,
+                    `${laNum(v.items.filter(d => d.status !== '점검' && d.nextCheckDate && d.nextCheckDate < today).length)}건`,
+                    laPct(v.items.filter(d => d.status === '점검').length, v.count)
+                ])));
+            }
+
+            if (overdue.length) {
+                L.push('');
+                L.push(`### 지연 항목 (예정일 오래된 순 · 최대 25건 / 전체 ${laNum(overdue.length)}건)`);
+                const sorted = overdue.slice().sort((a, b) => String(a.nextCheckDate).localeCompare(String(b.nextCheckDate)));
+                L.push(laTable(['예정일', '경과', '라인', '설비', '주기', '점검 내용'], sorted.slice(0, 25).map(d => {
+                    const days = Math.round((new Date(today) - new Date(d.nextCheckDate)) / 86400000);
+                    return [d.nextCheckDate, `${days}일`, d.line, d.equipmentName, normalizeCycle(d.cycleType), d.taskDetails];
+                })));
+            } else {
+                L.push('\n지연된 점검 항목은 **없습니다.**');
+            }
+            return L.join('\n');
+        }
+
+        // 불량 판정 조회
+        function laPmDefectAnswer(q, sc) {
+            const res = sc.pmRes;
+            if (!res.length) return `${laHead(sc)}\n\n이 범위에 등록된 **점검 실적이 없습니다.**`;
+            const bad = res.filter(r => r.result === '불량');
+            const L = [];
+            L.push('## 예방점검 불량 현황');
+            L.push(laHead(sc));
+            L.push('');
+            L.push(`점검 실적 **${laNum(res.length)}건** 중 불량 **${laNum(bad.length)}건** (불량률 ${laPct(bad.length, res.length)})`);
+            if (!bad.length) return L.join('\n') + '\n\n불량 판정 이력이 **없습니다.**';
+
+            L.push('');
+            L.push('### 설비별 불량 상위');
+            const g = laGroup(bad, d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`);
+            const allG = laGroup(res, d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`);
+            L.push(laTable(['순위', '설비', '불량', '전체 점검', '불량률'], laSort(g, 'count').slice(0, 15).map(([k, v], i) => {
+                const all = allG.get(k);
+                return [i + 1, k, `${laNum(v.count)}건`, `${laNum(all ? all.count : v.count)}건`, laPct(v.count, all ? all.count : v.count)];
+            })));
+
+            L.push('');
+            L.push(`### 불량 이력 (최신순 · 최대 30건 / 전체 ${laNum(bad.length)}건)`);
+            const sorted = bad.slice().sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a)));
+            L.push(laTable(['점검일시', '라인', '설비', '점검 내용', '특이사항', '점검자'], sorted.slice(0, 30).map(r =>
+                [pmResultTimeStr(r), r.line, r.equipmentName, r.taskDetails, r.remarks, r.checkedByName])));
+            return L.join('\n');
+        }
+
+        // 점검 실적 목록 (양호·불량 전체)
+        function laPmResultAnswer(q, sc) {
+            const res = sc.pmRes;
+            const L = [];
+            L.push('## 예방점검 실적');
+            L.push(laHead(sc));
+            L.push('');
+            if (!res.length) return L.join('\n') + '이 범위에 등록된 **점검 실적이 없습니다.**';
+            const bad = res.filter(r => r.result === '불량');
+            L.push(`실적 **${laNum(res.length)}건** · 양호 ${laNum(res.length - bad.length)} / 불량 ${laNum(bad.length)} (불량률 ${laPct(bad.length, res.length)})`);
+
+            if (sc.line === 'ALL') {
+                L.push('');
+                L.push('### 라인별');
+                L.push(laTable(['라인', '실적', '양호', '불량', '불량률'], laSort(laGroup(res, d => d.line), 'count').map(([k, v]) => {
+                    const b = v.items.filter(d => d.result === '불량').length;
+                    return [k, `${laNum(v.count)}건`, `${laNum(v.count - b)}건`, `${laNum(b)}건`, laPct(b, v.count)];
+                })));
+            }
+
+            L.push('');
+            L.push(`### 실적 목록 (최신순 · 최대 40건 / 전체 ${laNum(res.length)}건)`);
+            const sorted = res.slice().sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a)));
+            L.push(laTable(['점검일시', '라인', '설비', '구분', '주기', '점검 내용', '결과', '특이사항', '점검자'],
+                sorted.slice(0, 40).map(r => [pmResultTimeStr(r), r.line, r.equipmentName, r.category,
+                    r.cycleType ? normalizeCycle(r.cycleType) : '', r.taskDetails, r.result, r.remarks, r.checkedByName])));
+            return L.join('\n');
+        }
+
+        // 점검자별 실적
+        function laInspectorAnswer(q, sc) {
+            const res = sc.pmRes;
+            if (!res.length) return `${laHead(sc)}\n\n이 범위에 등록된 **점검 실적이 없습니다.**`;
+            const g = laGroup(res, d => d.checkedByName || '(이름 미기록)');
+            const L = [];
+            L.push('## 점검자별 점검 실적');
+            L.push(laHead(sc));
+            L.push('');
+            L.push(laTable(['점검자', '실적', '양호', '불량', '불량률', '최근 점검일'], laSort(g, 'count').map(([k, v]) => {
+                const bad = v.items.filter(d => d.result === '불량').length;
+                const last = v.items.map(pmResultTimeStr).filter(Boolean).sort().pop() || '-';
+                return [k, `${laNum(v.count)}건`, `${laNum(v.count - bad)}건`, `${laNum(bad)}건`, laPct(bad, v.count), last];
+            })));
+            if (g.has('(이름 미기록)')) L.push('\n_점검자 이름은 기능 추가 이후 등록된 실적부터 기록됩니다. 그 이전 실적은 (이름 미기록)으로 모입니다._');
+            return L.join('\n');
+        }
+
+        // 반복 고장 — 라인·설비·고장명을 한 키로 묶는다.
+        // 구분자는 데이터에 들어갈 일이 없는 제어문자(U+0001). 설비명에 / 나 | 가 있어도 안전하다.
+        const LA_SEP = '\u0001';
+        const laRepeatKey = (d) => [d.line || '-', d.equipmentName || '(미입력)', d.faultName || '(고장명 미입력)'].join(LA_SEP);
+
+        function laRepeatAnswer(q, sc) {
+            if (!sc.bd.length) return laNoBD(sc);
+            const g = laGroup(sc.bd, laRepeatKey);
+            const rep = laSort(g, 'count').filter(([, v]) => v.count >= 2);
+            const L = [];
+            L.push('## 반복 고장 (같은 설비 · 같은 고장명이 2회 이상)');
+            L.push(laHead(sc));
+            L.push('');
+            if (!rep.length) return L.join('\n') + '\n반복해서 발생한 고장은 **없습니다.**';
+            L.push(`반복 고장 **${laNum(rep.length)}종** · 관련 고장 **${laNum(rep.reduce((a, [, v]) => a + v.count, 0))}건**`);
+            L.push('');
+            L.push(laTable(['순위', '라인', '설비', '고장명', '횟수', '총 정지시간', '최근 발생'], rep.slice(0, 25).map(([k, v], i) => {
+                const [line, eq, fault] = k.split(LA_SEP);
+                const last = v.items.map(d => d.startTime || '').filter(Boolean).sort().pop() || '-';
+                return [i + 1, line, eq, fault, `${v.count}회`, laMin(v.mins), String(last).replace('T', ' ')];
+            })));
+            L.push('\n_같은 설비에서 같은 이름의 고장이 되풀이되면 임시 조치에 그쳤을 가능성이 있습니다. 방지대책 항목을 확인해 보세요._');
+            return L.join('\n');
+        }
+
+        // 중대고장 (2시간 이상 정지)
+        function laSevereAnswer(q, sc) {
+            if (!sc.bd.length) return laNoBD(sc);
+            const sev = sc.bd.filter(d => (d.durationMinutes || 0) >= 120)
+                .sort((a, b) => (b.durationMinutes || 0) - (a.durationMinutes || 0));
+            const L = [];
+            L.push('## 중대고장 (정지시간 2시간 이상)');
+            L.push(laHead(sc));
+            L.push('');
+            L.push(`전체 ${laNum(sc.bd.length)}건 중 **${laNum(sev.length)}건** (${laPct(sev.length, sc.bd.length)}) · 총 정지 ${laMin(sev.reduce((a, d) => a + (d.durationMinutes || 0), 0))}`);
+            if (!sev.length) return L.join('\n') + '\n\n중대고장은 **없습니다.**';
+            L.push('');
+            L.push(laTable(['발생일시', '라인', '설비', '고장명', '정지시간', '원인', '조치내용'], sev.slice(0, 30).map(d =>
+                [String(d.startTime || '').replace('T', ' '), d.line, d.equipmentName, d.faultName, laMin(d.durationMinutes), d.cause, d.content])));
+            return L.join('\n');
+        }
+
+        // 설비 이름이 질문에 들어 있으면 그 설비 카드
+        function laFindEquip(q) {
+            const names = new Set();
+            rawBDData.forEach(d => { if (d.equipmentName) names.add(String(d.equipmentName).trim()); });
+            rawPMData.forEach(d => { if (d.equipmentName) names.add(String(d.equipmentName).trim()); });
+            let best = '';
+            names.forEach(n => { if (n.length >= 2 && q.includes(n) && n.length > best.length) best = n; });
+            return best || null;
+        }
+        function laEquipCardAnswer(name, sc) {
+            const today = getLocalTodayString();
+            const bd = sc.bd.filter(d => String(d.equipmentName || '').trim() === name)
+                .sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
+            const pm = sc.pm.filter(d => String(d.equipmentName || '').trim() === name);
+            const res = sc.pmRes.filter(d => String(d.equipmentName || '').trim() === name)
+                .sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a)));
+
+            const L = [];
+            L.push(`## ${name} — 설비 이력`);
+            L.push(laHead(sc));
+            L.push('');
+            const totM = bd.reduce((a, d) => a + (d.durationMinutes || 0), 0);
+            const bad = res.filter(r => r.result === '불량').length;
+            const overdue = pm.filter(d => d.status !== '점검' && d.nextCheckDate && d.nextCheckDate < today).length;
+            L.push(laTable(['항목', '값'], [
+                ['고장', `${laNum(bd.length)}건 · 총 정지 ${laMin(totM)}`],
+                ['중대고장(2시간+)', `${laNum(bd.filter(d => (d.durationMinutes || 0) >= 120).length)}건`],
+                ['예방점검 항목', `${laNum(pm.length)}건 (지연 ${laNum(overdue)}건)`],
+                ['점검 실적', `${laNum(res.length)}건 (불량 ${laNum(bad)}건, 불량률 ${laPct(bad, res.length)})`]
+            ]));
+
+            if (bd.length) {
+                L.push('');
+                L.push(`### 고장 이력 (최신순 · 최대 20건)`);
+                L.push(laTable(['발생일시', '고장명', '정지시간', '원인', '조치내용', '방지대책'], bd.slice(0, 20).map(d =>
+                    [String(d.startTime || '').replace('T', ' '), d.faultName, laMin(d.durationMinutes), d.cause, d.content, d.prevention])));
+            }
+            if (pm.length) {
+                L.push('');
+                L.push('### 등록된 예방점검 항목');
+                L.push(laTable(['주기', '구분', '점검 내용', '점검기준', '상태', '예정일'], pm.slice(0, 20).map(d => [
+                    normalizeCycle(d.cycleType), d.category, d.taskDetails, d.criteria,
+                    d.status === '점검' ? '완료' : (d.nextCheckDate && d.nextCheckDate < today ? '지연' : '미점검'),
+                    d.nextCheckDate
+                ])));
+            }
+            if (res.length) {
+                L.push('');
+                L.push('### 점검 실적 (최신순 · 최대 15건)');
+                L.push(laTable(['점검일시', '점검 내용', '결과', '특이사항', '점검자'], res.slice(0, 15).map(r =>
+                    [pmResultTimeStr(r), r.taskDetails, r.result, r.remarks, r.checkedByName])));
+            }
+            if (!bd.length && !pm.length && !res.length) L.push('\n이 범위에 해당 설비의 데이터가 없습니다. 상단 범위를 넓혀 보세요.');
+            return L.join('\n');
+        }
+
+        // 데이터 품질(미입력) 점검
+        function laQualityAnswer(q, sc) {
+            const bd = sc.bd, pm = sc.pm;
+            const blank = (v) => !String(v ?? '').trim();
+            const L = [];
+            L.push('## 데이터 입력 상태 점검');
+            L.push(laHead(sc));
+            L.push('');
+
+            if (bd.length) {
+                const checks = [
+                    ['대분류', d => blank(d.mainCategory)], ['중분류', d => blank(d.subCategory)],
+                    ['소분류', d => blank(d.detailCategory)], ['고장명', d => blank(d.faultName)],
+                    ['정지시간(0분)', d => !(d.durationMinutes > 0)], ['발생원인', d => blank(d.cause)],
+                    ['조치내용', d => blank(d.content)], ['방지대책', d => blank(d.prevention)]
+                ];
+                L.push(`### 고장실적 ${laNum(bd.length)}건`);
+                L.push(laTable(['항목', '미입력', '비율'], checks.map(([label, f]) => {
+                    const n = bd.filter(f).length;
+                    return [label, `${laNum(n)}건`, laPct(n, bd.length)];
+                })));
+
+                const holes = bd.map(d => ({ d, miss: checks.filter(([, f]) => f(d)).map(([l]) => l) }))
+                    .filter(x => x.miss.length).sort((a, b) => b.miss.length - a.miss.length);
+                if (holes.length) {
+                    L.push('');
+                    L.push(`#### 보완이 필요한 고장 건 (빈 항목 많은 순 · 최대 20건 / 전체 ${laNum(holes.length)}건)`);
+                    L.push(laTable(['발생일시', '라인', '설비', '고장명', '비어있는 항목'], holes.slice(0, 20).map(x =>
+                        [String(x.d.startTime || '').replace('T', ' '), x.d.line, x.d.equipmentName, x.d.faultName, x.miss.join(', ')])));
+                }
+            }
+
+            if (pm.length) {
+                L.push('');
+                L.push(`### 예방점검 항목 ${laNum(pm.length)}건`);
+                const pmChecks = [
+                    ['점검기준', d => blank(d.criteria)], ['작업 세부사항', d => blank(d.taskDetails)],
+                    ['구분(전기/기계)', d => blank(d.category)], ['주기', d => blank(d.cycleType)],
+                    ['예정일', d => blank(d.nextCheckDate)]
+                ];
+                L.push(laTable(['항목', '미입력', '비율'], pmChecks.map(([label, f]) => {
+                    const n = pm.filter(f).length;
+                    return [label, `${laNum(n)}건`, laPct(n, pm.length)];
+                })));
+            }
+            if (!bd.length && !pm.length) L.push('이 범위에 점검할 데이터가 없습니다.');
+            return L.join('\n');
+        }
+
+        // 종합 보고서
+        function laReportAnswer(q, sc) {
+            const today = getLocalTodayString();
+            const { bd, pm, pmRes } = sc;
+            const totM = bd.reduce((a, d) => a + (d.durationMinutes || 0), 0);
+            const severe = bd.filter(d => (d.durationMinutes || 0) >= 120);
+            const pending = pm.filter(d => d.status !== '점검');
+            const overdue = pending.filter(d => d.nextCheckDate && d.nextCheckDate < today);
+            const bad = pmRes.filter(r => r.result === '불량');
+
+            const L = [];
+            L.push('# 설비 관리 보고서');
+            L.push(`**범위** ${sc.periodLabel} · ${sc.lineLabel}  |  **작성일** ${today}`);
+            L.push('');
+            L.push('## 1. 요약');
+            L.push(laTable(['항목', '값'], [
+                ['고장 건수', `${laNum(bd.length)}건`],
+                ['총 정지시간', laMin(totM)],
+                ['건당 평균 정지시간', bd.length ? laMin(totM / bd.length) : '-'],
+                ['중대고장 (2시간 이상)', `${laNum(severe.length)}건 (${laPct(severe.length, bd.length)})`],
+                ['예방점검 항목', `${laNum(pm.length)}건`],
+                ['점검 지연', `${laNum(overdue.length)}건`],
+                ['점검 실적', `${laNum(pmRes.length)}건`],
+                ['점검 불량', `${laNum(bad.length)}건 (불량률 ${laPct(bad.length, pmRes.length)})`]
+            ]));
+
+            L.push('');
+            L.push('## 2. 고장 현황');
+            if (!bd.length) {
+                L.push('이 범위에 등록된 고장이 없습니다.');
+            } else {
+                L.push('### 2-1. 라인별');
+                L.push(laTable(['라인', '건수', '정지시간', '비중'], laSort(laGroup(bd, d => d.line), 'count')
+                    .map(([k, v]) => [k, `${laNum(v.count)}건`, laMin(v.mins), laPct(v.count, bd.length)])));
+
+                L.push('');
+                L.push('### 2-2. 고장이 잦은 설비 (상위 10)');
+                L.push(laTable(['순위', '설비', '건수', '정지시간'], laSort(laGroup(bd, d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`), 'count')
+                    .slice(0, 10).map(([k, v], i) => [i + 1, k, `${laNum(v.count)}건`, laMin(v.mins)])));
+
+                L.push('');
+                L.push('### 2-3. 대분류별');
+                L.push(laTable(['대분류', '건수', '정지시간', '비중'], laSort(laGroup(bd, d => d.mainCategory), 'count')
+                    .slice(0, 10).map(([k, v]) => [k, `${laNum(v.count)}건`, laMin(v.mins), laPct(v.count, bd.length)])));
+
+                const shifts = laSort(laGroup(bd, d => d.shiftType), 'count');
+                if (shifts.length > 1) {
+                    L.push('');
+                    L.push('### 2-4. 교대조별');
+                    L.push(laTable(['교대조', '건수', '정지시간', '비중'], shifts.map(([k, v]) =>
+                        [k, `${laNum(v.count)}건`, laMin(v.mins), laPct(v.count, bd.length)])));
+                }
+
+                const months = [...laGroup(bd, d => (d.startTime || '').slice(0, 7)).entries()].sort((a, b) => a[0].localeCompare(b[0]));
+                if (months.length > 1) {
+                    L.push('');
+                    L.push('### 2-5. 월별 추이');
+                    L.push(laTable(['월', '건수', '정지시간'], months.map(([k, v]) => [k, `${laNum(v.count)}건`, laMin(v.mins)])));
+                }
+            }
+
+            L.push('');
+            L.push('## 3. 반복 고장');
+            const rep = laSort(laGroup(bd, laRepeatKey), 'count')
+                .filter(([, v]) => v.count >= 2);
+            if (!rep.length) L.push('같은 설비에서 같은 고장명이 2회 이상 발생한 사례는 없습니다.');
+            else L.push(laTable(['라인', '설비', '고장명', '횟수', '총 정지시간'], rep.slice(0, 15).map(([k, v]) => {
+                const [line, eq, fault] = k.split(LA_SEP);
+                return [line, eq, fault, `${v.count}회`, laMin(v.mins)];
+            })));
+
+            L.push('');
+            L.push('## 4. 예방점검 현황');
+            L.push(laTable(['주기', '전체', '미점검', '지연'], ['일별', '주별', '월별', '분기별', '연별'].map(c => {
+                const all = pm.filter(d => normalizeCycle(d.cycleType) === c);
+                if (!all.length) return null;
+                return [c, `${laNum(all.length)}건`, `${laNum(all.filter(d => d.status !== '점검').length)}건`,
+                    `${laNum(all.filter(d => d.status !== '점검' && d.nextCheckDate && d.nextCheckDate < today).length)}건`];
+            }).filter(Boolean)));
+
+            L.push('');
+            L.push('## 5. 조치가 필요한 항목');
+            L.push(`### 5-1. 지연된 예방점검 (${laNum(overdue.length)}건)`);
+            if (!overdue.length) L.push('지연된 점검이 없습니다.');
+            else {
+                const sorted = overdue.slice().sort((a, b) => String(a.nextCheckDate).localeCompare(String(b.nextCheckDate)));
+                L.push(laTable(['예정일', '경과', '라인', '설비', '점검 내용'], sorted.slice(0, 20).map(d => {
+                    const days = Math.round((new Date(today) - new Date(d.nextCheckDate)) / 86400000);
+                    return [d.nextCheckDate, `${days}일`, d.line, d.equipmentName, d.taskDetails];
+                })));
+            }
+            L.push('');
+            L.push(`### 5-2. 점검 불량 (${laNum(bad.length)}건)`);
+            if (!bad.length) L.push('불량 판정이 없습니다.');
+            else {
+                const sorted = bad.slice().sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a)));
+                L.push(laTable(['점검일시', '라인', '설비', '점검 내용', '특이사항'], sorted.slice(0, 20).map(r =>
+                    [pmResultTimeStr(r), r.line, r.equipmentName, r.taskDetails, r.remarks])));
+            }
+
+            L.push('');
+            L.push('_등록된 데이터를 집계한 결과입니다. 수치는 원본 데이터 기준이며, 미입력 항목은 집계에서 (미입력)으로 처리됩니다._');
+            return L.join('\n');
+        }
+
+        // 간단 집계 (몇 건인지만 묻는 경우)
+        function laSummaryAnswer(q, sc) {
+            const today = getLocalTodayString();
+            const totM = sc.bd.reduce((a, d) => a + (d.durationMinutes || 0), 0);
+            const overdue = sc.pm.filter(d => d.status !== '점검' && d.nextCheckDate && d.nextCheckDate < today).length;
+            const bad = sc.pmRes.filter(r => r.result === '불량').length;
+            return ['## 요약', laHead(sc), '', laTable(['항목', '값'], [
+                ['고장', `${laNum(sc.bd.length)}건`],
+                ['총 정지시간', laMin(totM)],
+                ['중대고장(2시간+)', `${laNum(sc.bd.filter(d => (d.durationMinutes || 0) >= 120).length)}건`],
+                ['예방점검 항목', `${laNum(sc.pm.length)}건`],
+                ['점검 지연', `${laNum(overdue)}건`],
+                ['점검 실적', `${laNum(sc.pmRes.length)}건 (불량 ${laNum(bad)}건)`]
+            ]), '', '_더 자세히 보려면 "보고서 써줘", "고장 잦은 설비", "지연된 점검 알려줘" 처럼 물어보세요._'].join('\n');
+        }
+
+        function laHelpAnswer(prefix) {
+            return [
+                prefix ? `${prefix}\n` : '',
+                '## 이렇게 물어보세요',
+                '등록된 고장·예방점검 데이터를 직접 집계해 답합니다. 상단의 **연도·라인**이 기본 범위이고, 질문에 기간을 쓰면 그쪽이 우선합니다.',
+                '',
+                '**보고서**',
+                '- 이번 달 보고서 써줘 / 지난달 보고서 / 2026년 7월 보고서',
+                '',
+                '**순위 · 집계**',
+                '- 고장이 가장 잦은 설비 상위 10개',
+                '- 정지시간이 긴 라인은?',
+                '- 대분류별 고장 통계 / 교대조별 비교 / 월별 추이',
+                '',
+                '**예방점검**',
+                '- 지연된 점검 알려줘 / 예방점검 현황',
+                '- 불량 판정 목록 / 점검자별 실적',
+                '',
+                '**설비 · 데이터 점검**',
+                '- (설비명을 그대로 입력) → 그 설비의 고장·점검 이력 카드',
+                '- 반복되는 고장 찾아줘 / 중대고장 목록',
+                '- 미입력 항목 찾아줘',
+                '',
+                '**기간 표현** 오늘 · 어제 · 이번 주 · 지난주 · 이번 달 · 지난달 · 최근 30일 · 최근 3개월 · 7월 · 2026년 7월',
+                '',
+                '_답변 아래의 버튼으로 **복사 · 엑셀 · 인쇄(PDF)** 할 수 있습니다._'
+            ].filter(Boolean).join('\n');
+        }
+
+        // 질문 → 분석 라우팅. 못 알아들으면 null (그러면 AI로 넘어간다)
+        function laAnswer(question) {
+            const q = String(question || '').trim();
+            if (!q) return null;
+            const sc = laScope(q);
+
+            if (/뭘 ?할 ?수|무엇을 ?할 ?수|어떤 ?기능|도움말|사용법|어떻게 ?물어|help/i.test(q)) return laHelpAnswer('');
+            if (/보고서|리포트|report|브리핑|정리해 ?줘|보고 ?자료/i.test(q)) return laReportAnswer(q, sc);
+            if (/점검자|누가 ?점검|점검 ?담당/.test(q)) return laInspectorAnswer(q, sc);
+            if (/미입력|누락|빠진|안 ?적|미분류|분류 ?안|입력 ?상태|데이터 ?품질/.test(q)) return laQualityAnswer(q, sc);
+            if (/반복|재발|되풀이|또 ?터/.test(q)) return laRepeatAnswer(q, sc);
+            if (/중대 ?고장|긴 ?고장|큰 ?고장/.test(q)) return laSevereAnswer(q, sc);
+            if (/불량/.test(q)) return laPmDefectAnswer(q, sc);
+            if (/점검 ?실적|실적 ?목록|실적 ?조회|찍은 ?점검/.test(q)) return laPmResultAnswer(q, sc);
+            if (/지연|미점검|밀린|안 ?한 ?점검|점검 ?현황|완료율|예방 ?점검/.test(q)) return laPmStatusAnswer(q, sc);
+
+            // 설비명이 그대로 들어온 질문은 그 설비 카드로. 단 순위를 묻는 문장은 집계로 넘긴다
+            // ("고장 가장 잦은 설비" 같은 문장이 설비명과 겹쳐 카드로 새는 것을 막는다)
+            // "대분류별 고장 통계"처럼 축 이름 + 별 이 붙은 문장도 집계로 본다
+            const isRanking = /가장|제일|많은|잦은|top|상위|순위|높은|별 ?통계|별 ?현황|별로|추이|추세|비교/i.test(q)
+                || /(?:대분류|중분류|소분류|고장명|설비|라인|공정|교대|근무조|구분|월|주기|점검자)\s*별/.test(q);
+            if (!isRanking) {
+                const eq = laFindEquip(q);
+                if (eq) return laEquipCardAnswer(eq, sc);
+            }
+
+            if (isRanking || /긴/.test(q)) return laRankAnswer(q, sc);
+            if (/몇 ?건|총 ?건수|얼마나|현황|요약|통계/.test(q)) return laSummaryAnswer(q, sc);
+            return null;
+        }
+
+        // ---------- 답변 내보내기 (복사 · 엑셀 · 인쇄) ----------
+        // 답변 마크다운에서 표를 뽑아낸다. 가장 가까운 앞쪽 제목을 시트 이름으로 쓴다.
+        function laExtractTables(md) {
+            const lines = String(md || '').split('\n');
+            const cells = (r) => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim().replace(/\*\*/g, ''));
+            const out = [];
+            let title = '보고서';
+            for (let i = 0; i < lines.length; i++) {
+                const h = /^#{1,4}\s+(.*)$/.exec(lines[i]);
+                if (h) { title = h[1].replace(/\*\*/g, '').trim(); continue; }
+                if (/^\s*\|.*\|\s*$/.test(lines[i]) && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1] || '')) {
+                    const head = cells(lines[i]);
+                    const rows = [];
+                    i += 2;
+                    while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { rows.push(cells(lines[i])); i++; }
+                    i--;
+                    out.push({ title, head, rows });
+                }
+            }
+            return out;
+        }
+
+        window.laCopyAnswer = async (idx) => {
+            const m = aiMessages[idx];
+            if (!m) return;
+            try { await navigator.clipboard.writeText(m.text || ''); showToast('답변을 복사했습니다.'); }
+            catch (e) { console.error(e); showToast('복사에 실패했습니다. 답변을 직접 선택해 복사하세요.', 'error'); }
+        };
+
+        window.laExportAnswer = (idx) => {
+            const m = aiMessages[idx];
+            if (!m) return;
+            const tables = laExtractTables(m.text);
+            if (!tables.length) return showToast('표로 된 내용이 없어 엑셀로 만들 수 없습니다.', 'error');
+            const wb = XLSX.utils.book_new();
+            const used = new Set();
+            tables.forEach((t, i) => {
+                let name = String(t.title || '').replace(/[\\\/\?\*\[\]:]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 28) || `표${i + 1}`;
+                while (used.has(name)) name = `${name.slice(0, 26)}_${i + 1}`;
+                used.add(name);
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([t.head, ...t.rows]), name);
+            });
+            XLSX.writeFile(wb, `Seah_Report_${getLocalTodayString()}.xlsx`);
+            showToast(`표 ${tables.length}개를 엑셀로 저장했습니다.`);
+        };
+
+        window.laPrintAnswer = (idx) => {
+            const m = aiMessages[idx];
+            if (!m) return;
+            const w = window.open('', '_blank');
+            if (!w) return showToast('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 시도하세요.', 'error');
+            const css = `
+                *{box-sizing:border-box}
+                body{font-family:'Malgun Gothic','맑은 고딕',system-ui,sans-serif;color:#1e293b;margin:0;padding:28px 32px;line-height:1.55}
+                p{margin:6px 0;font-size:13px}
+                p.font-bold,strong{font-weight:700;color:#0f172a}
+                p.font-bold{font-size:15px;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}
+                table{border-collapse:collapse;width:100%;margin:8px 0 14px;font-size:12px}
+                th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}
+                th{background:#f1f5f9;font-weight:700;white-space:nowrap}
+                ul,ol{margin:6px 0 10px;padding-left:22px;font-size:13px}
+                li{margin:2px 0}
+                code{background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px}
+                .doc-foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b}
+                @media print{body{padding:0} table{page-break-inside:auto} tr{page-break-inside:avoid}}
+            `;
+            const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8">`
+                + `<title>설비 관리 보고서 ${getLocalTodayString()}</title><style>${css}</style></head><body>`
+                + aiMdToHtml(m.text)
+                + `<div class="doc-foot">세아씨엠 설비 관리 시스템 · 출력 ${getLocalTodayString()} · 등록 데이터 집계 결과</div>`
+                + `</body></html>`;
+            w.document.open();
+            w.document.write(html);
+            w.document.close();
+            setTimeout(() => { try { w.focus(); w.print(); } catch (e) { console.error(e); } }, 400);
         };
 
         // ----- 질문 전송 -----
@@ -5663,6 +6363,22 @@
             aiMessages.push(placeholder);
             renderAIMessages();
 
+            // 1) 로컬 분석 먼저. 등록 데이터를 직접 집계하므로 API 없이도 즉시 답한다.
+            let localText = null;
+            try { localText = laAnswer(question); }
+            catch (e) { console.error('로컬 분석 실패', e); }
+
+            if (localText) {
+                placeholder.text = localText;
+                placeholder.pending = false;
+                placeholder.local = true;
+                aiBusy = false;
+                btn.disabled = false;
+                renderAIMessages();
+                return;
+            }
+
+            // 2) 로컬이 해석하지 못한 자유 질문만 AI로 넘긴다. 연동 전이면 사용법 안내로 대체한다.
             try {
                 const token = await currentUser.getIdToken();
                 const r = await fetch('/api/gemini', {
@@ -5676,9 +6392,9 @@
                 placeholder.pending = false;
             } catch (e) {
                 console.error(e);
-                placeholder.text = `답변을 가져오지 못했습니다.\n\n${e.message}`;
+                placeholder.text = laHelpAnswer('이 질문은 데이터 집계만으로는 답하기 어렵습니다. 자유로운 문장 해석은 AI 연동이 열린 뒤에 가능합니다.');
                 placeholder.pending = false;
-                placeholder.error = true;
+                placeholder.local = true;
             } finally {
                 aiBusy = false;
                 btn.disabled = false;
