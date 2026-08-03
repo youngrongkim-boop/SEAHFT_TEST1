@@ -417,6 +417,9 @@
             <button onclick="switchTab('pm-list')" id="nav-pm-list" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 리스트">
                 <i data-lucide="list-checks" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 리스트</span>
             </button>
+            <button onclick="switchTab('pm-result')" id="nav-pm-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 실적 (완료된 점검 이력)">
+                <i data-lucide="clipboard-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 실적</span>
+            </button>
             <button onclick="switchTab('pm-reg')" id="nav-pm-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 등록">
                 <i data-lucide="plus-square" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 등록</span>
             </button>
@@ -790,47 +793,72 @@
                     <div id="pm-list-pagination"></div>
                 </div>
 
-                <!-- 하단: 예방점검 실적 이력 (전체) -->
-                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-2 border-b border-slate-100 shrink-0 gap-3">
-                        <div class="flex items-center">
-                            <h3 class="text-sm md:text-base font-bold text-slate-800 flex items-center">
-                                <i data-lucide="history" class="w-4 h-4 mr-1.5 text-slate-500"></i> 예방점검 실적 이력 (전체)
-                            </h3>
-                            <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="ml-3 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-0.5 rounded hidden transition">필터 해제</button>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
-                            <select id="pm-history-filter-line" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
+            </div>
+
+            <!-- VIEW: 예방점검 실적 (완료된 점검 이력) -->
+            <div id="view-pm-result" class="view-section hidden flex-col gap-3 min-w-0 pb-4">
+                <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+                    <div class="mb-2 shrink-0">
+                        <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                            <select id="pm-res-filter-line" onchange="pmHistPage=1; updatePMResFilterEquip(); debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
                                 <option value="ALL">전체 라인</option>
                             </select>
-                            <select id="pm-history-filter-period" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <select id="pm-res-filter-equip" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[90px]">
+                                <option value="ALL">모든 설비</option>
+                            </select>
+                            <select id="pm-res-filter-category" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">구분: 전체</option>
+                                <option value="전기">전기</option>
+                                <option value="기계">기계</option>
+                            </select>
+                            <select id="pm-res-filter-cycle" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">주기: 전체</option>
+                                <option value="일별">일별</option><option value="주별">주별</option><option value="월별">월별</option><option value="분기별">분기별</option><option value="연별">연별</option>
+                            </select>
+                            <select id="pm-res-filter-result" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium text-blue-600">
+                                <option value="ALL">결과: 전체</option>
+                                <option value="양호">양호</option>
+                                <option value="불량">불량</option>
+                            </select>
+                            <select id="pm-res-filter-period" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">전체 기간</option>
                                 <option value="TODAY">오늘</option>
                                 <option value="WEEK">이번 주</option>
                                 <option value="MONTH">이번 달</option>
+                                <option value="YEAR">올해</option>
                             </select>
-                            <input type="text" id="pm-history-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="설비, 내용 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
-                            <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center">
+                            <input type="text" id="pm-res-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="설비, 내용, 특이사항 검색..." class="w-full sm:w-40 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                            <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-res-count">총 0건</span>
+                            <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200" id="pm-res-summary"></span>
+                            <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded hidden transition font-bold">특정 항목 필터 해제</button>
+                            <button onclick="exportPMHistoryToExcel()" class="ml-auto bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center">
                                 <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
                             </button>
                         </div>
                     </div>
-                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative max-h-[450px]">
+
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-175px)] hidden md:block">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
-                            <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
+                            <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-32">실적 등록일시</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-20">라인</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-48">설비명</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[200px]">작업 세부사항</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center w-24">결과</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 text-center text-red-500 w-16">삭제</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 w-32">점검 일시</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">라인</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">구분</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">주기</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px] text-center">점검기준</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">결과</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-red-500 w-14">삭제</th>
                                 </tr>
                             </thead>
-                            <tbody id="pm-history-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                            <tbody id="pm-history-body" class="divide-y divide-slate-200 text-slate-700"></tbody>
                         </table>
                     </div>
+                    <!-- 모바일 카드 뷰 -->
+                    <div id="pm-res-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-175px)] pb-2"></div>
                     <div id="pm-history-pagination"></div>
                 </div>
             </div>
@@ -1740,7 +1768,6 @@
         let monthlyTargetLine = ''; // 월별 목표 대비 실적 - 선택 라인
         let checkBoardLine = 'ALL'; // 점검 현황판 선택 라인
         let checkBoardCategory = 'ALL'; // 점검 현황판 전기/기계 구분
-        let checkBoardDonePeriod = 'MONTH'; // 점검완료 기간 필터 (TODAY/WEEK/MONTH/ALL)
         let riskLine = 'ALL'; // 고장 예측/위험도 선택 라인
         let equipMappingGroups = []; // 설비명 매핑 그룹 [{id, line, std, members:[]}]
         let mapModalLine = 'CPL'; // 설비명 매핑 모달 선택 라인
@@ -2386,10 +2413,10 @@
             document.getElementById('pm-master-filter-line').innerHTML = pmFilterLine;
             document.getElementById('bd-master-filter-line').innerHTML = bdFilterLine;
 
-            // 실적이력 전용 라인 필터
+            // 예방점검 실적 전용 라인 필터
             let histLineOptions = '<option value="ALL">전체 라인</option>';
             LINES.forEach(line => histLineOptions += `<option value="${line}">${line}</option>`);
-            const histLineEl = document.getElementById('pm-history-filter-line');
+            const histLineEl = document.getElementById('pm-res-filter-line');
             if(histLineEl) histLineEl.innerHTML = histLineOptions;
         }
 
@@ -2421,6 +2448,23 @@
             equipSel.innerHTML = `<option value="ALL">${lineVal === 'ALL' ? '전체 설비' : '모든 설비'}</option>`;
             if (lineVal !== 'ALL') {
                 getDynamicEquipments(lineVal).forEach(eq => equipSel.innerHTML += `<option value="${eq}">${eq}</option>`);
+            }
+        };
+
+        // 예방점검 실적 화면의 설비 필터 — 설정된 설비 + 실적에 실제로 남아 있는 설비명의 합집합
+        window.updatePMResFilterEquip = () => {
+            const lineEl = document.getElementById('pm-res-filter-line');
+            const equipSel = document.getElementById('pm-res-filter-equip');
+            if (!equipSel) return;
+            const prev = equipSel.value;
+            const lineVal = lineEl ? lineEl.value : 'ALL';
+
+            equipSel.innerHTML = `<option value="ALL">${lineVal === 'ALL' ? '전체 설비' : '모든 설비'}</option>`;
+            if (lineVal !== 'ALL') {
+                const set = new Set(getDynamicEquipments(lineVal));
+                rawPMResultsData.forEach(r => { if (r.line === lineVal && String(r.equipmentName || '').trim()) set.add(String(r.equipmentName).trim()); });
+                [...set].sort((a, b) => a.localeCompare(b)).forEach(eq => equipSel.innerHTML += `<option value="${eq}">${eq}</option>`);
+                if (prev && prev !== 'ALL' && set.has(prev)) equipSel.value = prev; // 라인이 그대로면 선택 유지
             }
         };
 
@@ -2633,12 +2677,19 @@
                             window.updatePMFilterEquip();
                         }
                         window.__pmListLineOverride = null;
-                        const histLineEl = document.getElementById('pm-history-filter-line');
-                        if (histLineEl) histLineEl.value = 'ALL';
-                        
+
                         pmListPage = 1;
-                        pmHistPage = 1;
                         window.debouncedRenderPMList();
+                    } else if (tabId === 'pm-result') {
+                        // 예방점검 실적 탭 진입 시 라인 필터 초기화 (딥링크로 특정 라인 지정 시 해당 라인 유지)
+                        const resLineEl = document.getElementById('pm-res-filter-line');
+                        if (resLineEl) {
+                            resLineEl.value = window.__pmResLineOverride || 'ALL';
+                            window.updatePMResFilterEquip();
+                        }
+                        window.__pmResLineOverride = null;
+
+                        pmHistPage = 1;
                         window.debouncedRenderPMHistory();
                     } else if (tabId === 'bd-list') {
                         bdListPage = 1;
@@ -2665,6 +2716,8 @@
             
             const pmLineEl = document.getElementById('pm-filter-line');
             if (pmLineEl) { pmLineEl.value = line; window.updatePMFilterEquip(); }
+            const pmResLineEl = document.getElementById('pm-res-filter-line');
+            if (pmResLineEl) { pmResLineEl.value = line; window.updatePMResFilterEquip(); }
             if (document.getElementById('bd-filter-line')) document.getElementById('bd-filter-line').value = line;
 
             updatePageTitle();
@@ -2687,7 +2740,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '예방점검 실적', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -3027,10 +3080,8 @@
             const kpiTdEl = document.getElementById('kpi-total-downtime');
             if(kpiTdEl) kpiTdEl.innerText = totalMins >= 60 ? `${Math.floor(totalMins/60).toLocaleString()}시간 ${totalMins%60}분` : `${totalMins}분`;
 
-            if(currentTabId === 'pm-list') {
-                window.debouncedRenderPMList();
-                window.debouncedRenderPMHistory();
-            }
+            if(currentTabId === 'pm-list') window.debouncedRenderPMList();
+            if(currentTabId === 'pm-result') window.debouncedRenderPMHistory();
             if(currentTabId === 'bd-list') window.debouncedRenderBDList();
             if(currentTabId === 'check-board') renderCheckBoard();
             if(currentTabId === 'risk-analysis') renderRiskAnalysis();
@@ -3942,8 +3993,10 @@
 
             if (!isCorrection) {
                 // 최초 완료 시에만: 실적 이력 기록 + 다음 주기 항목 자동 생성
+                // 구분·주기·점검기준도 함께 남긴다 (실적 화면에서 원본 항목 없이도 분류·조회 가능)
                 batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_results')), {
                     taskId: taskId, line: task.line, equipmentName: task.equipmentName,
+                    category: task.category || '', cycleType: normalizeCycle(task.cycleType), criteria: task.criteria || '',
                     taskDetails: task.taskDetails, result: resultType, remarks: task.remarks || '',
                     checkTime: checkTime, checkedAt: serverTimestamp()
                 });
@@ -3964,7 +4017,6 @@
 
         window.setCheckBoardLine = (line) => { checkBoardLine = line; renderCheckBoard(); };
         window.setCheckBoardCategory = (cat) => { checkBoardCategory = cat; renderCheckBoard(); };
-        window.setCheckBoardDonePeriod = (p) => { checkBoardDonePeriod = p; renderCheckBoard(); };
 
         window.renderCheckBoard = () => {
             const todayStr = getLocalTodayString();
@@ -4013,35 +4065,9 @@
                     ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200">점검예정</span>`
                     : `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">등록예정</span>`;
 
-            // 현황판(상단) = 미점검 항목 중 점검예정 + 점검지연  /  등록예정(현재 주기 이후)은 숨김
-            // 하단 = 점검완료(양호/불량 실적 등록되어 status='점검')
+            // 현황판 = 미점검 항목 중 점검예정 + 점검지연  /  등록예정(현재 주기 이후)은 숨김
+            // 완료된 점검 실적은 [예방점검 실적] 화면에서 본다.
             const pendingScope = scope.filter(d => d.status !== '점검');
-            const completedAll = scope.filter(d => d.status === '점검')
-                .sort((a, b) => (b.resultCheckTime || '').localeCompare(a.resultCheckTime || '') || ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
-            // 완료일(문자열 YYYY-MM-DD) 추출
-            const doneDateStr = (item) => {
-                if (item.resultCheckTime) return String(item.resultCheckTime).slice(0, 10);
-                if (item.checkTime) return String(item.checkTime).slice(0, 10);
-                if (item.createdAt && item.createdAt.seconds) {
-                    const d = new Date(item.createdAt.seconds * 1000);
-                    const off = d.getTimezoneOffset() * 60000;
-                    return new Date(d - off).toISOString().slice(0, 10);
-                }
-                return '';
-            };
-            // 기간 필터(오늘/이번주/이번달/전체) 경계 계산
-            const weekStart = (() => { const d = new Date(todayStr); d.setDate(d.getDate() - d.getDay()); const off = d.getTimezoneOffset() * 60000; return new Date(d - off).toISOString().slice(0, 10); })();
-            const monthPrefix = todayStr.slice(0, 7);
-            const inDonePeriod = (item) => {
-                if (checkBoardDonePeriod === 'ALL') return true;
-                const ds = doneDateStr(item);
-                if (!ds) return false;
-                if (checkBoardDonePeriod === 'TODAY') return ds === todayStr;
-                if (checkBoardDonePeriod === 'WEEK') return ds >= weekStart && ds <= todayStr;
-                if (checkBoardDonePeriod === 'MONTH') return ds.slice(0, 7) === monthPrefix;
-                return true;
-            };
-            const completedItems = completedAll.filter(inDonePeriod);
             const boardItems = pendingScope.filter(d => statusOf(d) !== '등록예정');
 
             // 조치시간(자유 텍스트) → 분 단위 파싱. 예) "1시간 30분"→90, "30분"→30, "45"→45, "1:30"→90
@@ -4075,11 +4101,6 @@
                 <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
                 <button onclick="handlePMResult('${item.id}','불량')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">불량</button>
             </div>`;
-            const resBadgeHtml = (item) => item.result === '양호'
-                ? `<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200">양호</span>`
-                : item.result === '불량'
-                    ? `<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold border border-red-200">불량</span>`
-                    : `<span class="text-slate-400 text-[10px]">-</span>`;
             // 모바일용 카드 (가로 스크롤 없이 세로로 쌓아 보기)
             const boardCard = (item, st) => {
                 const isOverdue = st === '점검지연';
@@ -4094,20 +4115,6 @@
                     <div class="flex items-center gap-2 mt-2">${remarksCell(item)}<div class="ml-auto">${resultBtns(item)}</div></div>
                 </div>`;
             };
-            const completedCard = (item) => {
-                const doneStr = item.resultCheckTime ? String(item.resultCheckTime).replace('T', ' ') : '-';
-                return `<div class="px-3 py-3 border-b border-slate-100">
-                    <div class="flex items-center justify-between gap-2 mb-1.5">
-                        <div class="flex items-center gap-1.5 min-w-0"><span class="font-bold text-brand-600 text-[11px] shrink-0">${item.line}</span><span class="font-semibold text-slate-800 text-sm truncate">${item.equipmentName}</span></div>
-                        ${resBadgeHtml(item)}
-                    </div>
-                    <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
-                    <div class="text-xs text-slate-500 leading-snug mt-0.5"><span class="text-slate-400 mr-1">기준</span>${item.criteria || '-'}</div>
-                    <div class="text-[11px] text-slate-500 mt-1.5">완료 ${doneStr}</div>
-                    <div class="flex items-center gap-2 mt-2">${remarksCell(item)}<div class="ml-auto">${resultBtns(item)}</div></div>
-                </div>`;
-            };
-
             let html = '';
             let boardHasAny = false;
             CYCLE_ORDER.forEach(cycle => {
@@ -4165,52 +4172,6 @@
             if (!boardHasAny) {
                 html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 px-4 py-8 text-center text-slate-400 text-xs">점검예정·점검지연 항목이 없습니다.</div>`;
             }
-
-            // ===== 하단: 점검완료 (양호/불량 실적이 등록된 항목) =====
-            const donePeriodBtns = [['TODAY', '오늘'], ['WEEK', '이번주'], ['MONTH', '이번달'], ['ALL', '전체']].map(([v, label]) => {
-                const active = checkBoardDonePeriod === v;
-                return `<button type="button" onclick="setCheckBoardDonePeriod('${v}')" class="px-2.5 py-1 rounded text-[11px] font-bold transition ${active ? 'bg-green-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-green-200 hover:bg-green-100'}">${label}</button>`;
-            }).join('');
-            html += `<div class="bg-white rounded-xl shadow-sm border border-green-200 overflow-hidden">
-                <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-green-50 border-b border-green-100">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 rounded bg-green-600 text-white text-xs font-bold">점검완료</span>
-                        <span class="text-xs text-slate-500">양호/불량 실적 등록 완료 · ${completedItems.length}건${completedItems.length > 30 ? ' (최근 30건 표시)' : ''} / 전체 ${completedAll.length}건</span>
-                    </div>
-                    <div class="flex items-center gap-1">${donePeriodBtns}</div>
-                </div>`;
-            if (!completedItems.length) {
-                html += `<div class="px-4 py-5 text-center text-slate-400 text-xs">선택한 기간에 점검완료 항목이 없습니다.</div>`;
-            } else {
-                html += `<div class="overflow-x-auto hidden md:block"><table class="w-full text-left text-xs whitespace-nowrap min-w-[880px]">
-                    <thead class="bg-white text-slate-500"><tr>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100">라인</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100">설비명</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100">점검 내용</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">점검기준</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">완료일시</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">결과</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">특이사항</th>
-                        <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 정정</th>
-                    </tr></thead><tbody>`;
-                let doneCards = '';
-                completedItems.slice(0, 30).forEach(item => {
-                    const doneStr = item.resultCheckTime ? String(item.resultCheckTime).replace('T', ' ') : '-';
-                    html += `<tr class="border-b border-slate-50 hover:bg-slate-50">
-                        <td class="py-2 px-3 font-bold text-brand-600">${item.line}</td>
-                        <td class="py-2 px-3 font-semibold text-slate-800">${item.equipmentName}</td>
-                        <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[150px] leading-snug">${item.taskDetails || '-'}</td>
-                        <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[130px] leading-snug text-center">${item.criteria || '-'}</td>
-                        <td class="py-2 px-3 text-center text-slate-500">${doneStr}</td>
-                        <td class="py-2 px-3 text-center">${resBadgeHtml(item)}</td>
-                        <td class="py-2 px-3 text-center">${remarksCell(item)}</td>
-                        <td class="py-2 px-3 text-center">${resultBtns(item)}</td>
-                    </tr>`;
-                    doneCards += completedCard(item);
-                });
-                html += `</tbody></table></div><div class="md:hidden">${doneCards}</div>`;
-            }
-            html += `</div>`;
 
             contentEl.innerHTML = html;
             if (window.lucide) lucide.createIcons({ root: contentEl });
@@ -4546,115 +4507,193 @@
             window.debouncedRenderPMHistory();
         };
         
-        function getFilteredPMHistory() {
-            const kw = document.getElementById('pm-history-search').value.toLowerCase();
-            const period = document.getElementById('pm-history-filter-period').value;
-            const fLine = document.getElementById('pm-history-filter-line')?.value || 'ALL';
+        // 실적 문서(pm_results)에는 구분·주기·점검기준이 없을 수 있다(초기 데이터).
+        // 원본 점검항목(pm_tasks)에서 보완해 리스트와 동일한 기준으로 분류할 수 있게 한다.
+        function buildPMTaskIndex() {
+            const byId = new Map(), byKey = new Map();
+            rawPMData.forEach(t => {
+                byId.set(t.id, t);
+                const k = `${t.line}|${t.equipmentName}|${t.taskDetails}`;
+                if (!byKey.has(k)) byKey.set(k, t);
+            });
+            return { byId, byKey };
+        }
 
-            let list = rawPMResultsData; 
-            
-            if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
-
-            if (selectedHistoryTaskId) list = list.filter(d => d.taskId === selectedHistoryTaskId);
-            if (kw) {
-                list = list.filter(d => 
-                    (d.equipmentName || '').toLowerCase().includes(kw) || 
-                    (d.taskDetails || '').toLowerCase().includes(kw) || 
-                    (d.remarks || '').toLowerCase().includes(kw) ||
-                    (d.result || '').toLowerCase().includes(kw) ||
-                    (d.line || '').toLowerCase().includes(kw)
-                );
+        // 실적 일시: 현장에서 입력한 점검일시 우선, 없으면 서버 등록시각
+        function pmResultTimeStr(item) {
+            if (item.checkTime) return String(item.checkTime).replace('T', ' ');
+            if (item.checkedAt && item.checkedAt.seconds) {
+                const d = new Date(item.checkedAt.seconds * 1000);
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
             }
-            
-            if(period !== 'ALL') {
-                const now = new Date();
-                const todayStr = getLocalTodayString();
-                
-                list = list.filter(d => {
-                    if(!d.checkedAt || !d.checkedAt.seconds) return false;
-                    const dDate = new Date(d.checkedAt.seconds * 1000);
-                    const dOffset = dDate.getTimezoneOffset() * 60000;
-                    const dLocalStr = (new Date(dDate - dOffset)).toISOString().split('T')[0];
+            return '';
+        }
 
-                    if(period === 'TODAY') {
-                        return dLocalStr === todayStr;
-                    } else if(period === 'WEEK') {
-                        const startOfWeek = new Date(now);
-                        startOfWeek.setDate(now.getDate() - now.getDay());
-                        startOfWeek.setHours(0,0,0,0);
-                        return dDate >= startOfWeek;
-                    } else if(period === 'MONTH') {
-                        return dDate.getFullYear() === now.getFullYear() && dDate.getMonth() === now.getMonth();
-                    }
+        function getFilteredPMHistory() {
+            const val = (id, dflt) => (document.getElementById(id)?.value ?? dflt);
+            const kw = String(val('pm-res-search', '')).toLowerCase().trim();
+            const period = val('pm-res-filter-period', 'ALL');
+            const fLine = val('pm-res-filter-line', 'ALL');
+            const fEquip = val('pm-res-filter-equip', 'ALL');
+            const fCat = val('pm-res-filter-category', 'ALL');
+            const fCycle = val('pm-res-filter-cycle', 'ALL');
+            const fResult = val('pm-res-filter-result', 'ALL');
+
+            const idx = buildPMTaskIndex();
+            let list = rawPMResultsData.map(r => {
+                const t = (r.taskId && idx.byId.get(r.taskId)) || idx.byKey.get(`${r.line}|${r.equipmentName}|${r.taskDetails}`) || null;
+                const when = pmResultTimeStr(r);
+                return {
+                    ...r,
+                    _category: r.category || (t && t.category) || '',
+                    _cycle: normalizeCycle(r.cycleType || (t && t.cycleType) || ''),
+                    _criteria: r.criteria || (t && t.criteria) || '',
+                    _when: when,
+                    _date: when.slice(0, 10)
+                };
+            });
+
+            if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
+            if (fEquip !== 'ALL') list = list.filter(d => String(d.equipmentName || '').trim() === fEquip);
+            if (fCat !== 'ALL') list = list.filter(d => d._category === fCat);
+            if (fCycle !== 'ALL') list = list.filter(d => d._cycle === fCycle);
+            if (fResult !== 'ALL') list = list.filter(d => d.result === fResult);
+            if (selectedHistoryTaskId) list = list.filter(d => d.taskId === selectedHistoryTaskId);
+
+            if (kw) {
+                list = list.filter(d => [d.equipmentName, d.taskDetails, d.remarks, d.result, d.line, d._criteria, d._category, d._cycle]
+                    .some(v => String(v || '').toLowerCase().includes(kw)));
+            }
+
+            if (period !== 'ALL') {
+                const todayStr = getLocalTodayString();
+                const weekStart = (() => {
+                    const d = new Date(todayStr);
+                    d.setDate(d.getDate() - d.getDay());
+                    const off = d.getTimezoneOffset() * 60000;
+                    return new Date(d - off).toISOString().slice(0, 10);
+                })();
+                list = list.filter(d => {
+                    const ds = d._date;
+                    if (!ds) return false;
+                    if (period === 'TODAY') return ds === todayStr;
+                    if (period === 'WEEK') return ds >= weekStart && ds <= todayStr;
+                    if (period === 'MONTH') return ds.slice(0, 7) === todayStr.slice(0, 7);
+                    if (period === 'YEAR') return ds.slice(0, 4) === todayStr.slice(0, 4);
                     return true;
                 });
             }
 
+            // 점검일시 최신순 (일시가 없는 오래된 실적은 서버 등록시각으로 보정)
+            list.sort((a, b) => b._when.localeCompare(a._when) || ((b.checkedAt?.seconds || 0) - (a.checkedAt?.seconds || 0)));
             return list;
         }
 
         window.renderPMHistory = () => {
             const tbody = document.getElementById('pm-history-body');
+            if (!tbody) return;
+            const cardsEl = document.getElementById('pm-res-cards');
+            const pagEl = document.getElementById('pm-history-pagination');
             const list = getFilteredPMHistory();
 
-            if(list.length === 0) { 
-                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 bg-white text-xs md:text-sm">해당 이력이 없습니다.</td></tr>`; 
-                document.getElementById('pm-history-pagination').innerHTML = '';
-                return; 
+            const good = list.filter(d => d.result === '양호').length;
+            const bad = list.length - good;
+            const countEl = document.getElementById('pm-res-count');
+            if (countEl) countEl.innerText = `총 ${list.length.toLocaleString()}건`;
+            const sumEl = document.getElementById('pm-res-summary');
+            if (sumEl) sumEl.innerHTML = `<span class="text-blue-600">양호 ${good.toLocaleString()}</span><span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`;
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검 실적이 없습니다.</td></tr>`;
+                if (cardsEl) cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">조건에 맞는 점검 실적이 없습니다.</div>`;
+                if (pagEl) pagEl.innerHTML = '';
+                return;
             }
 
-            const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
+            const totalPages = Math.ceil(list.length / PM_LIST_PER_PAGE);
             if (pmHistPage > totalPages) pmHistPage = Math.max(1, totalPages);
-            const start = (pmHistPage - 1) * ITEMS_PER_PAGE;
-            const paginatedList = list.slice(start, start + ITEMS_PER_PAGE);
+            const start = (pmHistPage - 1) * PM_LIST_PER_PAGE;
+            const paginatedList = list.slice(start, start + PM_LIST_PER_PAGE);
+
+            const resBadgeOf = (r) => r === '양호'
+                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] md:text-[11px] font-bold border border-blue-200">양호</span>`
+                : r === '불량'
+                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] md:text-[11px] font-bold border border-red-200">불량</span>`
+                    : `<span class="text-slate-400 text-[10px]">-</span>`;
 
             let html = '';
-            paginatedList.forEach(item => {
-                let dateStr = '-';
-                if(item.checkTime) {
-                    dateStr = item.checkTime.replace('T', ' ');
-                } else if(item.checkedAt && item.checkedAt.seconds) {
-                    const d = new Date(item.checkedAt.seconds * 1000);
-                    dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                }
-                const resBadge = item.result === '양호' ? `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">양호</span>` : `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">불량</span>`;
+            let cards = '';
+            paginatedList.forEach((item, index) => {
+                const absIndex = start + index + 1;
+                const isBad = item.result === '불량';
+                const delBtn = canEditLine(item.line)
+                    ? `<button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
+                    : '<span class="text-slate-300 text-xs">-</span>';
+
                 html += `
-                    <tr class="bg-white hover:bg-slate-50 transition-colors border-b border-slate-100">
-                        <td class="py-2 px-3 font-medium text-slate-500">${dateStr}</td>
-                        <td class="py-2 px-3 text-center font-bold text-brand-600">${item.line || '-'}</td>
-                        <td class="py-2 px-3 font-bold text-slate-800">${item.equipmentName}</td>
-                        <td class="py-2 px-3 text-slate-700 whitespace-normal min-w-[200px] break-words leading-snug">${item.taskDetails}</td>
-                        <td class="py-2 px-3 text-center">${resBadge}</td>
-                        <td class="py-2 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
-                        <td class="py-2 px-3 text-center">
-                            <button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </td>
+                    <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100">
+                        <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
+                        <td class="py-2.5 px-3 font-medium text-slate-500">${item._when || '-'}</td>
+                        <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line || '-'}</td>
+                        <td class="py-2.5 px-3 font-bold text-slate-800">${item.equipmentName || '-'}</td>
+                        <td class="py-2.5 px-2 text-center text-slate-600">${item._category || '-'}</td>
+                        <td class="py-2.5 px-2 text-center text-blue-600 font-bold">${item._cycle || '-'}</td>
+                        <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails || '-'}</td>
+                        <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
+                        <td class="py-2.5 px-2 text-center">${resBadgeOf(item.result)}</td>
+                        <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
+                        <td class="py-2.5 px-2 text-center">${delBtn}</td>
                     </tr>
                 `;
+
+                // 모바일 카드
+                cards += `
+                    <div class="bg-white border ${isBad ? 'border-red-200 ring-1 ring-red-100' : 'border-slate-200'} rounded-xl p-3 shadow-sm">
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="font-bold text-brand-600 text-[11px] shrink-0">${item.line || '-'}</span>
+                                <span class="font-semibold text-slate-800 text-sm truncate">${item.equipmentName || '-'}</span>
+                            </div>
+                            ${resBadgeOf(item.result)}
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[10px] mb-1">
+                            <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">${item._category || '-'}</span>
+                            <span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100">${item._cycle || '-'}</span>
+                            <span class="text-slate-400 ml-auto">${item._when || '-'}</span>
+                        </div>
+                        <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
+                        <div class="text-xs text-slate-500 leading-snug mt-0.5"><span class="text-slate-400 mr-1">기준</span>${item._criteria || '-'}</div>
+                        <div class="flex items-end justify-between gap-2 mt-1.5">
+                            <div class="text-xs text-slate-500 leading-snug min-w-0"><span class="text-slate-400 mr-1">특이</span>${item.remarks || '-'}</div>
+                            <div class="shrink-0">${delBtn}</div>
+                        </div>
+                    </div>
+                `;
             });
+
             tbody.innerHTML = html;
-            document.getElementById('pm-history-pagination').innerHTML = getPaginationHTML(pmHistPage, totalPages, 'window.changePMHistPage');
-            lucide.createIcons({root: tbody});
+            if (cardsEl) cardsEl.innerHTML = cards;
+            if (pagEl) pagEl.innerHTML = getPaginationHTML(pmHistPage, totalPages, 'window.changePMHistPage');
+            if (window.lucide) {
+                lucide.createIcons({ root: tbody });
+                if (cardsEl) lucide.createIcons({ root: cardsEl });
+            }
         };
 
         window.exportPMHistoryToExcel = () => {
             const list = getFilteredPMHistory();
             if(list.length === 0) return showToast('출력할 데이터가 없습니다.', 'error');
-            
-            const ws_data = [["등록일시", "라인", "설비명", "작업 세부사항", "결과", "특이사항"]];
+
+            const ws_data = [["점검일시", "라인", "설비명", "구분", "주기", "작업 세부사항", "점검기준", "결과", "특이사항"]];
             list.forEach(item => {
-                let dateStr = '-';
-                if(item.checkedAt && item.checkedAt.seconds) {
-                    const d = new Date(item.checkedAt.seconds * 1000);
-                    dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                }
-                ws_data.push([dateStr, item.line || '', item.equipmentName || '', item.taskDetails || '', item.result || '', item.remarks || '']);
+                ws_data.push([item._when || '', item.line || '', item.equipmentName || '', item._category || '', item._cycle || '',
+                              item.taskDetails || '', item._criteria || '', item.result || '', item.remarks || '']);
             });
-            
+
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "PM_History");
-            XLSX.writeFile(wb, "Seah_PM_History.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "PM_Results");
+            XLSX.writeFile(wb, "Seah_PM_Results.xlsx");
         };
 
         // ==========================================
