@@ -417,11 +417,14 @@
             <button onclick="switchTab('pm-list')" id="nav-pm-list" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 리스트">
                 <i data-lucide="list-checks" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 리스트</span>
             </button>
-            <button onclick="switchTab('pm-result')" id="nav-pm-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 실적 (완료된 점검 이력)">
-                <i data-lucide="clipboard-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 실적</span>
+            <button onclick="switchTab('pm-result')" id="nav-pm-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="점검 실적 (예방·돌발·긴급 등 모든 점검 이력)">
+                <i data-lucide="clipboard-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">점검 실적</span>
             </button>
-            <button onclick="switchTab('pm-reg')" id="nav-pm-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 등록">
+            <button onclick="switchTab('pm-reg')" id="nav-pm-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 등록 (주기 점검 항목)">
                 <i data-lucide="plus-square" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 등록</span>
+            </button>
+            <button onclick="goToAdhocReg()" id="nav-pm-adhoc" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="돌발·긴급 등 수시로 나간 점검을 바로 실적으로 등록">
+                <i data-lucide="zap" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">수시점검 등록</span>
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">고장실적 관리</div>
@@ -795,9 +798,11 @@
 
             </div>
 
-            <!-- VIEW: 예방점검 실적 (완료된 점검 이력) -->
+            <!-- VIEW: 점검 실적 (예방·법정·특별 + 돌발·긴급 모든 점검 이력) -->
             <div id="view-pm-result" class="view-section hidden flex-col gap-3 min-w-0 pb-4">
                 <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+                    <!-- 점검유형 탭: 계획점검(예방·법정·특별)과 수시점검(돌발·긴급)을 갈라 본다 -->
+                    <div id="pm-res-type-tabs" class="flex flex-wrap gap-1.5 mb-2 shrink-0"></div>
                     <div class="mb-2 shrink-0">
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
                             <select id="pm-res-filter-line" onchange="pmHistPage=1; updatePMResFilterEquip(); debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
@@ -845,6 +850,7 @@
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">유형</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 w-32">점검 일시</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">라인</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
@@ -854,6 +860,7 @@
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px] text-center">점검기준</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">결과</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">점검자</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24">발생사유</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-red-500 w-14">삭제</th>
                                 </tr>
@@ -873,11 +880,19 @@
                     <!-- 수동 등록 Form -->
                     <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col xl:col-span-2">
                         <div class="flex items-center justify-between mb-4 md:mb-6 border-b pb-3">
-                            <h3 class="text-base md:text-lg font-bold text-slate-800 flex items-center">
+                            <h3 id="pm-reg-title" class="text-base md:text-lg font-bold text-slate-800 flex items-center">
                                 <i data-lucide="edit" class="w-5 h-5 mr-2 text-slate-500"></i> 수동 등록 (신규 예방점검)
                             </h3>
                         </div>
                         <form id="form-pm" onsubmit="handlePMSubmit(event)" class="space-y-4 md:space-y-5 flex-1">
+                            <!-- 점검유형: 계획형(주기 있음)은 점검 항목으로, 비계획형(수시)은 실적으로 바로 저장된다 -->
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-1.5">점검유형</label>
+                                <div id="pm-worktype-tabs" class="flex flex-wrap gap-1.5"></div>
+                                <input type="hidden" id="pm-worktype" value="예방점검">
+                                <p id="pm-worktype-hint" class="text-[11px] text-slate-500 mt-1.5 leading-relaxed"></p>
+                            </div>
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-bold text-slate-700 mb-1.5">적용 라인</label>
@@ -911,14 +926,37 @@
                                         <option value="기계">기계</option>
                                     </select>
                                 </div>
-                                <div>
+                                <div id="pm-cycle-wrap">
                                     <label class="block text-sm font-bold text-slate-700 mb-1.5">점검주기</label>
-                                    <select id="pm-cycle" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                    <select id="pm-cycle" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                                         <option value="일별">일별</option><option value="주별">주별</option><option value="월별">월별</option><option value="분기별">분기별</option><option value="연별">연별</option>
                                     </select>
                                 </div>
+                                <div id="pm-adhoc-time-wrap" class="hidden">
+                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">점검 일시</label>
+                                    <input type="datetime-local" id="pm-adhoc-time" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                </div>
                             </div>
-                            
+
+                            <!-- 수시점검(돌발·긴급) 전용 입력 -->
+                            <div id="pm-adhoc-fields" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">점검 결과</label>
+                                    <select id="pm-adhoc-result" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                        <option value="양호">양호</option>
+                                        <option value="불량">불량</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">발생 사유</label>
+                                    <select id="pm-adhoc-reason" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"></select>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">특이사항 <span class="text-[11px] font-normal text-slate-400 ml-1">(선택)</span></label>
+                                    <textarea id="pm-adhoc-remarks" rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="예: 베어링부 이상음, 임시 조치 후 경과 관찰 필요"></textarea>
+                                </div>
+                            </div>
+
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-1.5">작업 세부사항 <span class="text-[11px] font-normal text-slate-400 ml-1">(직접 입력 또는 ▼ 클릭)</span></label>
                                 <div class="relative w-full" id="pm-details-container">
@@ -932,13 +970,13 @@
                             
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-1.5">점검기준</label>
-                                <textarea id="pm-criteria" required rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="예: 소음 및 진동 기준치 이하"></textarea>
+                                <textarea id="pm-criteria" rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="예: 소음 및 진동 기준치 이하"></textarea>
                             </div>
-                            <p class="text-xs text-blue-600 bg-blue-50 p-2 rounded flex items-start sm:items-center mt-auto mb-4">
-                                <i data-lucide="info" class="w-4 h-4 mr-1 shrink-0 mt-0.5 sm:mt-0"></i> 
-                                <span>신규 등록 시 '다음 점검 예정일'은 해당 주기의 종료일로 자동 계산됩니다.</span>
+                            <p id="pm-reg-note" class="text-xs text-blue-600 bg-blue-50 p-2 rounded flex items-start sm:items-center mt-auto mb-4">
+                                <i data-lucide="info" class="w-4 h-4 mr-1 shrink-0 mt-0.5 sm:mt-0"></i>
+                                <span id="pm-reg-note-text">신규 등록 시 '다음 점검 예정일'은 해당 주기의 종료일로 자동 계산됩니다.</span>
                             </p>
-                            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-md transition text-sm shadow-sm">점검 항목 생성</button>
+                            <button type="submit" id="pm-submit-btn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-md transition text-sm shadow-sm">점검 항목 생성</button>
                         </form>
                     </div>
 
@@ -1870,6 +1908,13 @@
             return (new Date(d - offset)).toISOString().split('T')[0];
         }
 
+        // datetime-local 입력에 넣을 현재 시각 (YYYY-MM-DDTHH:mm)
+        function getLocalDateTimeString() {
+            const d = new Date();
+            const offset = d.getTimezoneOffset() * 60000;
+            return (new Date(d - offset)).toISOString().slice(0, 16);
+        }
+
         // 1. 캘린더 기반 '점검 예정일' 계산 로직
         function calculatePeriodEndDate(baseDateStr, cycleType, offset = 0) {
             let d = new Date(baseDateStr);
@@ -1994,8 +2039,40 @@
             if(s.includes('주') || s.includes('week')) return '주별';
             if(s.includes('분기') || s.includes('quarter')) return '분기별';
             if(s.includes('연') || s.includes('년') || s.includes('year')) return '연별';
-            return '월별'; 
+            return '월별';
         }
+
+        // ==========================================
+        // 점검유형 — 계획형과 비계획형은 저장 위치부터 다르다.
+        //   계획형(예방·법정·특별) : 주기·예정일이 있는 '점검 항목' → pm_tasks
+        //                            (리스트·현황판·지연알림의 대상)
+        //   비계획형(돌발·긴급)    : 수시로 나가 수행한 결과 → pm_results 에 직접 기록
+        //                            항목을 만들지 않으므로 예정일·지연·다음주기 개념이 없고,
+        //                            pm_tasks 기반 화면(리스트·현황판·알림)에 자연히 나타나지 않는다.
+        // ==========================================
+        const PLANNED_WORK_TYPES = ['예방점검', '법정점검', '특별점검'];
+        const ADHOC_WORK_TYPES = ['돌발점검', '긴급점검'];
+        const WORK_TYPES = [...PLANNED_WORK_TYPES, ...ADHOC_WORK_TYPES];
+        const ADHOC_REASONS = ['이상음·진동 감지', '고장 직후 확인', '온도·누유 이상', '안전 지적', '상부 지시', '외부 요청', '기타'];
+
+        // 유형이 없는 과거 데이터는 전부 예방점검으로 본다 (마이그레이션 불필요)
+        const normalizeWorkType = (v) => {
+            const s = String(v || '').trim();
+            return WORK_TYPES.includes(s) ? s : '예방점검';
+        };
+        const isAdhocType = (v) => ADHOC_WORK_TYPES.includes(normalizeWorkType(v));
+
+        const WORK_TYPE_STYLE = {
+            '예방점검': 'bg-blue-100 text-blue-700 border-blue-200',
+            '법정점검': 'bg-purple-100 text-purple-700 border-purple-200',
+            '특별점검': 'bg-teal-100 text-teal-700 border-teal-200',
+            '돌발점검': 'bg-amber-100 text-amber-800 border-amber-300',
+            '긴급점검': 'bg-red-100 text-red-700 border-red-300'
+        };
+        const workTypeBadge = (v) => {
+            const t = normalizeWorkType(v);
+            return `<span class="px-1.5 py-0.5 rounded text-[10px] md:text-[11px] font-bold border ${WORK_TYPE_STYLE[t]}">${t}</span>`;
+        };
 
         function getDynamicEquipments(line) {
             let equips = new Set();
@@ -2720,6 +2797,10 @@
                     } else if (tabId === 'bd-list') {
                         bdListPage = 1;
                         window.debouncedRenderBDList();
+                    } else if (tabId === 'pm-reg') {
+                        // [수시점검 등록] 으로 들어오면 돌발점검이 선택된 상태로, 그 외에는 예방점검으로
+                        window.setPMWorkType(window.__pmRegWorkType || '예방점검');
+                        window.__pmRegWorkType = null;
                     } else if (tabId === 'bd-reg') {
                         initCategorySelects(); // 등록 폼 진입 시 실제 사용된 분류값을 반영
                     } else if (tabId === 'manual-lib') {
@@ -2766,7 +2847,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '예방점검 실적', 'pm-reg': '예방점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '점검 실적', 'pm-reg': '점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -3781,21 +3862,113 @@
         // ==========================================
         // PM Logic
         // ==========================================
+        // ----- 점검 등록 폼: 유형에 따라 입력 항목을 바꾼다 -----
+        window.setPMWorkType = (type) => {
+            const t = normalizeWorkType(type);
+            const adhoc = isAdhocType(t);
+            const el = (id) => document.getElementById(id);
+            el('pm-worktype').value = t;
+
+            // 유형 탭
+            const tabs = el('pm-worktype-tabs');
+            if (tabs) {
+                tabs.innerHTML = WORK_TYPES.map(w => {
+                    const on = w === t;
+                    const base = isAdhocType(w) ? 'amber' : 'brand';
+                    return `<button type="button" onclick="setPMWorkType('${w}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition border ${on
+                        ? (base === 'amber' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-brand-600 text-white border-brand-600 shadow-sm')
+                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${w}</button>`;
+                }).join('');
+            }
+
+            // 계획형 ↔ 비계획형 입력 전환
+            el('pm-cycle-wrap').classList.toggle('hidden', adhoc);
+            el('pm-adhoc-time-wrap').classList.toggle('hidden', !adhoc);
+            el('pm-adhoc-fields').classList.toggle('hidden', !adhoc);
+            el('pm-cycle').required = !adhoc;
+            el('pm-criteria').required = !adhoc;
+
+            const reason = el('pm-adhoc-reason');
+            if (reason && !reason.options.length) reason.innerHTML = ADHOC_REASONS.map(r => `<option value="${r}">${r}</option>`).join('');
+            const timeEl = el('pm-adhoc-time');
+            if (adhoc && timeEl && !timeEl.value) timeEl.value = getLocalDateTimeString();
+
+            el('pm-reg-title').innerHTML = adhoc
+                ? `<i data-lucide="zap" class="w-5 h-5 mr-2 text-amber-500"></i> 수시점검 실적 등록 (${t})`
+                : `<i data-lucide="edit" class="w-5 h-5 mr-2 text-slate-500"></i> 수동 등록 (신규 ${t})`;
+            el('pm-submit-btn').innerText = adhoc ? '점검 실적 등록' : '점검 항목 생성';
+            el('pm-submit-btn').className = adhoc
+                ? 'w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-md transition text-sm shadow-sm'
+                : 'w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-md transition text-sm shadow-sm';
+
+            el('pm-worktype-hint').innerHTML = adhoc
+                ? '<b class="text-amber-700">수시점검</b>입니다. 주기·예정일 없이 <b>수행한 결과가 곧바로 [점검 실적]에 기록</b>됩니다. 예방점검 리스트나 일일점검 현황판에는 나타나지 않습니다.'
+                : '<b class="text-brand-700">계획점검</b>입니다. 주기에 따라 <b>점검 항목</b>이 만들어지고, 예정일이 되면 리스트·현황판에서 양호/불량을 등록합니다.';
+            el('pm-reg-note-text').innerText = adhoc
+                ? '수시점검은 항목을 만들지 않고 실적만 남기므로, 다음 회차가 자동으로 생성되지 않습니다.'
+                : "신규 등록 시 '다음 점검 예정일'은 해당 주기의 종료일로 자동 계산됩니다.";
+
+            el('pm-reg-note').className = adhoc
+                ? 'text-xs text-amber-700 bg-amber-50 p-2 rounded flex items-start sm:items-center mt-auto mb-4'
+                : 'text-xs text-blue-600 bg-blue-50 p-2 rounded flex items-start sm:items-center mt-auto mb-4';
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        // 좌측 [수시점검 등록] 메뉴 — 등록 화면을 돌발점검이 선택된 상태로 연다
+        window.goToAdhocReg = () => {
+            window.__pmRegWorkType = '돌발점검';
+            switchTab('pm-reg');
+        };
+
         window.handlePMSubmit = async (e) => {
             e.preventDefault();
             if(!currentUser) return showToast("인증이 필요합니다.", "error");
             const btn = e.target.querySelector('button[type="submit"]');
+            const workType = normalizeWorkType(document.getElementById('pm-worktype').value);
+            const adhoc = isAdhocType(workType);
+            const origLabel = adhoc ? '점검 실적 등록' : '점검 항목 생성';
             btn.disabled = true;
             btn.innerText = "등록 중...";
 
+            const line = document.getElementById('pm-line').value;
+            const equipmentName = document.getElementById('pm-equip').value;
+            const category = document.getElementById('pm-category').value;
+            const taskDetails = document.getElementById('pm-details').value.trim();
+            const criteria = document.getElementById('pm-criteria').value.trim();
+
+            // ----- 비계획(돌발·긴급): 항목을 만들지 않고 실적을 바로 남긴다 -----
+            if (adhoc) {
+                const checkTime = document.getElementById('pm-adhoc-time').value || getLocalDateTimeString();
+                const result = document.getElementById('pm-adhoc-result').value;
+                const reason = document.getElementById('pm-adhoc-reason').value;
+                const remarks = document.getElementById('pm-adhoc-remarks').value.trim();
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_results'), {
+                        taskId: null, workType, triggerReason: reason,
+                        line, equipmentName, category, cycleType: '수시', criteria,
+                        taskDetails, result, remarks,
+                        checkedByName: currentEditorFields().editorName,
+                        checkTime, checkedAt: serverTimestamp()
+                    });
+                    await logEditHistory(`${workType} (실적 등록)`, line, equipmentName, `${result} · ${reason}${remarks ? ' · ' + remarks : ''}`);
+                    showToast(`${workType} 실적이 등록되었습니다.`);
+                    document.getElementById('pm-adhoc-remarks').value = '';
+                    document.getElementById('pm-details').value = '';
+                    document.getElementById('pm-criteria').value = '';
+                } catch (err) {
+                    console.error(err);
+                    showToast('실적 등록에 실패했습니다.', 'error');
+                }
+                btn.disabled = false; btn.innerText = origLabel;
+                return;
+            }
+
             const cycleCode = normalizeCycle(document.getElementById('pm-cycle').value);
             const data = {
-                line: document.getElementById('pm-line').value,
-                equipmentName: document.getElementById('pm-equip').value,
-                category: document.getElementById('pm-category').value,
+                line, equipmentName, category, workType,
                 cycleType: cycleCode,
-                taskDetails: document.getElementById('pm-details').value.trim(),
-                criteria: document.getElementById('pm-criteria').value.trim(),
+                taskDetails, criteria,
                 status: '미점검',
                 remarks: '',
                 nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), cycleCode, 0),
@@ -3809,17 +3982,18 @@
                 (d.taskDetails || '').trim().toLowerCase() === data.taskDetails.toLowerCase()
             );
             if (isDupPM && !confirm(`중복 데이터입니다.\n같은 라인·설비·작업 세부사항의 항목이 이미 등록되어 있습니다.\n\n데이터를 입력하겠습니까?`)) {
-                btn.disabled = false; btn.innerText = "점검 항목 생성";
+                btn.disabled = false; btn.innerText = origLabel;
                 return;
             }
 
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks'), data);
-                showToast("신규 예방점검 항목이 생성되었습니다.");
+                showToast(`신규 ${workType} 항목이 생성되었습니다.`);
                 e.target.reset();
                 document.getElementById('pm-equip').innerHTML = '<option value="">라인을 먼저 선택하세요</option>';
+                window.setPMWorkType(workType); // reset()이 유형을 초기값으로 되돌리므로 다시 맞춘다
             } catch (err) { showToast("등록 실패", "error"); }
-            finally { btn.disabled = false; btn.innerText = "점검 항목 생성"; }
+            finally { btn.disabled = false; btn.innerText = origLabel; }
         };
 
         window.renderPMList = () => {
@@ -3900,7 +4074,7 @@
                     <tr class="${rowColor} ${highlight} transition-colors border-b border-slate-100">
                         <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
                         <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line}</td>
-                        <td class="py-2.5 px-3 font-bold ${isOverdue && !isDone ? 'text-red-700' : 'text-slate-800'}">${item.equipmentName}</td>
+                        <td class="py-2.5 px-3 font-bold ${isOverdue && !isDone ? 'text-red-700' : 'text-slate-800'}">${item.equipmentName}${normalizeWorkType(item.workType) !== '예방점검' ? ' ' + workTypeBadge(item.workType) : ''}</td>
                         <td class="py-2.5 px-2 text-center text-slate-600">${item.category}</td>
                         <td class="py-2.5 px-2 text-center text-blue-600 font-bold">${normalizeCycle(item.cycleType)}</td>
                         <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails}</td>
@@ -4021,15 +4195,16 @@
                 // 최초 완료 시에만: 실적 이력 기록 + 다음 주기 항목 자동 생성
                 // 구분·주기·점검기준도 함께 남긴다 (실적 화면에서 원본 항목 없이도 분류·조회 가능)
                 // checkedByName = 점검자 이름(구글 계정 표시이름, 없으면 이메일 아이디). 과거 실적에는 값이 없다.
+                const wt = normalizeWorkType(task.workType); // 항목의 점검유형을 실적과 다음 회차에 그대로 잇는다
                 batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_results')), {
-                    taskId: taskId, line: task.line, equipmentName: task.equipmentName,
+                    taskId: taskId, workType: wt, line: task.line, equipmentName: task.equipmentName,
                     category: task.category || '', cycleType: normalizeCycle(task.cycleType), criteria: task.criteria || '',
                     taskDetails: task.taskDetails, result: resultType, remarks: task.remarks || '',
                     checkedByName: currentEditorFields().editorName,
                     checkTime: checkTime, checkedAt: serverTimestamp()
                 });
                 batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks')), {
-                    line: task.line, equipmentName: task.equipmentName, category: task.category,
+                    line: task.line, equipmentName: task.equipmentName, category: task.category, workType: wt,
                     cycleType: normalizeCycle(task.cycleType), taskDetails: task.taskDetails, criteria: task.criteria,
                     actionTime: task.actionTime || '',
                     status: '미점검', remarks: '', nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), task.cycleType, 1), createdAt: serverTimestamp()
@@ -4571,15 +4746,24 @@
             let list = rawPMResultsData.map(r => {
                 const t = (r.taskId && idx.byId.get(r.taskId)) || idx.byKey.get(`${r.line}|${r.equipmentName}|${r.taskDetails}`) || null;
                 const when = pmResultTimeStr(r);
+                // 수시점검(돌발·긴급)은 주기 개념이 없으므로 '수시' 로 둔다
+                const wt = normalizeWorkType(r.workType || (t && t.workType));
+                const rawCycle = r.cycleType || (t && t.cycleType) || '';
                 return {
                     ...r,
+                    _workType: wt,
                     _category: r.category || (t && t.category) || '',
-                    _cycle: normalizeCycle(r.cycleType || (t && t.cycleType) || ''),
+                    _cycle: isAdhocType(wt) ? '수시' : normalizeCycle(rawCycle),
                     _criteria: r.criteria || (t && t.criteria) || '',
+                    _reason: r.triggerReason || '',
                     _when: when,
                     _date: when.slice(0, 10)
                 };
             });
+
+            if (pmResTypeFilter === 'PLANNED') list = list.filter(d => !isAdhocType(d._workType));
+            else if (pmResTypeFilter === 'ADHOC') list = list.filter(d => isAdhocType(d._workType));
+            else if (pmResTypeFilter !== 'ALL') list = list.filter(d => d._workType === pmResTypeFilter);
 
             if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
             if (fEquip !== 'ALL') list = list.filter(d => String(d.equipmentName || '').trim() === fEquip);
@@ -4589,7 +4773,7 @@
             if (selectedHistoryTaskId) list = list.filter(d => d.taskId === selectedHistoryTaskId);
 
             if (kw) {
-                list = list.filter(d => [d.equipmentName, d.taskDetails, d.remarks, d.result, d.line, d._criteria, d._category, d._cycle, d.checkedByName]
+                list = list.filter(d => [d.equipmentName, d.taskDetails, d.remarks, d.result, d.line, d._criteria, d._category, d._cycle, d.checkedByName, d._workType, d._reason]
                     .some(v => String(v || '').toLowerCase().includes(kw)));
             }
 
@@ -4617,9 +4801,40 @@
             return list;
         }
 
+        // 점검 실적 화면의 유형 탭 (ALL / PLANNED / ADHOC / 개별 유형)
+        let pmResTypeFilter = 'ALL';
+        window.setPMResType = (v) => { pmResTypeFilter = v; pmHistPage = 1; renderPMHistory(); };
+
+        function renderPMResTypeTabs() {
+            const el = document.getElementById('pm-res-type-tabs');
+            if (!el) return;
+            const counts = {};
+            rawPMResultsData.forEach(r => {
+                const t = normalizeWorkType(r.workType);
+                counts[t] = (counts[t] || 0) + 1;
+            });
+            const planned = PLANNED_WORK_TYPES.reduce((a, t) => a + (counts[t] || 0), 0);
+            const adhoc = ADHOC_WORK_TYPES.reduce((a, t) => a + (counts[t] || 0), 0);
+
+            const tabs = [
+                ['ALL', '전체', planned + adhoc],
+                ['PLANNED', '계획점검', planned],
+                ['ADHOC', '수시점검', adhoc],
+                ...WORK_TYPES.filter(t => counts[t]).map(t => [t, t, counts[t]])
+            ];
+            el.innerHTML = tabs.map(([v, label, n]) => {
+                const on = pmResTypeFilter === v;
+                const accent = v === 'ADHOC' || ADHOC_WORK_TYPES.includes(v) ? 'amber' : 'brand';
+                return `<button type="button" onclick="setPMResType('${v}')" class="px-2.5 py-1.5 rounded-md text-[11px] md:text-xs font-bold transition border ${on
+                    ? (accent === 'amber' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-brand-600 text-white border-brand-600 shadow-sm')
+                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${label} <span class="${on ? 'opacity-80' : 'text-slate-400'}">${n.toLocaleString()}</span></button>`;
+            }).join('');
+        }
+
         window.renderPMHistory = () => {
             const tbody = document.getElementById('pm-history-body');
             if (!tbody) return;
+            renderPMResTypeTabs();
             const cardsEl = document.getElementById('pm-res-cards');
             const pagEl = document.getElementById('pm-history-pagination');
             const list = getFilteredPMHistory();
@@ -4632,7 +4847,7 @@
             if (sumEl) sumEl.innerHTML = `<span class="text-blue-600">양호 ${good.toLocaleString()}</span><span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`;
 
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검 실적이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="14" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검 실적이 없습니다.</td></tr>`;
                 if (cardsEl) cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">조건에 맞는 점검 실적이 없습니다.</div>`;
                 if (pagEl) pagEl.innerHTML = '';
                 return;
@@ -4661,6 +4876,7 @@
                 html += `
                     <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100">
                         <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
+                        <td class="py-2.5 px-2 text-center">${workTypeBadge(item._workType)}</td>
                         <td class="py-2.5 px-3 font-medium text-slate-500">${item._when || '-'}</td>
                         <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line || '-'}</td>
                         <td class="py-2.5 px-3 font-bold text-slate-800">${item.equipmentName || '-'}</td>
@@ -4670,6 +4886,7 @@
                         <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${resBadgeOf(item.result)}</td>
                         <td class="py-2.5 px-2 text-center ${item.checkedByName ? 'text-slate-700 font-medium' : 'text-slate-300'}">${item.checkedByName || '-'}</td>
+                        <td class="py-2.5 px-2 text-center ${item._reason ? 'text-amber-700 font-medium' : 'text-slate-300'}">${item._reason || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${delBtn}</td>
                     </tr>
@@ -4685,10 +4902,12 @@
                             </div>
                             ${resBadgeOf(item.result)}
                         </div>
-                        <div class="flex items-center gap-1.5 text-[10px] mb-1">
+                        <div class="flex flex-wrap items-center gap-1.5 text-[10px] mb-1">
+                            ${workTypeBadge(item._workType)}
                             <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">${item._category || '-'}</span>
                             <span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100">${item._cycle || '-'}</span>
                             ${item.checkedByName ? `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold">점검자 ${item.checkedByName}</span>` : ''}
+                            ${item._reason ? `<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-bold border border-amber-200">${item._reason}</span>` : ''}
                             <span class="text-slate-400 ml-auto">${item._when || '-'}</span>
                         </div>
                         <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
@@ -4714,10 +4933,10 @@
             const list = getFilteredPMHistory();
             if(list.length === 0) return showToast('출력할 데이터가 없습니다.', 'error');
 
-            const ws_data = [["점검일시", "라인", "설비명", "구분", "주기", "작업 세부사항", "점검기준", "결과", "점검자", "특이사항"]];
+            const ws_data = [["점검유형", "점검일시", "라인", "설비명", "구분", "주기", "작업 세부사항", "점검기준", "결과", "점검자", "발생사유", "특이사항"]];
             list.forEach(item => {
-                ws_data.push([item._when || '', item.line || '', item.equipmentName || '', item._category || '', item._cycle || '',
-                              item.taskDetails || '', item._criteria || '', item.result || '', item.checkedByName || '', item.remarks || '']);
+                ws_data.push([item._workType || '', item._when || '', item.line || '', item.equipmentName || '', item._category || '', item._cycle || '',
+                              item.taskDetails || '', item._criteria || '', item.result || '', item.checkedByName || '', item._reason || '', item.remarks || '']);
             });
 
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
@@ -5480,6 +5699,7 @@
             '고장이 가장 잦은 설비 10개',
             '정지시간이 긴 라인은?',
             '지연된 예방점검 알려줘',
+            '돌발점검 현황 보여줘',
             '불량 판정 목록 보여줘',
             '반복되는 고장 찾아줘',
             '대분류별 고장 통계',
@@ -5958,6 +6178,44 @@
             return L.join('\n');
         }
 
+        // 수시점검(돌발·긴급) 현황 — 왜 나갔는지가 핵심이라 발생 사유를 함께 집계한다
+        function laAdhocAnswer(q, sc) {
+            const all = sc.pmRes.map(r => ({ ...r, _wt: normalizeWorkType(r.workType) }));
+            const list = all.filter(r => isAdhocType(r._wt));
+            const L = [];
+            L.push('## 수시점검(돌발·긴급) 현황');
+            L.push(laHead(sc));
+            L.push('');
+            if (!list.length) return L.join('\n') + '이 범위에 등록된 **수시점검이 없습니다.**\n\n_수시점검은 좌측 [수시점검 등록]에서 기록합니다._';
+
+            const bad = list.filter(r => r.result === '불량');
+            L.push(`수시점검 **${laNum(list.length)}건** (전체 점검 실적 ${laNum(all.length)}건의 ${laPct(list.length, all.length)}) · 불량 ${laNum(bad.length)}건`);
+
+            L.push('');
+            L.push('### 유형별');
+            L.push(laTable(['유형', '건수', '불량', '불량률'], laSort(laGroup(list, d => d._wt), 'count').map(([k, v]) =>
+                [k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '불량').length)}건`, laPct(v.items.filter(d => d.result === '불량').length, v.count)])));
+
+            L.push('');
+            L.push('### 발생 사유별');
+            L.push(laTable(['발생 사유', '건수', '비중'], laSort(laGroup(list, d => d.triggerReason || '(미입력)'), 'count').map(([k, v]) =>
+                [k, `${laNum(v.count)}건`, laPct(v.count, list.length)])));
+
+            L.push('');
+            L.push('### 설비별 (상위 15)');
+            L.push(laTable(['순위', '설비', '건수', '불량'], laSort(laGroup(list, d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`), 'count')
+                .slice(0, 15).map(([k, v], i) => [i + 1, k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '불량').length)}건`])));
+
+            L.push('');
+            L.push(`### 내역 (최신순 · 최대 30건 / 전체 ${laNum(list.length)}건)`);
+            L.push(laTable(['점검일시', '유형', '라인', '설비', '발생사유', '점검 내용', '결과', '특이사항', '점검자'],
+                list.slice().sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a))).slice(0, 30).map(r =>
+                    [pmResultTimeStr(r), r._wt, r.line, r.equipmentName, r.triggerReason, r.taskDetails, r.result, r.remarks, r.checkedByName])));
+
+            L.push('\n_수시점검이 잦은 설비는 예방점검 주기를 짧게 하거나 점검 항목을 추가할 후보입니다._');
+            return L.join('\n');
+        }
+
         // 점검 실적 목록 (양호·불량 전체)
         function laPmResultAnswer(q, sc) {
             const res = sc.pmRes;
@@ -6363,8 +6621,9 @@
                 '- 정지시간이 긴 라인은?',
                 '- 대분류별 고장 통계 / 교대조별 비교 / 월별 추이',
                 '',
-                '**예방점검**',
+                '**점검**',
                 '- 지연된 점검 알려줘 / 예방점검 현황',
+                '- 돌발점검 현황 / 수시점검 얼마나 나갔어?',
                 '- 불량 판정 목록 / 점검자별 실적',
                 '',
                 '**설비 · 데이터 점검**',
@@ -6396,6 +6655,7 @@
             if (/미입력|누락|빠진|안 ?적|미분류|분류 ?안|입력 ?상태|데이터 ?품질/.test(q)) return laQualityAnswer(q, sc);
             if (/반복|재발|되풀이|또 ?터/.test(q)) return laRepeatAnswer(q, sc);
             if (/중대 ?고장|긴 ?고장|큰 ?고장/.test(q)) return laSevereAnswer(q, sc);
+            if (/돌발|긴급|수시 ?점검|비계획/.test(q)) return laAdhocAnswer(q, sc);
             if (/불량/.test(q)) return laPmDefectAnswer(q, sc);
             if (/점검 ?실적|실적 ?목록|실적 ?조회|찍은 ?점검/.test(q)) return laPmResultAnswer(q, sc);
             if (/지연|미점검|밀린|안 ?한 ?점검|점검 ?현황|완료율|예방 ?점검/.test(q)) return laPmStatusAnswer(q, sc);
@@ -6545,9 +6805,10 @@
                 ['검색어', document.getElementById('pm-res-search')?.value.trim()]
             ]);
 
+            const typeLabel = { ALL: '', PLANNED: '계획점검', ADHOC: '수시점검' }[pmResTypeFilter] ?? pmResTypeFilter;
             const L = [];
-            L.push('# 예방점검 실적 보고서');
-            L.push(`**조회 조건** ${cond}`);
+            L.push('# 점검 실적 보고서');
+            L.push(`**조회 조건** ${typeLabel ? `유형 **${typeLabel}** · ` : ''}${cond}`);
             L.push(`**대상** 총 ${laNum(list.length)}건  |  **출력일** ${getLocalTodayString()}`);
             L.push('');
             if (!list.length) { L.push('조건에 맞는 점검 실적이 없습니다.'); return L.join('\n'); }
@@ -6556,9 +6817,12 @@
             const dates = list.map(r => r._when).filter(Boolean).sort();
             const equipSet = new Set(list.map(r => `${r.line}/${r.equipmentName}`));
 
+            const nAdhoc = list.filter(d => isAdhocType(d._workType)).length;
             L.push('## 1. 요약');
             L.push(laTable(['항목', '값'], [
                 ['점검 실적', `${laNum(list.length)}건`],
+                ['계획점검 (예방·법정·특별)', `${laNum(list.length - nAdhoc)}건 (${laPct(list.length - nAdhoc, list.length)})`],
+                ['수시점검 (돌발·긴급)', `${laNum(nAdhoc)}건 (${laPct(nAdhoc, list.length)})`],
                 ['양호', `${laNum(list.length - bad.length)}건`],
                 ['불량', `${laNum(bad.length)}건`],
                 ['불량률', laPct(bad.length, list.length)],
@@ -6577,22 +6841,32 @@
                     return [k, `${laNum(v.count)}건`, `${laNum(v.count - b)}건`, `${laNum(b)}건`, laPct(b, v.count)];
                 })));
             };
-            section('## 2. 라인별', d => d.line, '라인');
-            section('## 3. 구분별', d => d._category, '구분');
-            section('## 4. 주기별', d => d._cycle, '주기');
-            section('## 5. 설비별 (상위 20)', d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`, '설비', 20);
-            section('## 6. 점검자별', d => d.checkedByName || '(이름 미기록)', '점검자');
+            section('## 2. 점검유형별', d => d._workType, '점검유형');
+            section('## 3. 라인별', d => d.line, '라인');
+            section('## 4. 구분별', d => d._category, '구분');
+            section('## 5. 주기별', d => d._cycle, '주기');
+            section('## 6. 설비별 (상위 20)', d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`, '설비', 20);
+            section('## 7. 점검자별', d => d.checkedByName || '(이름 미기록)', '점검자');
+
+            // 수시점검이 있으면 왜 나갔는지(발생 사유)를 따로 집계한다
+            const adhocList = list.filter(d => isAdhocType(d._workType));
+            if (adhocList.length) {
+                L.push('');
+                L.push(`## 8. 수시점검 발생 사유 (${laNum(adhocList.length)}건)`);
+                L.push(laTable(['발생 사유', '건수', '불량', '비중'], laSort(laGroup(adhocList, d => d._reason || '(미입력)'), 'count').map(([k, v]) =>
+                    [k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '불량').length)}건`, laPct(v.count, adhocList.length)])));
+            }
 
             L.push('');
-            L.push(`## 7. 불량 내역 (${laNum(bad.length)}건)`);
+            L.push(`## ${adhocList.length ? 9 : 8}. 불량 내역 (${laNum(bad.length)}건)`);
             if (!bad.length) L.push('불량 판정이 없습니다.');
-            else L.push(laTable(['점검일시', '라인', '설비', '구분', '주기', '점검 내용', '특이사항', '점검자'],
-                bad.slice(0, REPORT_ROW_CAP).map(r => [r._when, r.line, r.equipmentName, r._category, r._cycle, r.taskDetails, r.remarks, r.checkedByName])));
+            else L.push(laTable(['점검유형', '점검일시', '라인', '설비', '구분', '주기', '점검 내용', '발생사유', '특이사항', '점검자'],
+                bad.slice(0, REPORT_ROW_CAP).map(r => [r._workType, r._when, r.line, r.equipmentName, r._category, r._cycle, r.taskDetails, r._reason, r.remarks, r.checkedByName])));
 
             L.push('');
-            L.push(`## 8. 실적 상세 (${laNum(list.length)}건${list.length > REPORT_ROW_CAP ? ` 중 ${laNum(REPORT_ROW_CAP)}건 표시` : ''})`);
-            L.push(laTable(['No', '점검일시', '라인', '설비', '구분', '주기', '점검 내용', '점검기준', '결과', '특이사항', '점검자'],
-                list.slice(0, REPORT_ROW_CAP).map((r, i) => [i + 1, r._when, r.line, r.equipmentName, r._category, r._cycle, r.taskDetails, r._criteria, r.result, r.remarks, r.checkedByName])));
+            L.push(`## ${adhocList.length ? 10 : 9}. 실적 상세 (${laNum(list.length)}건${list.length > REPORT_ROW_CAP ? ` 중 ${laNum(REPORT_ROW_CAP)}건 표시` : ''})`);
+            L.push(laTable(['No', '점검유형', '점검일시', '라인', '설비', '구분', '주기', '점검 내용', '점검기준', '결과', '발생사유', '특이사항', '점검자'],
+                list.slice(0, REPORT_ROW_CAP).map((r, i) => [i + 1, r._workType, r._when, r.line, r.equipmentName, r._category, r._cycle, r.taskDetails, r._criteria, r.result, r._reason, r.remarks, r.checkedByName])));
             if (list.length > REPORT_ROW_CAP) L.push(`\n_상세 표는 ${laNum(REPORT_ROW_CAP)}건까지만 실었습니다. 위 집계에는 ${laNum(list.length)}건 전부 반영되어 있습니다._`);
 
             L.push('');
