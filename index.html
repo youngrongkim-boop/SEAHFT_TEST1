@@ -2041,31 +2041,35 @@
 
         // ==========================================
         // 점검유형 — 가르는 기준은 '주기가 있느냐'이고, 그에 따라 저장 위치가 다르다.
-        //   정기(예방·법정·특별) : 주기·예정일이 있는 '점검 항목' → pm_tasks
-        //                          (리스트·현황판·지연알림의 대상)
-        //   수시(돌발·긴급)      : 그때그때 나가 수행한 결과 → pm_results 에 직접 기록
-        //                          항목을 만들지 않으므로 예정일·지연·다음주기 개념이 없고,
-        //                          pm_tasks 기반 화면(리스트·현황판·알림)에 자연히 나타나지 않는다.
-        // ※ '정기/수시'는 유형이 아니라 묶어 보는 축이다. 유형명(예방점검 등)과 겹치지 않게 둔다.
+        //   예방점검        : 주기·예정일이 있는 '점검 항목' → pm_tasks
+        //                     (리스트·현황판·지연알림의 대상)
+        //   긴급점검·일반점검 : 그때그때 나가 수행한 결과 → pm_results 에 직접 기록
+        //                     항목을 만들지 않으므로 예정일·지연·다음주기 개념이 없고,
+        //                     pm_tasks 기반 화면(리스트·현황판·알림)에 자연히 나타나지 않는다.
         // ==========================================
-        const PLANNED_WORK_TYPES = ['예방점검', '법정점검', '특별점검'];
-        const ADHOC_WORK_TYPES = ['돌발점검', '긴급점검'];
-        const WORK_TYPES = [...PLANNED_WORK_TYPES, ...ADHOC_WORK_TYPES];
+        const PLANNED_WORK_TYPES = ['예방점검'];              // 주기가 있는 유형
+        const ADHOC_WORK_TYPES = ['긴급점검', '일반점검'];    // 주기 없이 수시로 수행
+        const WORK_TYPES = ['예방점검', '긴급점검', '일반점검'];
         const ADHOC_REASONS = ['이상음·진동 감지', '고장 직후 확인', '온도·누유 이상', '안전 지적', '상부 지시', '외부 요청', '기타'];
 
-        // 유형이 없는 과거 데이터는 전부 예방점검으로 본다 (마이그레이션 불필요)
+        // 이전 유형명으로 저장된 데이터를 현재 3종에 맞춰 읽는다 (데이터 수정 없이 표시만 매핑)
+        const LEGACY_WORK_TYPES = {
+            '법정점검': '예방점검',   // 주기가 있던 유형 → 예방점검
+            '특별점검': '예방점검',
+            '돌발점검': '일반점검'    // 수시 유형 → 일반점검
+        };
+        // 유형이 없는 과거 데이터는 예방점검으로 본다 (마이그레이션 불필요)
         const normalizeWorkType = (v) => {
             const s = String(v || '').trim();
-            return WORK_TYPES.includes(s) ? s : '예방점검';
+            if (WORK_TYPES.includes(s)) return s;
+            return LEGACY_WORK_TYPES[s] || '예방점검';
         };
         const isAdhocType = (v) => ADHOC_WORK_TYPES.includes(normalizeWorkType(v));
 
         const WORK_TYPE_STYLE = {
             '예방점검': 'bg-blue-100 text-blue-700 border-blue-200',
-            '법정점검': 'bg-purple-100 text-purple-700 border-purple-200',
-            '특별점검': 'bg-teal-100 text-teal-700 border-teal-200',
-            '돌발점검': 'bg-amber-100 text-amber-800 border-amber-300',
-            '긴급점검': 'bg-red-100 text-red-700 border-red-300'
+            '긴급점검': 'bg-red-100 text-red-700 border-red-300',
+            '일반점검': 'bg-amber-100 text-amber-800 border-amber-300'
         };
         const workTypeBadge = (v) => {
             const t = normalizeWorkType(v);
@@ -3899,8 +3903,8 @@
                 : 'w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-md transition text-sm shadow-sm';
 
             el('pm-worktype-hint').innerHTML = adhoc
-                ? '<b class="text-amber-700">수시점검</b> — 주기가 없습니다. <b>수행한 결과가 곧바로 [점검 실적]에 기록</b>되며, 미리 등록할 항목이 없으므로 예방점검 리스트·일일점검 현황판에는 나타나지 않습니다.'
-                : '<b class="text-brand-700">정기점검</b> — 주기가 있습니다. <b>점검 항목</b>이 만들어지고, 예정일이 되면 리스트·현황판에서 양호/불량을 등록합니다.';
+                ? `<b class="text-amber-700">${t}</b> — 주기가 없습니다. <b>수행한 결과가 곧바로 [점검 실적]에 기록</b>되며, 미리 등록할 항목이 없으므로 예방점검 리스트·일일점검 현황판에는 나타나지 않습니다.`
+                : `<b class="text-brand-700">${t}</b> — 주기가 있습니다. <b>점검 항목</b>이 만들어지고, 예정일이 되면 리스트·현황판에서 양호/불량을 등록합니다.`;
             el('pm-reg-note-text').innerText = adhoc
                 ? '수시점검은 항목을 만들지 않고 실적만 남기므로, 다음 회차가 자동으로 생성되지 않습니다.'
                 : "신규 등록 시 '다음 점검 예정일'은 해당 주기의 종료일로 자동 계산됩니다.";
@@ -4752,9 +4756,7 @@
                 };
             });
 
-            if (pmResTypeFilter === 'PLANNED') list = list.filter(d => !isAdhocType(d._workType));
-            else if (pmResTypeFilter === 'ADHOC') list = list.filter(d => isAdhocType(d._workType));
-            else if (pmResTypeFilter !== 'ALL') list = list.filter(d => d._workType === pmResTypeFilter);
+            if (pmResTypeFilter !== 'ALL') list = list.filter(d => d._workType === pmResTypeFilter);
 
             if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
             if (fEquip !== 'ALL') list = list.filter(d => String(d.equipmentName || '').trim() === fEquip);
@@ -4807,17 +4809,12 @@
             const planned = PLANNED_WORK_TYPES.reduce((a, t) => a + (counts[t] || 0), 0);
             const adhoc = ADHOC_WORK_TYPES.reduce((a, t) => a + (counts[t] || 0), 0);
 
-            // 앞의 둘은 '주기 유무'로 묶어 보는 축, 나머지는 개별 유형
-            const tabs = [
-                ['ALL', '전체', planned + adhoc, ''],
-                ['PLANNED', '정기', planned, `주기가 정해진 점검 (${PLANNED_WORK_TYPES.join('·')})`],
-                ['ADHOC', '수시', adhoc, `주기 없이 그때그때 나간 점검 (${ADHOC_WORK_TYPES.join('·')})`],
-                ...WORK_TYPES.filter(t => counts[t]).map(t => [t, t, counts[t], ''])
-            ];
-            el.innerHTML = tabs.map(([v, label, n, tip]) => {
+            // 전체 + 점검유형 3종. 건수가 0이어도 항상 보여 어떤 유형이 있는지 알 수 있게 한다.
+            const tabs = [['ALL', '전체', planned + adhoc], ...WORK_TYPES.map(t => [t, t, counts[t] || 0])];
+            el.innerHTML = tabs.map(([v, label, n]) => {
                 const on = pmResTypeFilter === v;
-                const accent = v === 'ADHOC' || ADHOC_WORK_TYPES.includes(v) ? 'amber' : 'brand';
-                return `<button type="button" onclick="setPMResType('${v}')"${tip ? ` title="${tip}"` : ''} class="px-2.5 py-1.5 rounded-md text-[11px] md:text-xs font-bold transition border ${on
+                const accent = ADHOC_WORK_TYPES.includes(v) ? 'amber' : 'brand';
+                return `<button type="button" onclick="setPMResType('${v}')" class="px-2.5 py-1.5 rounded-md text-[11px] md:text-xs font-bold transition border ${on
                     ? (accent === 'amber' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-brand-600 text-white border-brand-600 shadow-sm')
                     : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${label} <span class="${on ? 'opacity-80' : 'text-slate-400'}">${n.toLocaleString()}</span></button>`;
             }).join('');
@@ -5691,7 +5688,7 @@
             '고장이 가장 잦은 설비 10개',
             '정지시간이 긴 라인은?',
             '지연된 예방점검 알려줘',
-            '돌발점검 현황 보여줘',
+            '긴급점검 현황 보여줘',
             '불량 판정 목록 보여줘',
             '반복되는 고장 찾아줘',
             '대분류별 고장 통계',
@@ -6170,18 +6167,21 @@
             return L.join('\n');
         }
 
-        // 수시점검(돌발·긴급) 현황 — 왜 나갔는지가 핵심이라 발생 사유를 함께 집계한다
+        // 긴급·일반점검 현황 — 왜 나갔는지가 핵심이라 발생 사유를 함께 집계한다.
+        // 질문에 특정 유형이 있으면 그 유형만 본다.
         function laAdhocAnswer(q, sc) {
+            const only = ADHOC_WORK_TYPES.find(t => q.includes(t) || q.includes(t.replace('점검', '')));
+            const label = only || ADHOC_WORK_TYPES.join('·');
             const all = sc.pmRes.map(r => ({ ...r, _wt: normalizeWorkType(r.workType) }));
-            const list = all.filter(r => isAdhocType(r._wt));
+            const list = all.filter(r => only ? r._wt === only : isAdhocType(r._wt));
             const L = [];
-            L.push('## 수시점검(돌발·긴급) 현황');
+            L.push(`## ${label} 현황`);
             L.push(laHead(sc));
             L.push('');
-            if (!list.length) return L.join('\n') + '이 범위에 등록된 **수시점검이 없습니다.**\n\n_수시점검은 좌측 [점검항목 등록]에서 유형을 돌발·긴급으로 골라 기록합니다._';
+            if (!list.length) return L.join('\n') + `이 범위에 등록된 **${label}이 없습니다.**\n\n_좌측 [점검항목 등록]에서 유형을 ${ADHOC_WORK_TYPES.join('·')}으로 골라 기록합니다._`;
 
             const bad = list.filter(r => r.result === '불량');
-            L.push(`수시점검 **${laNum(list.length)}건** (전체 점검 실적 ${laNum(all.length)}건의 ${laPct(list.length, all.length)}) · 불량 ${laNum(bad.length)}건`);
+            L.push(`${label} **${laNum(list.length)}건** (전체 점검 실적 ${laNum(all.length)}건의 ${laPct(list.length, all.length)}) · 불량 ${laNum(bad.length)}건`);
 
             L.push('');
             L.push('### 유형별');
@@ -6204,7 +6204,7 @@
                 list.slice().sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a))).slice(0, 30).map(r =>
                     [pmResultTimeStr(r), r._wt, r.line, r.equipmentName, r.triggerReason, r.taskDetails, r.result, r.remarks, r.checkedByName])));
 
-            L.push('\n_수시점검이 잦은 설비는 예방점검 주기를 짧게 하거나 점검 항목을 추가할 후보입니다._');
+            L.push(`\n_${label}이 잦은 설비는 예방점검 주기를 짧게 하거나 점검 항목을 추가할 후보입니다._`);
             return L.join('\n');
         }
 
@@ -6212,12 +6212,19 @@
         function laPmResultAnswer(q, sc) {
             const res = sc.pmRes;
             const L = [];
-            L.push('## 예방점검 실적');
+            L.push('## 점검 실적');
             L.push(laHead(sc));
             L.push('');
             if (!res.length) return L.join('\n') + '이 범위에 등록된 **점검 실적이 없습니다.**';
             const bad = res.filter(r => r.result === '불량');
             L.push(`실적 **${laNum(res.length)}건** · 양호 ${laNum(res.length - bad.length)} / 불량 ${laNum(bad.length)} (불량률 ${laPct(bad.length, res.length)})`);
+
+            L.push('');
+            L.push('### 점검유형별');
+            L.push(laTable(['점검유형', '실적', '양호', '불량', '불량률'], laSort(laGroup(res, d => normalizeWorkType(d.workType)), 'count').map(([k, v]) => {
+                const b = v.items.filter(d => d.result === '불량').length;
+                return [k, `${laNum(v.count)}건`, `${laNum(v.count - b)}건`, `${laNum(b)}건`, laPct(b, v.count)];
+            })));
 
             if (sc.line === 'ALL') {
                 L.push('');
@@ -6231,9 +6238,9 @@
             L.push('');
             L.push(`### 실적 목록 (최신순 · 최대 40건 / 전체 ${laNum(res.length)}건)`);
             const sorted = res.slice().sort((a, b) => pmResultTimeStr(b).localeCompare(pmResultTimeStr(a)));
-            L.push(laTable(['점검일시', '라인', '설비', '구분', '주기', '점검 내용', '결과', '특이사항', '점검자'],
-                sorted.slice(0, 40).map(r => [pmResultTimeStr(r), r.line, r.equipmentName, r.category,
-                    r.cycleType ? normalizeCycle(r.cycleType) : '', r.taskDetails, r.result, r.remarks, r.checkedByName])));
+            L.push(laTable(['점검일시', '유형', '라인', '설비', '구분', '주기', '점검 내용', '결과', '특이사항', '점검자'],
+                sorted.slice(0, 40).map(r => [pmResultTimeStr(r), normalizeWorkType(r.workType), r.line, r.equipmentName, r.category,
+                    isAdhocType(r.workType) ? '수시' : (r.cycleType ? normalizeCycle(r.cycleType) : ''), r.taskDetails, r.result, r.remarks, r.checkedByName])));
             return L.join('\n');
         }
 
@@ -6615,7 +6622,7 @@
                 '',
                 '**점검**',
                 '- 지연된 점검 알려줘 / 예방점검 현황',
-                '- 돌발점검 현황 / 수시점검 얼마나 나갔어?',
+                '- 긴급점검 현황 / 일반점검 얼마나 나갔어?',
                 '- 불량 판정 목록 / 점검자별 실적',
                 '',
                 '**설비 · 데이터 점검**',
@@ -6647,7 +6654,7 @@
             if (/미입력|누락|빠진|안 ?적|미분류|분류 ?안|입력 ?상태|데이터 ?품질/.test(q)) return laQualityAnswer(q, sc);
             if (/반복|재발|되풀이|또 ?터/.test(q)) return laRepeatAnswer(q, sc);
             if (/중대 ?고장|긴 ?고장|큰 ?고장/.test(q)) return laSevereAnswer(q, sc);
-            if (/돌발|긴급|수시 ?점검|비계획/.test(q)) return laAdhocAnswer(q, sc);
+            if (/긴급 ?점검|일반 ?점검|돌발|수시 ?점검|비계획/.test(q)) return laAdhocAnswer(q, sc);
             if (/불량/.test(q)) return laPmDefectAnswer(q, sc);
             if (/점검 ?실적|실적 ?목록|실적 ?조회|찍은 ?점검/.test(q)) return laPmResultAnswer(q, sc);
             if (/지연|미점검|밀린|안 ?한 ?점검|점검 ?현황|완료율|예방 ?점검/.test(q)) return laPmStatusAnswer(q, sc);
@@ -6797,7 +6804,7 @@
                 ['검색어', document.getElementById('pm-res-search')?.value.trim()]
             ]);
 
-            const typeLabel = { ALL: '', PLANNED: '정기점검', ADHOC: '수시점검' }[pmResTypeFilter] ?? pmResTypeFilter;
+            const typeLabel = pmResTypeFilter === 'ALL' ? '' : pmResTypeFilter;
             const L = [];
             L.push('# 점검 실적 보고서');
             L.push(`**조회 조건** ${typeLabel ? `유형 **${typeLabel}** · ` : ''}${cond}`);
@@ -6809,12 +6816,13 @@
             const dates = list.map(r => r._when).filter(Boolean).sort();
             const equipSet = new Set(list.map(r => `${r.line}/${r.equipmentName}`));
 
-            const nAdhoc = list.filter(d => isAdhocType(d._workType)).length;
             L.push('## 1. 요약');
             L.push(laTable(['항목', '값'], [
                 ['점검 실적', `${laNum(list.length)}건`],
-                [`정기점검 (${PLANNED_WORK_TYPES.join('·')})`, `${laNum(list.length - nAdhoc)}건 (${laPct(list.length - nAdhoc, list.length)})`],
-                [`수시점검 (${ADHOC_WORK_TYPES.join('·')})`, `${laNum(nAdhoc)}건 (${laPct(nAdhoc, list.length)})`],
+                ...WORK_TYPES.map(t => {
+                    const n = list.filter(d => d._workType === t).length;
+                    return [t, `${laNum(n)}건 (${laPct(n, list.length)})`];
+                }),
                 ['양호', `${laNum(list.length - bad.length)}건`],
                 ['불량', `${laNum(bad.length)}건`],
                 ['불량률', laPct(bad.length, list.length)],
@@ -6840,11 +6848,11 @@
             section('## 6. 설비별 (상위 20)', d => `${d.line || '-'} / ${d.equipmentName || '(미입력)'}`, '설비', 20);
             section('## 7. 점검자별', d => d.checkedByName || '(이름 미기록)', '점검자');
 
-            // 수시점검이 있으면 왜 나갔는지(발생 사유)를 따로 집계한다
+            // 긴급·일반점검이 있으면 왜 나갔는지(발생 사유)를 따로 집계한다
             const adhocList = list.filter(d => isAdhocType(d._workType));
             if (adhocList.length) {
                 L.push('');
-                L.push(`## 8. 수시점검 발생 사유 (${laNum(adhocList.length)}건)`);
+                L.push(`## 8. ${ADHOC_WORK_TYPES.join('·')} 발생 사유 (${laNum(adhocList.length)}건)`);
                 L.push(laTable(['발생 사유', '건수', '불량', '비중'], laSort(laGroup(adhocList, d => d._reason || '(미입력)'), 'count').map(([k, v]) =>
                     [k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '불량').length)}건`, laPct(v.count, adhocList.length)])));
             }
