@@ -243,7 +243,11 @@ async function fsDelete(token, path) {
 // 메일 발송용 자격증명 보관 위치.
 // public/data 가 아니라서 firestore.rules 의 마지막 전면 차단 규칙에 걸린다
 // → 브라우저(직원 누구든)에서는 읽을 수 없고, 서비스 계정으로만 접근된다.
-const SECRET_PATH = `artifacts/${APP_ID}/private/mail`;
+//
+// ※ Firestore 경로는 컬렉션/문서가 번갈아 나온다. 문서를 가리키려면 마디 수가 짝수여야 한다.
+//    artifacts(컬)/appId(문)/private(컬)/gmailAuth(문) = 4마디 → 문서 (OK)
+//    여기에 마디를 하나 더 붙이면 컬렉션이 되어 쓰기가 실패한다.
+const SECRET_PATH = `artifacts/${APP_ID}/private`;
 
 module.exports = {
     PROJECT_ID, FIRESTORE_DB, APP_ID, ALLOWED_DOMAIN, SUPER_ADMIN, SECRET_PATH,
