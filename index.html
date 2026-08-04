@@ -310,9 +310,31 @@
                 <button type="button" onclick="closeLineOwnerModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="px-5 py-3 border-b border-slate-100 shrink-0 bg-brand-50/50">
-                <p class="text-xs text-slate-600 leading-relaxed">라인별 담당자를 지정합니다. 담당자가 사이트에 접속하면 <b>자기 라인의 점검지연·마감임박 항목이 팝업</b>으로 표시됩니다.<br><b class="text-brand-700">담당자는 자기 라인의 고장실적·예방점검을 수정·삭제할 수 있습니다.</b> (다른 라인은 불가)<br>한 라인에 여러 명, 한 사람이 여러 라인을 맡을 수 있습니다.</p>
+                <p class="text-xs text-slate-600 leading-relaxed">라인별 담당자를 지정합니다. 담당자가 사이트에 접속하면 <b>자기 담당의 점검지연·마감임박 항목이 팝업</b>으로 표시되고, <b>주간 보고 메일</b>도 같은 범위로 갑니다.<br><b class="text-amber-700">담당 구분(전체·전기·기계)</b>을 고르면 팝업과 메일에 <b>그 구분의 점검 항목만</b> 들어갑니다. 전기 담당자는 전기 항목만 받습니다.<br><b class="text-brand-700">수정·삭제 권한은 구분과 무관하게 담당 라인 전체</b>에 적용됩니다.<br>한 라인에 여러 명, 한 사람이 여러 라인을 맡을 수 있습니다.</p>
             </div>
             <div id="line-owner-body" class="p-5 space-y-3 overflow-y-auto custom-scroll flex-1"></div>
+
+            <!-- 주간 점검 보고 메일 -->
+            <div class="px-5 py-3.5 border-t border-slate-200 shrink-0 bg-slate-50">
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5 mr-auto">
+                        <i data-lucide="mail" class="w-4 h-4 text-brand-600"></i> 주간 점검 보고 메일
+                    </h4>
+                    <button type="button" onclick="connectGmail()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-slate-700 rounded hover:bg-slate-800 shadow-sm">Gmail 연결</button>
+                    <button type="button" onclick="checkReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-100">연결 확인</button>
+                    <button type="button" onclick="previewReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-brand-700 bg-white border border-brand-300 rounded hover:bg-brand-50">미리보기</button>
+                    <button type="button" onclick="sendReportMailTest()" class="px-2.5 py-1.5 text-[11px] font-bold text-amber-700 bg-white border border-amber-300 rounded hover:bg-amber-50">나에게 시험발송</button>
+                    <button type="button" onclick="sendReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-brand-600 rounded hover:bg-brand-700 shadow-sm">담당자에게 발송</button>
+                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                    담당자별로 <b>담당 라인의 점검지연 · 금주 점검예정 · 지난주 점검실적</b>을 한 통에 묶어 보냅니다.
+                    한 사람이 여러 라인을 맡으면 한 통에 함께 담기고, <b>담당 구분이 전기·기계면 그 구분의 항목만</b> 들어갑니다.
+                    보낼 내용이 하나도 없는 담당자는 건너뜁니다.<br>
+                    <b class="text-brand-700">매주 월요일 아침 7시에 자동 발송</b>됩니다.
+                </p>
+                <div id="report-mail-status" class="hidden mt-2 text-[11px] rounded border p-2 leading-relaxed"></div>
+            </div>
+
             <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
                 <span class="text-[11px] text-slate-400">변경은 즉시 저장됩니다.</span>
                 <button type="button" onclick="closeLineOwnerModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
@@ -506,21 +528,21 @@
                             <p class="leading-none mt-1"><span class="text-lg font-bold text-slate-800" id="kpi-pm-total">0</span> <span class="text-[10px] font-semibold text-red-500 whitespace-nowrap">지연 <span id="kpi-pm-overdue">0</span></span></p>
                         </div>
                     </div>
-                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2 cursor-pointer hover:bg-slate-50 transition" onclick="goToBDList()" title="선택 연도에 발생한 총 고장 건수. 중대고장 = 조치시간 2시간 이상. 클릭 시 고장 리스트로 이동">
+                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2 cursor-pointer hover:bg-slate-50 transition" onclick="goToBDList()" title="선택 연도에 발생한 총 고장 건수 (계획된 정기수리는 제외). 중대고장 = 조치시간 2시간 이상. 클릭 시 고장 리스트로 이동">
                         <div class="p-1.5 bg-red-50 text-red-500 rounded-md shrink-0"><i data-lucide="alert-triangle" class="w-4 h-4"></i></div>
                         <div class="min-w-0 flex-1">
                             <p class="text-[10px] text-slate-500 leading-none truncate">총 고장 건수</p>
                             <p class="leading-none mt-1"><span class="text-lg font-bold text-slate-800" id="kpi-breakdown-total">0</span> <span class="text-[10px] font-semibold text-red-600 whitespace-nowrap">중대 <span id="kpi-critical">0</span></span></p>
                         </div>
                     </div>
-                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2" title="선택 연도에 발생한 고장들의 정지시간(조치시간) 합계 — 설비가 멈춰 있던 총 시간">
+                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2" title="선택 연도 고장의 정지시간(조치시간) 합계 — 설비가 멈춰 있던 총 시간 (계획된 정기수리는 제외)">
                         <div class="p-1.5 bg-amber-50 text-amber-500 rounded-md shrink-0"><i data-lucide="timer-off" class="w-4 h-4"></i></div>
                         <div class="min-w-0 flex-1">
                             <p class="text-[10px] text-slate-500 leading-none truncate">누적 정지시간</p>
                             <p class="text-base font-bold text-slate-800 leading-none mt-1 truncate" id="kpi-total-downtime">0분</p>
                         </div>
                     </div>
-                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2" title="선택 연도 고장 1건당 평균 조치시간 (MTTR) — 누적 정지시간 ÷ 고장 건수">
+                    <div class="bg-white px-2.5 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2" title="선택 연도 고장 1건당 평균 조치시간 (MTTR) — 누적 정지시간 ÷ 고장 건수 (계획된 정기수리는 제외)">
                         <div class="p-1.5 bg-orange-50 text-orange-500 rounded-md shrink-0"><i data-lucide="clock" class="w-4 h-4"></i></div>
                         <div class="min-w-0 flex-1">
                             <p class="text-[10px] text-slate-500 leading-none truncate">평균 조치시간</p>
@@ -1012,6 +1034,9 @@
                             <select id="bd-filter-line" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium min-w-[70px]">
                                 <option value="ALL">전체 라인</option>
                             </select>
+                            <select id="bd-filter-workkind" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-red-600">
+                                <option value="ALL">작업구분 전체</option><option value="고장">고장</option><option value="정기수리">정기수리</option>
+                            </select>
                             <select id="bd-filter-category" onchange="bdListPage=1; debouncedRenderBDList()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">전/기 구분</option><option value="기계">기계</option><option value="전기">전기</option>
                             </select>
@@ -1086,6 +1111,14 @@
                                 <div id="bd-equip-manage-list" class="flex flex-wrap gap-1.5"></div>
                                 <p class="text-[10px] text-slate-500 mt-2">현재 라인의 설비 목록입니다. <b>&times;</b> 로 잘못 입력했거나 사용 안 하는 설비를 제거할 수 있어요. (기존 등록 데이터는 유지됩니다)</p>
                             </div>
+                            <!-- 작업구분: 계획에 없던 고장인지, 예정된 정기수리인지. 고장 지표(건수·정지시간)를 볼 때 갈라 봐야 한다 -->
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-1.5">작업구분</label>
+                                <div id="bd-workkind-tabs" class="flex flex-wrap gap-1.5"></div>
+                                <input type="hidden" id="bd-workkind" value="고장">
+                                <p id="bd-workkind-hint" class="text-[11px] text-slate-500 mt-1.5 leading-relaxed"></p>
+                            </div>
+
                             <div class="flex items-center justify-between mb-1">
                                 <span class="text-xs font-bold text-slate-500">고장 분류</span>
                                 <button type="button" onclick="openCategoryModal()" class="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i> 대/중/소 분류 추가·수정</button>
@@ -1689,9 +1722,17 @@
                             <input type="text" id="edit-bd-detail" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">고장명</label>
-                        <input type="text" id="edit-bd-fault" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">작업구분</label>
+                            <select id="edit-bd-workkind" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none bg-white font-bold">
+                                <option value="고장">고장</option><option value="정기수리">정기수리</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">고장명</label>
+                            <input type="text" id="edit-bd-fault" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">발생원인</label>
@@ -2071,6 +2112,26 @@
             '긴급점검': 'bg-red-100 text-red-700 border-red-300',
             '일반점검': 'bg-amber-100 text-amber-800 border-amber-300'
         };
+
+        // ==========================================
+        // 고장실적 작업구분 — 계획에 없던 '고장'과 예정된 '정기수리'를 나눈다.
+        // 정기수리는 계획된 정지라서 고장 건수·정지시간과 같이 세면 지표가 왜곡된다.
+        // 유형이 없는 기존 데이터는 전부 고장으로 본다 (마이그레이션 불필요).
+        // ==========================================
+        const BD_WORK_KINDS = ['고장', '정기수리'];
+        const normalizeWorkKind = (v) => BD_WORK_KINDS.includes(String(v || '').trim()) ? String(v).trim() : '고장';
+        const BD_WORK_KIND_STYLE = {
+            '고장': 'bg-red-100 text-red-700 border-red-300',
+            '정기수리': 'bg-slate-100 text-slate-600 border-slate-300'
+        };
+        const workKindBadge = (v) => {
+            const k = normalizeWorkKind(v);
+            return `<span class="px-1.5 py-0.5 rounded text-[10px] md:text-[11px] font-bold border ${BD_WORK_KIND_STYLE[k]}">${k}</span>`;
+        };
+        // 정기수리는 계획된 정지라서 목표·KPI 수치에 넣지 않는다.
+        // 대시보드·위험도 분석·챗봇의 고장 집계는 모두 이걸 거쳐야 한다.
+        // (고장실적 리스트와 보고서는 화면 필터를 따르므로 여기서 거르지 않는다)
+        const faultsOnly = (arr) => (arr || []).filter(d => normalizeWorkKind(d.workKind) === '고장');
         const workTypeBadge = (v) => {
             const t = normalizeWorkType(v);
             return `<span class="px-1.5 py-0.5 rounded text-[10px] md:text-[11px] font-bold border ${WORK_TYPE_STYLE[t]}">${t}</span>`;
@@ -2131,6 +2192,20 @@
         let lineOwners = {}; // 라인별 담당자 { CPL: ['a@seah.co.kr'], ... }
         let myLines = [];    // 내가 담당자로 지정된 라인 목록
 
+        // 담당자별 전기/기계 구분 { CPL: { 'a@seah.co.kr': '전기' } }
+        // 값이 없으면 '전체'(전기·기계 모두)로 본다 → 기존 담당자는 지금과 똑같이 동작한다.
+        // ※ 수정 권한은 라인 단위 그대로다. lineOwners.lines 의 모양을 바꾸면
+        //   firestore.rules 의 담당자 판정이 깨지므로 구분은 별도 필드로 둔다.
+        let lineOwnerCats = {};
+        let myLineCats = {};  // { CPL: '전기' } — 내 담당 라인별 구분
+        const OWNER_CATS = ['전체', '전기', '기계'];
+        const ownerCatOf = (line, email) => {
+            const c = (lineOwnerCats[line] || {})[normEmail(email)];
+            return OWNER_CATS.includes(c) ? c : '전체';
+        };
+        // 그 담당자가 이 점검 항목을 맡는지 (구분이 '전체'면 전부)
+        const ownerCoversItem = (cat, item) => cat === '전체' || !cat || String(item.category || '').trim() === cat;
+
         const normEmail = (e) => String(e || '').trim().toLowerCase();
         const isSuper = (e) => normEmail(e) === SUPER_ADMIN;
 
@@ -2138,8 +2213,10 @@
             const me = normEmail(currentUser && currentUser.email);
             isSuperAdmin = !!me && isSuper(me);
             isAdmin = isSuperAdmin || (!!me && adminEmails.some(a => normEmail(a) === me));
-            // 담당 라인: 그 라인의 데이터에 한해 수정·삭제할 수 있다
+            // 담당 라인: 그 라인의 데이터에 한해 수정·삭제할 수 있다 (구분과 무관하게 라인 단위)
             myLines = !me ? [] : Object.keys(lineOwners).filter(l => (lineOwners[l] || []).some(e => normEmail(e) === me));
+            myLineCats = {};
+            myLines.forEach(l => { myLineCats[l] = ownerCatOf(l, me); });
             applyAdminUI();
         }
 
@@ -2262,8 +2339,11 @@
 
         function buildPMAlerts() {
             const todayStr = getLocalTodayString();
-            // 담당 라인이 있으면 그 라인만, 없으면 전체
-            const scoped = myLines.length ? rawPMData.filter(d => myLines.includes(d.line)) : rawPMData;
+            // 담당 라인이 있으면 그 라인만, 없으면 전체.
+            // 담당 구분이 전기(또는 기계)로 지정돼 있으면 그 구분의 항목만 본다.
+            const scoped = myLines.length
+                ? rawPMData.filter(d => myLines.includes(d.line) && ownerCoversItem(myLineCats[d.line], d))
+                : rawPMData;
             const pending = scoped.filter(d => d.status !== '점검' && d.nextCheckDate);
 
             const overdue = pending.filter(d => d.nextCheckDate < todayStr)
@@ -2277,7 +2357,9 @@
 
             return {
                 overdue, soon,
-                scopeLabel: myLines.length ? `${myLines.join(' · ')} 담당 기준` : '전체 라인 기준'
+                scopeLabel: myLines.length
+                    ? myLines.map(l => myLineCats[l] && myLineCats[l] !== '전체' ? `${l}(${myLineCats[l]})` : l).join(' · ') + ' 담당 기준'
+                    : '전체 라인 기준'
             };
         }
 
@@ -2361,12 +2443,20 @@
             const box = document.getElementById('line-owner-body');
             if (!box) return;
             // 예방점검이 운영되는 라인 기준
+            const catStyle = { '전체': 'bg-slate-100 text-slate-600 border-slate-300', '전기': 'bg-amber-100 text-amber-800 border-amber-300', '기계': 'bg-sky-100 text-sky-800 border-sky-300' };
             box.innerHTML = LINES.map(line => {
                 const owners = lineOwners[line] || [];
                 const chips = owners.length
-                    ? owners.map(em => `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 border border-brand-200 text-[11px] font-bold text-brand-700 max-w-full">
+                    ? owners.map(em => {
+                        const cat = ownerCatOf(line, em);
+                        return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 border border-brand-200 text-[11px] font-bold text-brand-700 max-w-full">
                         <i data-lucide="mail" class="w-3 h-3 shrink-0"></i><span class="truncate">${manualEsc(em)}</span>
-                        <button type="button" onclick="removeLineOwner('${manualEsc(line)}','${manualEsc(em)}')" title="담당 해제" class="text-brand-400 hover:text-red-600 shrink-0 leading-none">&times;</button></span>`).join('')
+                        <select onchange="setLineOwnerCat('${manualEsc(line)}','${manualEsc(em)}', this.value)" title="이 담당자가 받을 점검 구분"
+                            class="text-[10px] font-bold rounded border px-1 py-0.5 outline-none cursor-pointer ${catStyle[cat]}">
+                            ${OWNER_CATS.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
+                        </select>
+                        <button type="button" onclick="removeLineOwner('${manualEsc(line)}','${manualEsc(em)}')" title="담당 해제" class="text-brand-400 hover:text-red-600 shrink-0 leading-none">&times;</button></span>`;
+                    }).join('')
                     : '<span class="text-[11px] text-slate-400">지정된 담당자가 없습니다.</span>';
                 return `<div class="border border-slate-200 rounded-lg p-3">
                     <div class="flex items-center gap-2 mb-2">
@@ -2375,6 +2465,9 @@
                     </div>
                     <div class="flex flex-wrap gap-1.5 mb-2">${chips}</div>
                     <div class="flex gap-2">
+                        <select id="lo-cat-${manualEsc(line)}" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none bg-white font-bold shrink-0" title="담당 구분">
+                            ${OWNER_CATS.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
                         <input type="email" id="lo-input-${manualEsc(line)}" placeholder="hong.gildong@seah.co.kr" autocomplete="off"
                             class="flex-1 border border-slate-300 rounded-md px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-brand-500"
                             onkeydown="if(event.key==='Enter'){event.preventDefault();addLineOwner('${manualEsc(line)}');}">
@@ -2385,9 +2478,14 @@
             if (window.lucide) lucide.createIcons({ root: box });
         };
 
-        async function saveLineOwners(next) {
+        // lines 는 기존 모양 그대로 두고 cats 만 함께 저장한다 (firestore.rules 의 담당자 판정과 호환)
+        async function saveLineOwners(next, nextCats) {
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'lineOwners'),
-                { lines: next, updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp() });
+                {
+                    lines: next,
+                    cats: nextCats || lineOwnerCats,
+                    updatedBy: (currentUser && currentUser.email) || '', updatedAt: serverTimestamp()
+                });
         }
 
         window.addLineOwner = async (line) => {
@@ -2397,24 +2495,212 @@
             if (!em) return showToast('이메일을 입력하세요.', 'error');
             if (!/^[^\s@]+@seah\.co\.kr$/.test(em)) return showToast('@seah.co.kr 회사 계정만 등록할 수 있습니다.', 'error');
             if ((lineOwners[line] || []).some(a => normEmail(a) === em)) return showToast('이미 등록된 담당자입니다.', 'error');
+            const catEl = document.getElementById(`lo-cat-${line}`);
+            const cat = OWNER_CATS.includes(catEl && catEl.value) ? catEl.value : '전체';
+
             const next = { ...lineOwners, [line]: [...(lineOwners[line] || []), em] };
+            const nextCats = { ...lineOwnerCats, [line]: { ...(lineOwnerCats[line] || {}), [em]: cat } };
             try {
-                await saveLineOwners(next);
-                await logEditHistory('라인별 담당자', line, '-', `담당자 추가 (${em})`);
+                await saveLineOwners(next, nextCats);
+                await logEditHistory('라인별 담당자', line, '-', `담당자 추가 (${em} · ${cat})`);
                 if (input) input.value = '';
-                showToast(`${line} 담당자로 ${em} 을(를) 지정했습니다.`);
+                showToast(`${line} ${cat} 담당자로 ${em} 을(를) 지정했습니다.`);
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        // 담당 구분(전체/전기/기계) 변경
+        window.setLineOwnerCat = async (line, email, cat) => {
+            if (!requireAdmin('담당 구분 변경')) return renderLineOwners();
+            const em = normEmail(email);
+            const c = OWNER_CATS.includes(cat) ? cat : '전체';
+            const nextCats = { ...lineOwnerCats, [line]: { ...(lineOwnerCats[line] || {}), [em]: c } };
+            try {
+                await saveLineOwners(lineOwners, nextCats);
+                await logEditHistory('라인별 담당자', line, '-', `담당 구분 변경 (${em} → ${c})`);
+                showToast(`${em} 의 ${line} 담당 구분을 ${c}(으)로 바꿨습니다.`);
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); renderLineOwners(); }
         };
 
         window.removeLineOwner = async (line, email) => {
             if (!requireAdmin('담당자 해제')) return;
             const em = normEmail(email);
             const next = { ...lineOwners, [line]: (lineOwners[line] || []).filter(a => normEmail(a) !== em) };
+            const nextCats = { ...lineOwnerCats, [line]: { ...(lineOwnerCats[line] || {}) } };
+            delete nextCats[line][em];
             try {
-                await saveLineOwners(next);
+                await saveLineOwners(next, nextCats);
                 await logEditHistory('라인별 담당자', line, '-', `담당자 해제 (${em})`);
                 showToast('담당자를 해제했습니다.');
             } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        // ==========================================
+        // 주간 점검 보고 메일 (/api/report-mail)
+        // 집계와 발송은 서버에서 한다. 크론으로도 같은 함수가 도는데,
+        // 그때는 브라우저가 없으므로 화면 데이터를 보내는 방식은 쓸 수 없다.
+        // ==========================================
+        function reportMailStatus(kind, html) {
+            const el = document.getElementById('report-mail-status');
+            if (!el) return;
+            const tone = {
+                info: 'bg-slate-50 border-slate-200 text-slate-600',
+                ok: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+                warn: 'bg-amber-50 border-amber-200 text-amber-800',
+                error: 'bg-red-50 border-red-200 text-red-700'
+            }[kind] || 'bg-slate-50 border-slate-200 text-slate-600';
+            el.className = `mt-2 text-[11px] rounded border p-2 leading-relaxed ${tone}`;
+            el.innerHTML = html;
+            el.classList.remove('hidden');
+        }
+
+        async function callReportMail(method, body, qs) {
+            if (!currentUser) throw new Error('로그인이 필요합니다.');
+            const token = await currentUser.getIdToken();
+            const r = await fetch(`/api/report-mail${qs || ''}`, {
+                method,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                ...(body ? { body: JSON.stringify(body) } : {})
+            });
+            const j = await r.json().catch(() => ({ error: `응답을 해석할 수 없습니다 (HTTP ${r.status})` }));
+            if (!r.ok) throw new Error(j.error || `요청 실패 (HTTP ${r.status})`);
+            return j;
+        }
+
+        // Gmail 연결 — 본인이 구글 동의 화면에서 [허용] 을 한 번 누르면 끝.
+        // 이후에는 저장된 갱신용 토큰으로 서버가 알아서 보내므로 다시 동의할 필요가 없다.
+        window.connectGmail = async () => {
+            if (!requireAdmin('Gmail 연결')) return;
+            reportMailStatus('info', '연결 상태를 확인하는 중…');
+            try {
+                const token = await currentUser.getIdToken();
+                const st = await fetch('/api/gmail-auth?action=status', { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.json());
+
+                if (st.connected && !confirm(`이미 ${st.email} 계정으로 연결되어 있습니다.\n(연결 ${st.connectedAt || '-'})\n\n다른 계정으로 다시 연결할까요?`)) {
+                    return reportMailStatus('ok', `<b>연결됨</b> — ${st.email}<br>다시 동의하실 필요 없이 매주 자동 발송됩니다.`);
+                }
+
+                const j = await fetch('/api/gmail-auth?action=start', { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.json());
+                if (!j.url) return reportMailStatus('error', j.error || '동의 주소를 만들지 못했습니다.');
+
+                const w = window.open(j.url, '_blank', 'width=520,height=680');
+                if (!w) return reportMailStatus('error', '팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 시도하세요.');
+                reportMailStatus('info', '구글 동의 창에서 <b>[허용]</b> 을 눌러 주세요.<br>완료되면 아래 [연결 확인] 으로 상태를 확인할 수 있습니다.<br><span class="text-slate-400">한 번만 하시면 됩니다. 이후에는 자동으로 발송됩니다.</span>');
+            } catch (e) {
+                reportMailStatus('error', `연결 실패: ${e.message}`);
+            }
+        };
+
+        // 설정이 제대로 들어갔는지만 확인 (발송하지 않음)
+        window.checkReportMail = async () => {
+            if (!requireAdmin('주간 보고 메일')) return;
+            reportMailStatus('info', '확인 중…');
+            try {
+                const j = await callReportMail('GET');
+                const modeLabel = {
+                    'gmail-oauth': 'Gmail (본인 동의)', gmail: 'Gmail (도메인 위임)', resend: 'Resend', none: '미설정'
+                }[j.mailMode] || j.mailMode;
+                const rows = [
+                    `발송 경로: <b>${modeLabel}</b>`,
+                    j.gmailConnected ? `보내는 계정: <b>${j.gmailAccount}</b>` : 'Gmail 연결: <b>안 됨</b>',
+                    `OAuth 클라이언트 설정: ${j.hasOAuthClient ? '등록됨' : '<b>없음</b>'}`,
+                    `Firestore 읽기용 서비스 계정: ${j.hasServiceAccount ? '있음' : '<b>없음</b>'}`,
+                    `자동 발송(CRON_SECRET): ${j.hasCronSecret ? '설정됨 · 매주 월요일 07:00' : '미설정'}`
+                ].join('<br>');
+                reportMailStatus(j.ok ? 'ok' : 'error', (j.ok ? '<b>설정 정상</b><br>' : `<b>설정 확인 필요</b> — ${j.error}<br>`) + rows);
+            } catch (e) {
+                reportMailStatus('error', `확인 실패: ${e.message}`);
+            }
+        };
+
+        // 누구에게 무엇이 나가는지 먼저 본다 (발송하지 않음)
+        window.previewReportMail = async () => {
+            if (!requireAdmin('주간 보고 메일')) return;
+            reportMailStatus('info', '미리보기를 만드는 중…');
+            try {
+                const j = await callReportMail('GET', null, '?preview=1');
+                if (j.error) return reportMailStatus('error', j.error);
+
+                const lines = (j.lines || []).map(l =>
+                    `${l.line}: 지연 ${l.overdue} · 금주예정 ${l.dueThisWeek} · 지난주실적 ${l.done}(불량 ${l.bad}) · 담당 ${l.owners}명`).join('<br>');
+                const recips = (j.recipients || []).map(r => `${r.to} <span class="text-slate-400">(${r.lines.join(', ')})</span>`).join('<br>')
+                    || '<span class="text-amber-700">보낼 대상 없음</span>';
+                const skipped = (j.skipped || []).length ? `<br><span class="text-slate-500">건너뜀 ${j.skipped.length}명 — 보낼 내용이 없는 담당자</span>` : '';
+                reportMailStatus('info',
+                    `<b>미리보기</b> (실제로 보내지 않았습니다)<br>`
+                    + `기간: 금주 ${j.window.thisWeek.from}~${j.window.thisWeek.to} / 지난주 ${j.window.lastWeek.from}~${j.window.lastWeek.to}<br>`
+                    + `<b class="text-slate-700">라인</b><br>${lines || '-'}<br>`
+                    + `<b class="text-slate-700">받는 사람 ${(j.recipients || []).length}명</b><br>${recips}${skipped}`);
+
+                if (j.previewHtml) {
+                    const w = window.open('', '_blank');
+                    if (w) {
+                        w.document.open();
+                        w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${j.previewSubject || '주간 점검 보고'}</title></head><body style="margin:0;background:#f1f5f9;">
+                            <div style="padding:12px 16px;background:#0f172a;color:#e2e8f0;font:13px/1.5 sans-serif;">제목: ${j.previewSubject || ''}</div>
+                            <div style="background:#fff;">${j.previewHtml}</div></body></html>`);
+                        w.document.close();
+                    } else {
+                        showToast('팝업이 차단되어 본문 미리보기를 열지 못했습니다.', 'error');
+                    }
+                }
+            } catch (e) {
+                reportMailStatus('error', `미리보기 실패: ${e.message}`);
+            }
+        };
+
+        // 내용 확인용으로 나에게만 보낸다 (담당자에게는 가지 않음)
+        window.sendReportMailTest = async () => {
+            if (!requireAdmin('주간 보고 메일')) return;
+            const me = (currentUser && currentUser.email) || '';
+            if (!me) return showToast('로그인 정보를 확인할 수 없습니다.', 'error');
+            if (!confirm(`시험 발송입니다.\n담당자에게는 가지 않고 ${me} 에게만 보냅니다.\n\n보낼까요?`)) return;
+            reportMailStatus('info', '보내는 중…');
+            try {
+                const j = await callReportMail('POST', { to: [me], includeEmpty: true });
+                if (j.error) return reportMailStatus('error', j.error);
+                const okN = (j.sent || []).length, ngN = (j.failed || []).length;
+                reportMailStatus(ngN ? 'warn' : 'ok',
+                    `<b>시험 발송 ${okN}통</b>${ngN ? ` · 실패 ${ngN}통` : ''}<br>${me} 메일함을 확인하세요.`
+                    + (ngN ? `<br><span class="text-red-700">${j.failed.map(f => `${f.to}: ${f.error}`).join('<br>')}</span>` : ''));
+            } catch (e) {
+                reportMailStatus('error', `발송 실패: ${e.message}`);
+            }
+        };
+
+        // 실제 발송 — 담당자 전원
+        window.sendReportMail = async () => {
+            if (!requireAdmin('주간 보고 메일')) return;
+            let plan;
+            reportMailStatus('info', '대상을 확인하는 중…');
+            try {
+                plan = await callReportMail('GET', null, '?preview=1');
+                if (plan.error) return reportMailStatus('error', plan.error);
+            } catch (e) {
+                return reportMailStatus('error', `대상 확인 실패: ${e.message}`);
+            }
+
+            const recips = plan.recipients || [];
+            if (!recips.length) return reportMailStatus('warn', '보낼 대상이 없습니다. (담당자 미지정이거나 보낼 내용이 없음)');
+            const names = recips.map(r => `· ${r.to} (${r.lines.join(', ')})`).join('\n');
+            if (!confirm(`담당자 ${recips.length}명에게 주간 점검 보고를 보냅니다.\n\n${names}\n\n보낼까요?`)) return;
+
+            reportMailStatus('info', `${recips.length}명에게 보내는 중…`);
+            try {
+                const j = await callReportMail('POST', {});
+                const okN = (j.sent || []).length, ngN = (j.failed || []).length;
+                reportMailStatus(ngN ? (okN ? 'warn' : 'error') : 'ok',
+                    `<b>발송 완료 ${okN}통</b>${ngN ? ` · 실패 ${ngN}통` : ''}<br>`
+                    + (okN ? (j.sent || []).map(s => `${s.to} (${s.lines.join(', ')})`).join('<br>') : '')
+                    + (ngN ? `<br><span class="text-red-700">${j.failed.map(f => `${f.to}: ${f.error}`).join('<br>')}</span>` : ''));
+                if (okN) {
+                    showToast(`주간 보고 메일 ${okN}통을 보냈습니다.`);
+                    await logEditHistory('주간 보고 메일', '-', '-', `담당자 ${okN}명에게 발송${ngN ? ` (실패 ${ngN}명)` : ''}`);
+                }
+            } catch (e) {
+                reportMailStatus('error', `발송 실패: ${e.message}`);
+            }
         };
 
         // KPI Card Deep Linking
@@ -2762,7 +3048,8 @@
                         ensureDashboardYear();
                         const ySelD = document.getElementById('target-year-select');
                         if (ySelD) { fillYearSelect(ySelD, targetYear); targetYear = ySelD.value; }
-                        let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+                        const bdSourceD = faultsOnly(rawBDData); // 정기수리는 KPI·차트에서 제외
+                        let dashboardBDData = currentLineFilter === 'ALL' ? bdSourceD : bdSourceD.filter(d => d.line === currentLineFilter);
                         if (targetYear) dashboardBDData = dashboardBDData.filter(d => (d.startTime || '').slice(0, 4) === targetYear);
                         window.debouncedRenderCharts(dashboardBDData, dashboardPMData);
                         if (currentLineFilter !== 'ALL') {
@@ -2804,6 +3091,7 @@
                         window.__pmRegWorkType = null;
                     } else if (tabId === 'bd-reg') {
                         initCategorySelects(); // 등록 폼 진입 시 실제 사용된 분류값을 반영
+                        window.setBDWorkKind('고장');
                     } else if (tabId === 'manual-lib') {
                         renderManualLibrary();
                     }
@@ -3003,6 +3291,7 @@
             const lineOwnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'lineOwners');
             onSnapshot(lineOwnerRef, (snap) => {
                 lineOwners = (snap.exists() && snap.data().lines) ? snap.data().lines : {};
+                lineOwnerCats = (snap.exists() && snap.data().cats) ? snap.data().cats : {};
                 lineOwnersLoaded = true;
                 recomputeAdmin(); // 담당 라인이 바뀌면 수정 권한도 즉시 반영
                 if (!document.getElementById('line-owner-modal').classList.contains('hidden')) renderLineOwners();
@@ -3152,7 +3441,9 @@
 
         function applyFilterAndRender() {
             const dashboardPMData = currentLineFilter === 'ALL' ? rawPMData : rawPMData.filter(d => d.line === currentLineFilter);
-            let dashboardBDData = currentLineFilter === 'ALL' ? rawBDData : rawBDData.filter(d => d.line === currentLineFilter);
+            // KPI·차트·목표는 순수 고장만 센다 (정기수리 제외)
+            const bdSource = faultsOnly(rawBDData);
+            let dashboardBDData = currentLineFilter === 'ALL' ? bdSource : bdSource.filter(d => d.line === currentLineFilter);
             // 대시보드 전역 연도 필터 (선택 연도 기준으로 KPI·차트·목록 모두 적용)
             ensureDashboardYear();
             const ySel = document.getElementById('target-year-select');
@@ -3688,6 +3979,7 @@
             document.getElementById('edit-bd-main').value = item.mainCategory;
             document.getElementById('edit-bd-sub').value = item.subCategory;
             document.getElementById('edit-bd-detail').value = item.detailCategory;
+            document.getElementById('edit-bd-workkind').value = normalizeWorkKind(item.workKind);
             document.getElementById('edit-bd-fault').value = item.faultName || '';
             document.getElementById('edit-bd-cause').value = item.cause || '';
             document.getElementById('edit-bd-content').value = item.content || '';
@@ -3753,6 +4045,7 @@
                 mainCategory: document.getElementById('edit-bd-main').value.trim(),
                 subCategory: document.getElementById('edit-bd-sub').value.trim(),
                 detailCategory: document.getElementById('edit-bd-detail').value.trim(),
+                workKind: normalizeWorkKind(document.getElementById('edit-bd-workkind').value),
                 faultName: document.getElementById('edit-bd-fault').value.trim(),
                 cause: document.getElementById('edit-bd-cause').value.trim(),
                 content: document.getElementById('edit-bd-content').value.trim(),
@@ -3765,6 +4058,7 @@
 
             const oldManuals = Array.isArray(old.manuals) ? old.manuals : [];
             let diffs = [];
+            if(normalizeWorkKind(old.workKind) !== newData.workKind) diffs.push(`작업구분 변경(${normalizeWorkKind(old.workKind)}->${newData.workKind})`);
             if(old.content !== newData.content) diffs.push("조치내용 변경");
             if(old.durationMinutes !== newData.durationMinutes) diffs.push(`시간 변경(${old.durationMinutes}분->${newData.durationMinutes}분)`);
             if(old.detailCategory !== newData.detailCategory) diffs.push(`소분류 변경(${old.detailCategory}->${newData.detailCategory})`);
@@ -4421,7 +4715,8 @@
             if (labelEl) labelEl.innerText = `(${sinceStr} ~ ${todayStr} · 최근 12개월)`;
 
             // 데이터 수집
-            let faults = rawBDData.filter(d => BD_LINES.includes(d.line) && (d.startTime || '') >= sinceStr);
+            // 위험도는 '고장이 날 위험'을 보는 것이므로 계획된 정기수리는 넣지 않는다
+            let faults = faultsOnly(rawBDData).filter(d => BD_LINES.includes(d.line) && (d.startTime || '') >= sinceStr);
             let pmDefects = rawPMResultsData.filter(d => d.result === '불량' && (d.checkTime || '').slice(0, 10) >= sinceStr);
             let pmOverdue = rawPMData.filter(d => d.status !== '점검' && (d.nextCheckDate || '') !== '' && d.nextCheckDate < todayStr);
             if (riskLine !== 'ALL') {
@@ -4937,6 +5232,26 @@
         // ==========================================
         // BD Logic
         // ==========================================
+        // 고장실적 등록 폼의 작업구분 선택
+        window.setBDWorkKind = (kind) => {
+            const k = normalizeWorkKind(kind);
+            document.getElementById('bd-workkind').value = k;
+            const tabs = document.getElementById('bd-workkind-tabs');
+            if (tabs) {
+                tabs.innerHTML = BD_WORK_KINDS.map(w => {
+                    const on = w === k;
+                    const acc = w === '고장' ? 'red' : 'slate';
+                    return `<button type="button" onclick="setBDWorkKind('${w}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition border ${on
+                        ? (acc === 'red' ? 'bg-red-500 text-white border-red-500 shadow-sm' : 'bg-slate-600 text-white border-slate-600 shadow-sm')
+                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${w}</button>`;
+                }).join('');
+            }
+            const hint = document.getElementById('bd-workkind-hint');
+            if (hint) hint.innerHTML = k === '정기수리'
+                ? '<b class="text-slate-700">정기수리</b> — 계획된 정지입니다. 고장 건수·정지시간 지표와 <b>갈라서</b> 집계됩니다.'
+                : '<b class="text-red-700">고장</b> — 계획에 없던 정지입니다. 고장 지표에 포함됩니다.';
+        };
+
         window.handleBDSubmit = async (e) => {
             e.preventDefault();
             if(!currentUser) return showToast("인증이 필요합니다.", "error");
@@ -4967,8 +5282,9 @@
                 // 메뉴얼은 첨부 버튼을 누른 시점에 이미 업로드돼 있으므로 목록만 그대로 저장한다
                 if (hasPendingManualUpload(bdRegManuals)) return;
                 const uploadedManuals = bdRegManuals.map(toManualRecord);
+                const bdWorkKind = normalizeWorkKind(document.getElementById('bd-workkind').value);
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs'), {
-                    manuals: uploadedManuals,
+                    manuals: uploadedManuals, workKind: bdWorkKind,
                     line: document.getElementById('bd-line').value, equipmentName: document.getElementById('bd-equip').value,
                     category: document.getElementById('bd-category').value, mainCategory: document.getElementById('bd-main-cat').value,
                     subCategory: document.getElementById('bd-sub-cat').value, detailCategory: document.getElementById('bd-detail-cat').value,
@@ -4980,8 +5296,8 @@
                     durationMinutes, shiftType: getShiftType(startStr), createdAt: serverTimestamp()
                 });
                 // 등록자(누가 넣었는지)를 데이터 수정 이력에 기록 (양식 초기화 전에 값 읽음)
-                await logEditHistory('고장실적 (등록)', document.getElementById('bd-line').value, document.getElementById('bd-equip').value, `수동 등록 (${document.getElementById('bd-fault-name').value.trim() || '고장명 미입력'})`);
-                showToast(uploadedManuals.length ? `고장 실적이 등록되었습니다. (메뉴얼 ${uploadedManuals.length}건 첨부)` : "고장 실적이 등록되었습니다.");
+                await logEditHistory(`고장실적 (등록·${bdWorkKind})`, document.getElementById('bd-line').value, document.getElementById('bd-equip').value, `수동 등록 (${document.getElementById('bd-fault-name').value.trim() || '고장명 미입력'})`);
+                showToast(uploadedManuals.length ? `${bdWorkKind} 실적이 등록되었습니다. (메뉴얼 ${uploadedManuals.length}건 첨부)` : `${bdWorkKind} 실적이 등록되었습니다.`);
                 e.target.reset();
                 bdRegManuals = []; renderBDRegManuals();
                 document.getElementById('bd-equip').innerHTML = '<option value="">라인을 먼저 선택하세요</option>';
@@ -5221,9 +5537,11 @@
             const fMain = val('bd-filter-main', 'ALL');
             const fSub = val('bd-filter-sub', 'ALL');
             const fDetail = val('bd-filter-detail', 'ALL');
+            const fKind = val('bd-filter-workkind', 'ALL');
             const kw = String(val('bd-search-keyword', '')).toLowerCase();
 
             let list = rawBDData;
+            if (fKind !== 'ALL') list = list.filter(d => normalizeWorkKind(d.workKind) === fKind);
             if (fYear !== 'ALL') list = list.filter(d => (d.startTime || '').slice(0, 4) === fYear);
             if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
             if (fCat !== 'ALL') list = list.filter(d => d.category === fCat);
@@ -5288,7 +5606,7 @@
                     <tr class="hover:bg-blue-50/60 transition-colors border-b border-slate-50 cursor-pointer ${isCritical ? 'bg-red-50' : ''}" onclick="openBDDetail('${item.id}')" title="클릭하면 상세 내용">
                         <td class="py-2.5 px-3 font-bold text-brand-600">${item.line || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-700">${startStr}</td>
-                        <td class="py-2.5 px-3 font-semibold text-slate-800">${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-800">${normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) + ' ' : ''}${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
                         <td class="py-2.5 px-2 text-center text-red-500 font-bold text-xs">${durStr}</td>
                         <td class="py-2.5 px-1.5 text-center">${shiftBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${repeatBadge}</td>
@@ -5304,6 +5622,7 @@
                         <div class="flex items-center justify-between gap-2 mb-1.5">
                             <div class="flex items-center gap-1.5 flex-wrap min-w-0">
                                 <span class="px-1.5 py-0.5 rounded bg-blue-50 text-brand-600 text-[10px] font-bold">${item.line || '-'}</span>
+                                ${normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) : ''}
                                 ${shiftBadge}
                                 ${isRepeat ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회 반복</span>` : ''}
                                 ${isCritical ? '<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">중대</span>' : ''}
@@ -5767,9 +6086,10 @@
             const line = document.getElementById('ai-line').value;
             const yearOk = (s) => year === 'ALL' || String(s || '').slice(0, 4) === year;
             const lineOk = (l) => line === 'ALL' || l === line;
+            // 챗봇도 '고장' 분석이므로 계획된 정기수리는 넣지 않는다 (대시보드 KPI와 같은 기준)
             return {
                 year, line,
-                bd: rawBDData.filter(d => yearOk(d.startTime) && lineOk(d.line)),
+                bd: faultsOnly(rawBDData).filter(d => yearOk(d.startTime) && lineOk(d.line)),
                 pm: rawPMData.filter(d => lineOk(d.line)),
                 pmRes: rawPMResultsData.filter(d => yearOk(d.checkTime) && lineOk(d.line))
             };
@@ -6033,12 +6353,12 @@
 
             return {
                 year: base.year, line, lineLabel, periodLabel,
-                bd: rawBDData.filter(d => lineOk(d.line) && dateOk(d.startTime)),
+                bd: faultsOnly(rawBDData).filter(d => lineOk(d.line) && dateOk(d.startTime)),
                 pm: rawPMData.filter(d => lineOk(d.line)),
                 pmRes: rawPMResultsData.filter(d => lineOk(d.line) && dateOk(pmResultTimeStr(d)))
             };
         }
-        const laHead = (sc) => `**분석 범위** ${sc.periodLabel} · ${sc.lineLabel} · 기준일 ${getLocalTodayString()}`;
+        const laHead = (sc) => `**분석 범위** ${sc.periodLabel} · ${sc.lineLabel} · 기준일 ${getLocalTodayString()} · 고장만(정기수리 제외)`;
         const laNoBD = (sc) => `${laHead(sc)}\n\n이 범위에 등록된 **고장 데이터가 없습니다.** 상단의 연도·라인 범위를 넓혀서 다시 물어보세요.`;
 
         // ---------- 개별 분석 ----------
@@ -6425,6 +6745,7 @@
             const L = [];
             L.push(mode === 'bd' ? '# 고장실적 보고서' : mode === 'pm' ? '# 예방점검 보고서' : '# 설비 관리 보고서');
             L.push(`**범위** ${sc.periodLabel} · ${sc.lineLabel}  |  **작성일** ${today}`);
+            if (withBD) L.push('_고장 수치는 계획된 **정기수리를 제외**한 순수 고장 기준입니다._');
             L.push('');
             L.push('## 1. 요약');
             L.push(laTable(['항목', '값'], [
@@ -6696,6 +7017,117 @@
             return out;
         }
 
+        // ==========================================
+        // 보고서 그래프 — 보고서 안의 '집계 표'를 그대로 차트로 만든다.
+        // 표에서 뽑으므로 보고서 종류(리스트 보고서·챗봇 보고서)를 가리지 않고 같이 동작한다.
+        // 상세/목록처럼 행이 많거나 요약처럼 값 단위가 뒤섞인 표는 제외한다.
+        // ==========================================
+        const CHART_SKIP_TITLE = /요약|상세|내역|목록|보완이 필요|이렇게 물어보세요/;
+        const CHART_COLORS = ['#2563eb', '#dc2626', '#f59e0b', '#059669', '#7c3aed', '#0891b2', '#db2777', '#65a30d', '#ea580c', '#4f46e5'];
+
+        // "12건" → 12, "3시간 20분" → 200(분), "45.0%" → 45
+        function chartNum(s) {
+            const t = String(s ?? '').trim();
+            if (!t || t === '-') return null;
+            const hm = /^(?:(\d+(?:\.\d+)?)\s*시간)?\s*(?:(\d+(?:\.\d+)?)\s*분)?$/.exec(t);
+            if (hm && (hm[1] || hm[2])) return (parseFloat(hm[1] || 0) * 60) + parseFloat(hm[2] || 0);
+            const n = /^-?[\d,]+(?:\.\d+)?/.exec(t.replace(/,/g, ''));
+            return n ? parseFloat(n[0]) : null;
+        }
+
+        // 표 → 차트 사양. 첫 열을 이름으로, 숫자로 읽히는 첫 열을 값으로 쓴다.
+        function chartSpecFromTable(t) {
+            if (!t || t.head.length < 2 || t.rows.length < 2 || t.rows.length > 24) return null;
+            if (CHART_SKIP_TITLE.test(t.title || '')) return null;
+
+            let valueIdx = -1;
+            for (let c = 1; c < t.head.length; c++) {
+                const vals = t.rows.map(r => chartNum(r[c]));
+                if (vals.every(v => v !== null) && vals.some(v => v > 0)) { valueIdx = c; break; }
+            }
+            if (valueIdx < 0) return null;
+
+            const labels = t.rows.map(r => String(r[0] ?? '').trim());
+            // 첫 열이 범주축이 아니면(값이 겹치면) 라벨이 뭉개진다. 예: 반복고장 표의 '라인' 열
+            if (new Set(labels).size !== labels.length) return null;
+            const data = t.rows.map(r => chartNum(r[valueIdx]));
+            const unitIsMinutes = /시간|정지/.test(t.head[valueIdx]);
+            const isTrend = /월별|추이|추세/.test(t.title || '') || /^\d{4}-\d{2}$/.test(labels[0] || '');
+            const type = isTrend ? 'line' : (labels.length <= 6 ? 'doughnut' : 'bar');
+
+            return {
+                title: `${String(t.title || '').replace(/^\d+(-\d+)?\.\s*/, '')} — ${t.head[valueIdx]}`,
+                type, labels, data, unitIsMinutes
+            };
+        }
+
+        // 차트를 화면 밖 캔버스에 그려 PNG(data URI)로 뽑는다. 인쇄 창·미리보기에 그대로 넣는다.
+        function renderChartPNG(spec, width = 760, height = 340) {
+            if (typeof Chart === 'undefined') return null;
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            // 화면에 보이지 않게 두되, 레이아웃에서 빠지면 Chart.js 가 크기를 못 잡으므로 화면 밖으로 보낸다
+            canvas.style.cssText = `position:fixed;left:-10000px;top:0;width:${width}px;height:${height}px;`;
+            document.body.appendChild(canvas);
+
+            let png = null, chart = null;
+            try {
+                const fmt = (v) => spec.unitIsMinutes ? laMin(v) : laNum(v);
+                const isPie = spec.type === 'doughnut';
+                chart = new Chart(canvas.getContext('2d'), {
+                    type: spec.type,
+                    data: {
+                        labels: spec.labels,
+                        datasets: [{
+                            label: spec.title,
+                            data: spec.data,
+                            backgroundColor: isPie ? spec.labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length])
+                                : (spec.type === 'line' ? 'rgba(37,99,235,0.12)' : '#2563eb'),
+                            borderColor: spec.type === 'line' ? '#2563eb' : '#1e40af',
+                            borderWidth: spec.type === 'line' ? 2 : 1,
+                            fill: spec.type === 'line',
+                            tension: 0.25,
+                            pointRadius: 3
+                        }]
+                    },
+                    options: {
+                        responsive: false, animation: false, devicePixelRatio: 2,
+                        plugins: {
+                            legend: { display: isPie, position: 'right', labels: { font: { size: 11 } } },
+                            title: { display: true, text: spec.title, font: { size: 13, weight: 'bold' }, color: '#0f172a' },
+                            tooltip: { enabled: false },
+                            datalabels: false
+                        },
+                        scales: isPie ? {} : {
+                            y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: (v) => fmt(v) }, grid: { color: '#e2e8f0' } },
+                            x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0 }, grid: { display: false } }
+                        }
+                    }
+                });
+                png = canvas.toDataURL('image/png');
+            } catch (e) {
+                console.error('차트 생성 실패', spec && spec.title, e);
+            } finally {
+                if (chart) chart.destroy();
+                canvas.remove();
+            }
+            return png;
+        }
+
+        // 보고서 마크다운 → 차트 이미지 목록
+        function buildReportCharts(md, max = 8) {
+            const specs = laExtractTables(md).map(chartSpecFromTable).filter(Boolean).slice(0, max);
+            return specs.map(s => ({ title: s.title, png: renderChartPNG(s) })).filter(c => c.png);
+        }
+
+        // 인쇄 문서에 넣을 그래프 블록
+        function chartsHtmlBlock(charts) {
+            if (!charts.length) return '';
+            return `<div class="chart-sheet"><p class="font-bold">그래프</p>`
+                + charts.map(c => `<div class="chart-box"><img src="${c.png}" alt="${String(c.title).replace(/"/g, '&quot;')}"></div>`).join('')
+                + `</div>`;
+        }
+
         window.laCopyAnswer = async (idx) => {
             const m = aiMessages[idx];
             if (!m) return;
@@ -6708,7 +7140,43 @@
             if (m) laExportMarkdown(m.text);
         };
 
-        // 마크다운 안의 표들을 시트로 나눠 엑셀로 저장
+        // 여러 차트를 세로로 이어 붙여 한 장의 PNG 로 만든다.
+        // 엑셀 파일(SheetJS)에는 이미지를 넣을 수 없어서, 그래프는 그림 파일로 따로 내려준다.
+        function mergeChartsPNG(charts) {
+            if (!charts.length) return Promise.resolve(null);
+            const W = 900, H = 400, PAD = 16;
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = charts.length * H + PAD * (charts.length + 1);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            return Promise.all(charts.map(c => new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = c.png;
+            }))).then(imgs => {
+                let y = PAD;
+                imgs.forEach(img => {
+                    if (img) ctx.drawImage(img, PAD, y, W - PAD * 2, H);
+                    y += H + PAD;
+                });
+                return canvas.toDataURL('image/png');
+            });
+        }
+
+        function downloadDataUri(dataUri, filename) {
+            const a = document.createElement('a');
+            a.href = dataUri;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        // 마크다운 안의 표들을 시트로 나눠 엑셀로 저장하고, 그래프는 PNG 로 함께 내려준다.
         function laExportMarkdown(md, fileBase) {
             const tables = laExtractTables(md);
             if (!tables.length) return showToast('표로 된 내용이 없어 엑셀로 만들 수 없습니다.', 'error');
@@ -6720,8 +7188,25 @@
                 used.add(name);
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([t.head, ...t.rows]), name);
             });
-            XLSX.writeFile(wb, `${fileBase || 'Seah_Report'}_${getLocalTodayString()}.xlsx`);
-            showToast(`표 ${tables.length}개를 엑셀로 저장했습니다.`);
+            const base = `${fileBase || 'Seah_Report'}_${getLocalTodayString()}`;
+            XLSX.writeFile(wb, `${base}.xlsx`);
+
+            // 엑셀 파일 형식(SheetJS)에는 그림을 넣을 수 없어 그래프는 PNG 로 따로 저장한다.
+            let charts = [];
+            try { charts = buildReportCharts(md); } catch (e) { console.error('보고서 그래프 생성 실패', e); }
+            if (!charts.length) return showToast(`표 ${tables.length}개를 엑셀로 저장했습니다.`);
+
+            mergeChartsPNG(charts).then(png => {
+                if (png) {
+                    downloadDataUri(png, `${base}_그래프.png`);
+                    showToast(`엑셀(표 ${tables.length}개)과 그래프 ${charts.length}개를 저장했습니다.`);
+                } else {
+                    showToast(`표 ${tables.length}개를 엑셀로 저장했습니다.`);
+                }
+            }).catch(e => {
+                console.error(e);
+                showToast(`표 ${tables.length}개를 엑셀로 저장했습니다. (그래프 저장 실패)`, 'error');
+            });
         }
 
         window.laPrintAnswer = (idx) => {
@@ -6746,11 +7231,20 @@
                 li{margin:2px 0}
                 code{background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px}
                 .doc-foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b}
+                .chart-sheet{margin:0 0 20px}
+                .chart-box{margin:0 0 14px;border:1px solid #e2e8f0;border-radius:6px;padding:8px;page-break-inside:avoid}
+                .chart-box img{width:100%;height:auto;display:block}
                 @media print{body{padding:0} table{page-break-inside:auto} tr{page-break-inside:avoid}}
             `;
+            // 집계 표에서 뽑은 그래프를 본문 뒤에 싣는다 (제목·수치를 먼저 보고 그림으로 확인하는 순서)
+            let chartsHtml = '';
+            try { chartsHtml = chartsHtmlBlock(buildReportCharts(md)); }
+            catch (e) { console.error('보고서 그래프 생성 실패', e); }
+
             const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8">`
                 + `<title>${docTitle || '설비 관리 보고서'} ${getLocalTodayString()}</title><style>${css}</style></head><body>`
                 + aiMdToHtml(md)
+                + chartsHtml
                 + `<div class="doc-foot">세아씨엠 설비 관리 시스템 · 출력 ${getLocalTodayString()} · 등록 데이터 집계 결과</div>`
                 + `</body></html>`;
             w.document.open();
@@ -6768,7 +7262,11 @@
             currentReport = { title, md, file: file || 'Seah_Report' };
             document.getElementById('report-modal-title').innerText = title;
             const body = document.getElementById('report-modal-body');
-            body.innerHTML = aiMdToHtml(md);
+            let charts = [];
+            try { charts = buildReportCharts(md); } catch (e) { console.error('보고서 그래프 생성 실패', e); }
+            body.innerHTML = aiMdToHtml(md)
+                + (charts.length ? `<p class="font-bold text-slate-900 mt-6 mb-2 pb-1 border-b border-slate-200">그래프</p>`
+                    + `<div class="space-y-3">${charts.map(c => `<div class="border border-slate-200 rounded-lg p-2"><img src="${c.png}" alt="${String(c.title).replace(/"/g, '&quot;')}" class="w-full h-auto block"></div>`).join('')}</div>` : '');
             body.scrollTop = 0;
             const modal = document.getElementById('report-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
@@ -6880,6 +7378,7 @@
             const list = getFilteredBDList();
             const val = (id) => document.getElementById(id)?.value || 'ALL';
             const cond = reportFilterLine([
+                ['작업구분', val('bd-filter-workkind')],
                 ['연도', val('bd-filter-year')], ['라인', val('bd-filter-line')], ['구분', val('bd-filter-category')],
                 ['대분류', val('bd-filter-main')], ['중분류', val('bd-filter-sub')], ['소분류', val('bd-filter-detail')],
                 ['검색어', document.getElementById('bd-search-keyword')?.value.trim()]
@@ -6898,16 +7397,34 @@
             const equipSet = new Set(list.map(d => `${d.line}/${d.equipmentName}`));
             const maxD = list.reduce((a, d) => Math.max(a, d.durationMinutes || 0), 0);
 
+            // 고장과 정기수리는 성격이 달라 합산 지표만 보면 오해가 생긴다. 요약에서 갈라 보여준다.
+            const bdOnly = list.filter(d => normalizeWorkKind(d.workKind) === '고장');
+            const planOnly = list.filter(d => normalizeWorkKind(d.workKind) === '정기수리');
+            const minsOf = (arr) => arr.reduce((a, d) => a + (d.durationMinutes || 0), 0);
+
             L.push('## 1. 요약');
             L.push(laTable(['항목', '값'], [
-                ['고장 건수', `${laNum(list.length)}건`],
+                ['전체 건수', `${laNum(list.length)}건`],
                 ['총 정지시간', laMin(totM)],
                 ['건당 평균 정지시간', laMin(totM / list.length)],
                 ['최장 정지시간', laMin(maxD)],
-                ['중대고장 (2시간 이상)', `${laNum(severe.length)}건 (${laPct(severe.length, list.length)})`],
-                ['고장 설비 수', `${laNum(equipSet.size)}대`],
+                ['중대 (2시간 이상)', `${laNum(severe.length)}건 (${laPct(severe.length, list.length)})`],
+                ['대상 설비 수', `${laNum(equipSet.size)}대`],
                 ['발생 기간', dates.length ? `${dates[0].slice(0, 10)} ~ ${dates[dates.length - 1].slice(0, 10)}` : '-']
             ]));
+
+            if (planOnly.length) {
+                L.push('');
+                L.push('### 1-1. 작업구분별 (고장 / 정기수리)');
+                L.push(laTable(['작업구분', '건수', '정지시간', '건당 평균', '비중'], BD_WORK_KINDS.map(k => {
+                    const arr = k === '고장' ? bdOnly : planOnly;
+                    if (!arr.length) return null;
+                    return [k, `${laNum(arr.length)}건`, laMin(minsOf(arr)),
+                        laMin(minsOf(arr) / arr.length), laPct(arr.length, list.length)];
+                }).filter(Boolean)));
+                L.push('');
+                L.push(`_계획된 정지인 **정기수리 ${laNum(planOnly.length)}건**(${laMin(minsOf(planOnly))})이 포함돼 있습니다. 순수 고장 지표만 보려면 화면에서 작업구분을 **고장**으로 두고 다시 만드세요._`);
+            }
 
             const section = (title, keyFn, headLabel, top, sortByKey) => {
                 const g = laGroup(list, keyFn);
@@ -6944,8 +7461,8 @@
 
             L.push('');
             L.push(`## 11. 고장 상세 (${laNum(list.length)}건${list.length > REPORT_ROW_CAP ? ` 중 ${laNum(REPORT_ROW_CAP)}건 표시` : ''})`);
-            L.push(laTable(['No', '발생일시', '라인', '설비', '구분', '분류(대>중>소)', '고장명', '정지시간', '발생원인', '조치내용', '방지대책'],
-                list.slice(0, REPORT_ROW_CAP).map((d, i) => [i + 1, String(d.startTime || '').replace('T', ' '), d.line, d.equipmentName, d.category,
+            L.push(laTable(['No', '작업구분', '발생일시', '라인', '설비', '구분', '분류(대>중>소)', '고장명', '정지시간', '발생원인', '조치내용', '방지대책'],
+                list.slice(0, REPORT_ROW_CAP).map((d, i) => [i + 1, normalizeWorkKind(d.workKind), String(d.startTime || '').replace('T', ' '), d.line, d.equipmentName, d.category,
                     [d.mainCategory, d.subCategory, d.detailCategory].filter(Boolean).join(' > '),
                     d.faultName, laMin(d.durationMinutes), d.cause, d.content, d.prevention])));
             if (list.length > REPORT_ROW_CAP) L.push(`\n_상세 표는 ${laNum(REPORT_ROW_CAP)}건까지만 실었습니다. 위 집계에는 ${laNum(list.length)}건 전부 반영되어 있습니다._`);
