@@ -6446,15 +6446,19 @@
 
             const totC = sc.bd.length;
             const totM = sc.bd.reduce((a, d) => a + (d.durationMinutes || 0), 0);
-            const body = rows.map(([k, v], i) => [
-                isMonth ? k : i + 1,
-                isMonth ? '' : k,
-                `${laNum(v.count)}건`,
-                laMin(v.mins),
-                metric === 'mins' ? laPct(v.mins, totM) : laPct(v.count, totC)
-            ].filter((_, idx) => !(isMonth && idx === 1)));
+            // 정렬 기준이 된 지표를 첫 숫자 열에 둔다.
+            // 그래프는 '이름 열 다음의 첫 숫자 열'을 값으로 쓰므로, 이렇게 해야
+            // "정지시간이 긴 라인" 을 물었을 때 정지시간 막대가 그려진다.
+            const byMins = metric === 'mins';
+            const numHead = byMins ? ['정지시간', '건수', '비중'] : ['건수', '정지시간', '비중'];
+            const numCell = (v) => byMins
+                ? [laMin(v.mins), `${laNum(v.count)}건`, laPct(v.mins, totM)]
+                : [`${laNum(v.count)}건`, laMin(v.mins), laPct(v.count, totC)];
 
-            const head = isMonth ? ['월', '건수', '정지시간', '비중'] : ['순위', dim.label, '건수', '정지시간', '비중'];
+            const head = isMonth ? ['월', ...numHead] : ['순위', dim.label, ...numHead];
+            const body = rows.map(([k, v], i) => isMonth
+                ? [k, ...numCell(v)]
+                : [i + 1, k, ...numCell(v)]);
             const L = [];
             L.push(`## ${dim.label}별 고장 ${isMonth ? '추이' : '순위'} (${metric === 'mins' ? '정지시간' : '건수'} 기준)`);
             L.push(laHead(sc));
@@ -7100,20 +7104,32 @@
             return n ? parseFloat(n[0]) : null;
         }
 
-        // 표 → 차트 사양. 첫 열을 이름으로, 숫자로 읽히는 첫 열을 값으로 쓴다.
+        // 표 → 차트 사양.
+        // 이름표로 쓸 열: 값이 전부 '순수한 정수'인 열(순위·No)은 건너뛴다.
+        //   그런 열을 쓰면 x축에 1,2,3,4 만 찍혀 어느 막대가 무엇인지 알 수 없다.
+        //   '2026-01'(월)이나 'CPL / 1호기'는 순수 정수가 아니므로 이름표로 남는다.
+        // 값으로 쓸 열: 이름표 다음에 오는 첫 숫자 열. 표에서 정렬 기준을 앞에 두므로
+        //   질문한 지표(건수 또는 정지시간)가 그대로 그려진다.
         function chartSpecFromTable(t) {
             if (!t || t.head.length < 2 || t.rows.length < 2 || t.rows.length > 24) return null;
             if (CHART_SKIP_TITLE.test(t.title || '')) return null;
 
+            const isPureInt = (s) => /^\d+$/.test(String(s ?? '').trim());
+            let labelIdx = -1;
+            for (let c = 0; c < t.head.length; c++) {
+                if (!t.rows.every(r => isPureInt(r[c]))) { labelIdx = c; break; }
+            }
+            if (labelIdx < 0 || labelIdx >= t.head.length - 1) return null;
+
             let valueIdx = -1;
-            for (let c = 1; c < t.head.length; c++) {
+            for (let c = labelIdx + 1; c < t.head.length; c++) {
                 const vals = t.rows.map(r => chartNum(r[c]));
                 if (vals.every(v => v !== null) && vals.some(v => v > 0)) { valueIdx = c; break; }
             }
             if (valueIdx < 0) return null;
 
-            const labels = t.rows.map(r => String(r[0] ?? '').trim());
-            // 첫 열이 범주축이 아니면(값이 겹치면) 라벨이 뭉개진다. 예: 반복고장 표의 '라인' 열
+            const labels = t.rows.map(r => String(r[labelIdx] ?? '').trim());
+            // 이름이 겹치면 라벨이 뭉개진다. 예: 반복고장 표의 '라인' 열
             if (new Set(labels).size !== labels.length) return null;
             const data = t.rows.map(r => chartNum(r[valueIdx]));
             const unitIsMinutes = /시간|정지/.test(t.head[valueIdx]);
