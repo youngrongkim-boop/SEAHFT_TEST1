@@ -55,7 +55,9 @@ module.exports = async (req, res) => {
     const cronSecret = process.env.CRON_SECRET;
     const isCron = !!(cronSecret && bearer && bearer === cronSecret);
 
-    // ---- 인증 ----
+    // ---- 인증 · 권한 ----
+    // 발송 계정 연결이 걸려 있어 최고관리자만 다룬다.
+    // 설정 진단에도 연결 계정·환경변수 상태가 담기므로, 아래 어떤 처리보다 먼저 막는다.
     let caller = null;
     if (!isCron) {
         try {
@@ -63,6 +65,9 @@ module.exports = async (req, res) => {
             caller = normEmail(payload.email);
         } catch (e) {
             return res.status(401).json({ error: `인증 실패: ${e.message}` });
+        }
+        if (caller !== normEmail(SUPER_ADMIN)) {
+            return res.status(403).json({ error: '주간 보고 메일은 최고관리자만 사용할 수 있습니다.' });
         }
     }
 
@@ -146,15 +151,7 @@ module.exports = async (req, res) => {
     try {
         const token = await getAccessToken(sa, FIRESTORE_SCOPE);
 
-        // ---- 관리자 확인 (사람이 부른 경우만) ----
-        const adminsDoc = await fsGet(token, dataPath('settings/admins'));
-        const adminList = ((adminsDoc && adminsDoc.emails) || []).map(normEmail);
-        if (!isCron) {
-            const isAdmin = caller === normEmail(SUPER_ADMIN) || adminList.includes(caller);
-            if (!isAdmin) return res.status(403).json({ error: '관리자만 사용할 수 있습니다.' });
-        }
-
-        // ---- 데이터 읽기 ----
+        // ---- 데이터 읽기 ---- (권한은 위에서 이미 확인했다)
         const win = weekWindows(new Date());
 
         const ownersDoc = await fsGet(token, dataPath('settings/lineOwners'));

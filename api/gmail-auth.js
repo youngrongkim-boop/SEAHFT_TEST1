@@ -22,7 +22,7 @@
 const crypto = require('crypto');
 const {
     SUPER_ADMIN, SECRET_PATH, normEmail, verifyIdToken,
-    serviceAccount, getAccessToken, dataPath, fsGet, fsSet, fsDelete
+    serviceAccount, getAccessToken, fsGet, fsSet, fsDelete
 } = require('./_lib/google');
 
 const FIRESTORE_SCOPE = 'https://www.googleapis.com/auth/datastore';
@@ -146,11 +146,11 @@ module.exports = async (req, res) => {
     if (saError) return res.status(500).json({ error: saError });
     if (!sa) return res.status(500).json({ error: 'GCP_SERVICE_ACCOUNT_JSON 이 설정되어 있지 않습니다.' });
 
+    // 발송 계정을 연결·해제하는 기능이라 최고관리자만 다룬다.
+    if (caller !== normEmail(SUPER_ADMIN)) {
+        return res.status(403).json({ error: 'Gmail 연결은 최고관리자만 할 수 있습니다.' });
+    }
     const fsToken = await getAccessToken(sa, FIRESTORE_SCOPE);
-    const adminsDoc = await fsGet(fsToken, dataPath('settings/admins'));
-    const adminList = ((adminsDoc && adminsDoc.emails) || []).map(normEmail);
-    const isAdmin = caller === normEmail(SUPER_ADMIN) || adminList.includes(caller);
-    if (!isAdmin) return res.status(403).json({ error: '관리자만 사용할 수 있습니다.' });
 
     const action = String(q.action || (req.body && req.body.action) || 'status');
 

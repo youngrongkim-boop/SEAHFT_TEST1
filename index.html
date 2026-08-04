@@ -314,8 +314,9 @@
             </div>
             <div id="line-owner-body" class="p-5 space-y-3 overflow-y-auto custom-scroll flex-1"></div>
 
-            <!-- 주간 점검 보고 메일 -->
-            <div class="px-5 py-3.5 border-t border-slate-200 shrink-0 bg-slate-50">
+            <!-- 주간 점검 보고 메일 — 발송 계정 연결이 걸려 있어 최고관리자만 보이게 한다.
+                 (담당자 등록·해제는 위쪽 영역이라 관리자 전원이 그대로 쓸 수 있다) -->
+            <div data-super-only class="hidden px-5 py-3.5 border-t border-slate-200 shrink-0 bg-slate-50">
                 <div class="flex flex-wrap items-center gap-2 mb-2">
                     <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5 mr-auto">
                         <i data-lucide="mail" class="w-4 h-4 text-brand-600"></i> 주간 점검 보고 메일
@@ -2539,6 +2540,14 @@
         // 집계와 발송은 서버에서 한다. 크론으로도 같은 함수가 도는데,
         // 그때는 브라우저가 없으므로 화면 데이터를 보내는 방식은 쓸 수 없다.
         // ==========================================
+        // 메일 설정은 발송 계정 연결이 걸려 있어 최고관리자만 다룬다.
+        // (서버 쪽 /api/report-mail · /api/gmail-auth 에서도 같은 규칙으로 막는다)
+        function requireSuperForMail() {
+            if (isSuperAdmin) return true;
+            showToast('주간 보고 메일 설정은 최고관리자만 할 수 있습니다.', 'error');
+            return false;
+        }
+
         function reportMailStatus(kind, html) {
             const el = document.getElementById('report-mail-status');
             if (!el) return;
@@ -2569,6 +2578,7 @@
         // Gmail 연결 — 본인이 구글 동의 화면에서 [허용] 을 한 번 누르면 끝.
         // 이후에는 저장된 갱신용 토큰으로 서버가 알아서 보내므로 다시 동의할 필요가 없다.
         window.connectGmail = async () => {
+            if (!requireSuperForMail()) return;
             if (!requireAdmin('Gmail 연결')) return;
             reportMailStatus('info', '연결 상태를 확인하는 중…');
             try {
@@ -2594,6 +2604,7 @@
 
         // 설정이 제대로 들어갔는지만 확인 (발송하지 않음)
         window.checkReportMail = async () => {
+            if (!requireSuperForMail()) return;
             if (!requireAdmin('주간 보고 메일')) return;
             reportMailStatus('info', '확인 중…');
             try {
@@ -2625,6 +2636,7 @@
 
         // 누구에게 무엇이 나가는지 먼저 본다 (발송하지 않음)
         window.previewReportMail = async () => {
+            if (!requireSuperForMail()) return;
             if (!requireAdmin('주간 보고 메일')) return;
             reportMailStatus('info', '미리보기를 만드는 중…');
             try {
@@ -2661,6 +2673,7 @@
 
         // 내용 확인용으로 나에게만 보낸다 (담당자에게는 가지 않음)
         window.sendReportMailTest = async () => {
+            if (!requireSuperForMail()) return;
             if (!requireAdmin('주간 보고 메일')) return;
             const me = (currentUser && currentUser.email) || '';
             if (!me) return showToast('로그인 정보를 확인할 수 없습니다.', 'error');
@@ -2680,6 +2693,7 @@
 
         // 실제 발송 — 담당자 전원
         window.sendReportMail = async () => {
+            if (!requireSuperForMail()) return;
             if (!requireAdmin('주간 보고 메일')) return;
             let plan;
             reportMailStatus('info', '대상을 확인하는 중…');
