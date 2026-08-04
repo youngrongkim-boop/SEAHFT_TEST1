@@ -7092,7 +7092,6 @@
         // 상세/목록처럼 행이 많거나 요약처럼 값 단위가 뒤섞인 표는 제외한다.
         // ==========================================
         const CHART_SKIP_TITLE = /요약|상세|내역|목록|보완이 필요|이렇게 물어보세요/;
-        const CHART_COLORS = ['#2563eb', '#dc2626', '#f59e0b', '#059669', '#7c3aed', '#0891b2', '#db2777', '#65a30d', '#ea580c', '#4f46e5'];
 
         // "12건" → 12, "3시간 20분" → 200(분), "45.0%" → 45
         function chartNum(s) {
@@ -7133,8 +7132,10 @@
             if (new Set(labels).size !== labels.length) return null;
             const data = t.rows.map(r => chartNum(r[valueIdx]));
             const unitIsMinutes = /시간|정지/.test(t.head[valueIdx]);
+            // 시간 흐름은 꺾은선, 나머지는 가로 막대.
+            // 원형(도넛)은 조각 크기를 눈으로 비교하기 어렵고 이름이 잘려서 쓰지 않는다.
             const isTrend = /월별|추이|추세/.test(t.title || '') || /^\d{4}-\d{2}$/.test(labels[0] || '');
-            const type = isTrend ? 'line' : (labels.length <= 6 ? 'doughnut' : 'bar');
+            const type = isTrend ? 'line' : 'bar';
 
             return {
                 title: `${String(t.title || '').replace(/^\d+(-\d+)?\.\s*/, '')} — ${t.head[valueIdx]}`,
@@ -7142,9 +7143,48 @@
             };
         }
 
-        // 차트를 화면 밖 캔버스에 그려 PNG(data URI)로 뽑는다. 인쇄 창·미리보기에 그대로 넣는다.
-        function renderChartPNG(spec, width = 760, height = 340) {
+        // 막대 끝(또는 꺾은선 점 위)에 값을 직접 적는다. 축 눈금을 훑지 않아도 읽히게.
+        const CHART_VALUE_LABELS = {
+            id: 'seahValueLabels',
+            afterDatasetsDraw(chart, _args, opts) {
+                const ctx = chart.ctx;
+                const fmt = (opts && opts.fmt) || ((v) => String(v));
+                const horizontal = chart.options.indexAxis === 'y';
+                ctx.save();
+                ctx.font = 'bold 12px "Malgun Gothic","맑은 고딕",sans-serif';
+                ctx.fillStyle = '#0f172a';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = horizontal ? 'left' : 'center';
+                chart.getDatasetMeta(0).data.forEach((el, i) => {
+                    const v = chart.data.datasets[0].data[i];
+                    if (v === null || v === undefined) return;
+                    const t = fmt(v);
+                    if (horizontal) {
+                        // 막대가 너무 길어 글자가 밖으로 나가면 막대 안쪽에 흰 글씨로 적는다
+                        const w = ctx.measureText(t).width;
+                        if (el.x + 6 + w > chart.chartArea.right) {
+                            ctx.textAlign = 'right'; ctx.fillStyle = '#ffffff';
+                            ctx.fillText(t, el.x - 6, el.y);
+                            ctx.textAlign = 'left'; ctx.fillStyle = '#0f172a';
+                        } else ctx.fillText(t, el.x + 6, el.y);
+                    } else {
+                        ctx.fillText(t, el.x, el.y - 10);
+                    }
+                });
+                ctx.restore();
+            }
+        };
+
+        // 차트를 화면 밖 캔버스에 그려 PNG(data URI)로 뽑는다.
+        // 인쇄 폭(A4 본문 ≈ 680px)에 맞춰 그리므로 문서에서 줄어들지 않아 글자가 또렷하다.
+        // 순위·비교는 가로 막대로 그린다. 설비명이 길어 세로 막대로는 x축 글씨가 45도로 눕는다.
+        function renderChartPNG(spec) {
             if (typeof Chart === 'undefined') return null;
+            const isLine = spec.type === 'line';
+            const width = 680;
+            // 막대는 항목 수에 따라 높이를 정해 필요 이상으로 커지지 않게 한다
+            const height = isLine ? 240 : Math.min(360, 74 + spec.labels.length * 26);
+
             const canvas = document.createElement('canvas');
             canvas.width = width; canvas.height = height;
             // 화면에 보이지 않게 두되, 레이아웃에서 빠지면 Chart.js 가 크기를 못 잡으므로 화면 밖으로 보낸다
@@ -7154,36 +7194,50 @@
             let png = null, chart = null;
             try {
                 const fmt = (v) => spec.unitIsMinutes ? laMin(v) : laNum(v);
-                const isPie = spec.type === 'doughnut';
+                const tick = { font: { size: 12, family: '"Malgun Gothic","맑은 고딕",sans-serif' }, color: '#334155' };
                 chart = new Chart(canvas.getContext('2d'), {
-                    type: spec.type,
+                    type: isLine ? 'line' : 'bar',
                     data: {
                         labels: spec.labels,
                         datasets: [{
                             label: spec.title,
                             data: spec.data,
-                            backgroundColor: isPie ? spec.labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length])
-                                : (spec.type === 'line' ? 'rgba(37,99,235,0.12)' : '#2563eb'),
-                            borderColor: spec.type === 'line' ? '#2563eb' : '#1e40af',
-                            borderWidth: spec.type === 'line' ? 2 : 1,
-                            fill: spec.type === 'line',
-                            tension: 0.25,
-                            pointRadius: 3
+                            backgroundColor: isLine ? 'rgba(37,99,235,0.10)' : '#2563eb',
+                            borderColor: '#1d4ed8',
+                            borderWidth: isLine ? 2 : 0,
+                            borderRadius: isLine ? 0 : 3,
+                            barPercentage: 0.72,
+                            fill: isLine, tension: 0.25, pointRadius: 3, pointBackgroundColor: '#1d4ed8'
                         }]
                     },
                     options: {
+                        indexAxis: isLine ? 'x' : 'y',   // 막대는 가로 (긴 한글 이름을 그대로 읽게)
                         responsive: false, animation: false, devicePixelRatio: 2,
+                        layout: { padding: { right: isLine ? 12 : 56, top: isLine ? 18 : 6, left: 4, bottom: 4 } },
                         plugins: {
-                            legend: { display: isPie, position: 'right', labels: { font: { size: 11 } } },
-                            title: { display: true, text: spec.title, font: { size: 13, weight: 'bold' }, color: '#0f172a' },
+                            legend: { display: false },
+                            title: {
+                                display: true, text: spec.title, align: 'start',
+                                font: { size: 13, weight: 'bold', family: '"Malgun Gothic","맑은 고딕",sans-serif' },
+                                color: '#0f172a', padding: { bottom: 10 }
+                            },
                             tooltip: { enabled: false },
-                            datalabels: false
+                            seahValueLabels: { fmt }
                         },
-                        scales: isPie ? {} : {
-                            y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: (v) => fmt(v) }, grid: { color: '#e2e8f0' } },
-                            x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0 }, grid: { display: false } }
+                        scales: isLine ? {
+                            y: { beginAtZero: true, ticks: { ...tick, callback: (v) => fmt(v) }, grid: { color: '#eef2f7' } },
+                            x: { ticks: tick, grid: { display: false } }
+                        } : {
+                            // 가로 막대: 값 축(x)은 눈금을 지우고 막대 끝 숫자로 읽는다
+                            x: { beginAtZero: true, display: false, grid: { display: false } },
+                            y: {
+                                grid: { display: false }, border: { display: false },
+                                ticks: { ...tick, autoSkip: false, crossAlign: 'far',
+                                    callback(v) { const s = String(this.getLabelForValue(v)); return s.length > 22 ? s.slice(0, 21) + '…' : s; } }
+                            }
                         }
-                    }
+                    },
+                    plugins: [CHART_VALUE_LABELS]
                 });
                 png = canvas.toDataURL('image/png');
             } catch (e) {
@@ -7192,13 +7246,16 @@
                 if (chart) chart.destroy();
                 canvas.remove();
             }
-            return png;
+            return { png, width, height };
         }
 
         // 보고서 마크다운 → 차트 이미지 목록
         function buildReportCharts(md, max = 8) {
             const specs = laExtractTables(md).map(chartSpecFromTable).filter(Boolean).slice(0, max);
-            return specs.map(s => ({ title: s.title, png: renderChartPNG(s) })).filter(c => c.png);
+            return specs.map(s => {
+                const r = renderChartPNG(s);
+                return r && r.png ? { title: s.title, png: r.png, width: r.width, height: r.height } : null;
+            }).filter(Boolean);
         }
 
         // 인쇄 문서에 넣을 그래프 블록
@@ -7225,10 +7282,14 @@
         // 엑셀 파일(SheetJS)에는 이미지를 넣을 수 없어서, 그래프는 그림 파일로 따로 내려준다.
         function mergeChartsPNG(charts) {
             if (!charts.length) return Promise.resolve(null);
-            const W = 900, H = 400, PAD = 16;
+            const PAD = 14;
+            // 차트마다 높이가 다르므로(항목 수에 따라) 원래 크기 그대로 이어 붙인다.
+            // 늘리거나 줄이면 글자가 뭉개진다.
+            const W = Math.max(...charts.map(c => c.width || 680)) + PAD * 2;
+            const totalH = charts.reduce((a, c) => a + (c.height || 240) + PAD, PAD);
             const canvas = document.createElement('canvas');
             canvas.width = W;
-            canvas.height = charts.length * H + PAD * (charts.length + 1);
+            canvas.height = totalH;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -7240,9 +7301,10 @@
                 img.src = c.png;
             }))).then(imgs => {
                 let y = PAD;
-                imgs.forEach(img => {
-                    if (img) ctx.drawImage(img, PAD, y, W - PAD * 2, H);
-                    y += H + PAD;
+                imgs.forEach((img, i) => {
+                    const h = charts[i].height || 240, w = charts[i].width || 680;
+                    if (img) ctx.drawImage(img, PAD, y, w, h);
+                    y += h + PAD;
                 });
                 return canvas.toDataURL('image/png');
             });
@@ -7313,8 +7375,9 @@
                 code{background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px}
                 .doc-foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b}
                 .chart-sheet{margin:0 0 20px}
-                .chart-box{margin:0 0 14px;border:1px solid #e2e8f0;border-radius:6px;padding:8px;page-break-inside:avoid}
-                .chart-box img{width:100%;height:auto;display:block}
+                /* 이미지를 그린 크기 그대로 싣는다. 늘리면 글자가 흐려지고, 줄이면 작아져 안 보인다 */
+                .chart-box{margin:0 0 10px;border:1px solid #e2e8f0;border-radius:6px;padding:6px;page-break-inside:avoid;display:inline-block;max-width:100%}
+                .chart-box img{display:block;max-width:100%;height:auto}
                 @media print{body{padding:0} table{page-break-inside:auto} tr{page-break-inside:avoid}}
             `;
             // 집계 표에서 뽑은 그래프를 본문 뒤에 싣는다 (제목·수치를 먼저 보고 그림으로 확인하는 순서)
@@ -7347,7 +7410,7 @@
             try { charts = buildReportCharts(md); } catch (e) { console.error('보고서 그래프 생성 실패', e); }
             body.innerHTML = aiMdToHtml(md)
                 + (charts.length ? `<p class="font-bold text-slate-900 mt-6 mb-2 pb-1 border-b border-slate-200">그래프</p>`
-                    + `<div class="space-y-3">${charts.map(c => `<div class="border border-slate-200 rounded-lg p-2"><img src="${c.png}" alt="${String(c.title).replace(/"/g, '&quot;')}" class="w-full h-auto block"></div>`).join('')}</div>` : '');
+                    + `<div class="space-y-2.5">${charts.map(c => `<div class="border border-slate-200 rounded-lg p-1.5 inline-block max-w-full"><img src="${c.png}" alt="${String(c.title).replace(/"/g, '&quot;')}" class="block max-w-full h-auto"></div>`).join('')}</div>` : '');
             body.scrollTop = 0;
             const modal = document.getElementById('report-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
