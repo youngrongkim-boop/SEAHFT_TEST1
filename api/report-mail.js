@@ -71,15 +71,34 @@ module.exports = async (req, res) => {
     let sa = null, saError = null;
     try { sa = serviceAccount(); } catch (e) { saError = e.message; }
 
+    // 환경변수가 이 배포까지 전달됐는지 확인용.
+    // 값은 절대 내보내지 않고, '이름이 있는지'와 '길이'만 본다.
+    //  - 이름 목록이 비어 있으면 → 다른 Vercel 프로젝트에 넣었거나 저장이 안 된 것
+    //  - 이름은 있는데 길이가 0이면 → 값 칸이 비어 있는 것
+    const envNames = Object.keys(process.env)
+        .filter(k => /OAUTH|GMAIL|MAIL_|CRON|PUBLIC_SITE|GCP_|RESEND/i.test(k)).sort();
+    const len = (k) => (process.env[k] || '').trim().length;
+
     const baseDiag = {
         hasServiceAccount: !!sa,
         serviceAccount: sa ? sa.client_email : null,
         gmailSender: process.env.GMAIL_SENDER || null,
-        hasOAuthClient: !!(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET),
+        hasOAuthClient: !!(len('GOOGLE_OAUTH_CLIENT_ID') && len('GOOGLE_OAUTH_CLIENT_SECRET')),
         hasCronSecret: !!cronSecret,
         siteUrl: process.env.PUBLIC_SITE_URL || null,
         vercelEnv: process.env.VERCEL_ENV || null,
-        gitCommit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null
+        vercelUrl: process.env.VERCEL_URL || null,
+        gitRepo: process.env.VERCEL_GIT_REPO_SLUG || null,
+        gitCommit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
+        envNames,
+        envLengths: {
+            GOOGLE_OAUTH_CLIENT_ID: len('GOOGLE_OAUTH_CLIENT_ID'),
+            GOOGLE_OAUTH_CLIENT_SECRET: len('GOOGLE_OAUTH_CLIENT_SECRET'),
+            PUBLIC_SITE_URL: len('PUBLIC_SITE_URL'),
+            MAIL_FROM_NAME: len('MAIL_FROM_NAME'),
+            CRON_SECRET: len('CRON_SECRET'),
+            GCP_SERVICE_ACCOUNT_JSON: len('GCP_SERVICE_ACCOUNT_JSON')
+        }
     };
     const wantsPreview = String((req.query && req.query.preview) || '') === '1';
 

@@ -2607,8 +2607,17 @@
                     `OAuth 클라이언트 설정: ${j.hasOAuthClient ? '등록됨' : '<b>없음</b>'}`,
                     `Firestore 읽기용 서비스 계정: ${j.hasServiceAccount ? '있음' : '<b>없음</b>'}`,
                     `자동 발송(CRON_SECRET): ${j.hasCronSecret ? '설정됨 · 매주 월요일 07:00' : '미설정'}`
-                ].join('<br>');
-                reportMailStatus(j.ok ? 'ok' : 'error', (j.ok ? '<b>설정 정상</b><br>' : `<b>설정 확인 필요</b> — ${j.error}<br>`) + rows);
+                ];
+                // 설정이 안 잡히면 어디가 문제인지 바로 알 수 있게 진단 정보를 덧붙인다 (값은 표시하지 않음)
+                if (!j.hasOAuthClient && j.envLengths) {
+                    const L = j.envLengths;
+                    rows.push('<hr class="my-1 border-slate-200">');
+                    rows.push(`<b>이 배포에 전달된 환경변수</b> (값은 표시하지 않고 길이만)`);
+                    rows.push(Object.keys(L).map(k => `· ${k}: ${L[k] ? `${L[k]}자` : '<b class="text-red-600">없음</b>'}`).join('<br>'));
+                    rows.push(`이름이 보이는 항목: ${(j.envNames || []).length ? (j.envNames || []).join(', ') : '<b class="text-red-600">하나도 없음</b>'}`);
+                    rows.push(`배포 주소: <b>${j.vercelUrl || '?'}</b> · 저장소 <b>${j.gitRepo || '?'}</b> · 커밋 <b>${j.gitCommit || '?'}</b>`);
+                }
+                reportMailStatus(j.ok ? 'ok' : 'error', (j.ok ? '<b>설정 정상</b><br>' : `<b>설정 확인 필요</b> — ${j.error}<br>`) + rows.join('<br>'));
             } catch (e) {
                 reportMailStatus('error', `확인 실패: ${e.message}`);
             }
