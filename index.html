@@ -305,38 +305,48 @@
     <!-- 라인별 담당자 모달 (담당 라인 수정 권한 + 알림 대상) -->
     <div id="line-owner-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 gap-2">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-brand-600"></i> 라인별 담당자</h3>
-                <button type="button" onclick="closeLineOwnerModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="toggleLineOwnerHelp()" id="lo-help-btn" class="px-2.5 py-1 text-[11px] font-bold text-brand-700 bg-brand-50 border border-brand-200 rounded hover:bg-brand-100 flex items-center gap-1"><i data-lucide="help-circle" class="w-3.5 h-3.5"></i> 사용법</button>
+                    <button type="button" onclick="closeLineOwnerModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
             </div>
-            <div class="px-5 py-3 border-b border-slate-100 shrink-0 bg-brand-50/50">
+
+            <!-- 사용법 — 자리를 많이 차지해서 기본은 접어 둔다 -->
+            <div id="lo-help" class="hidden px-5 py-3 border-b border-slate-100 shrink-0 bg-brand-50/50">
                 <p class="text-xs text-slate-600 leading-relaxed">라인별 담당자를 지정합니다. 담당자가 사이트에 접속하면 <b>자기 담당의 점검지연·마감임박 항목이 팝업</b>으로 표시되고, <b>주간 보고 메일</b>도 같은 범위로 갑니다.<br><b class="text-amber-700">담당 구분(전체·전기·기계)</b>을 고르면 팝업과 메일에 <b>그 구분의 점검 항목만</b> 들어갑니다. 전기 담당자는 전기 항목만 받습니다.<br><b class="text-brand-700">수정·삭제 권한은 구분과 무관하게 담당 라인 전체</b>에 적용됩니다.<br>한 라인에 여러 명, 한 사람이 여러 라인을 맡을 수 있습니다.</p>
             </div>
+
             <div id="line-owner-body" class="p-5 space-y-3 overflow-y-auto custom-scroll flex-1"></div>
 
             <!-- 주간 점검 보고 메일 — 발송 계정 연결이 걸려 있어 최고관리자만 보이게 한다.
-                 (담당자 등록·해제는 위쪽 영역이라 관리자 전원이 그대로 쓸 수 있다) -->
-            <div data-super-only class="hidden px-5 py-3.5 border-t border-slate-200 shrink-0 bg-slate-50">
-                <div class="flex flex-wrap items-center gap-2 mb-2">
-                    <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5 mr-auto">
-                        <i data-lucide="mail" class="w-4 h-4 text-brand-600"></i> 주간 점검 보고 메일
-                    </h4>
-                    <button type="button" onclick="connectGmail()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-slate-700 rounded hover:bg-slate-800 shadow-sm">Gmail 연결</button>
-                    <button type="button" onclick="checkReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-100">연결 확인</button>
-                    <button type="button" onclick="previewReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-brand-700 bg-white border border-brand-300 rounded hover:bg-brand-50">미리보기</button>
-                    <button type="button" onclick="sendReportMailTest()" class="px-2.5 py-1.5 text-[11px] font-bold text-amber-700 bg-white border border-amber-300 rounded hover:bg-amber-50">나에게 시험발송</button>
-                    <button type="button" onclick="sendReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-brand-600 rounded hover:bg-brand-700 shadow-sm">담당자에게 발송</button>
+                 담당자 목록 자리를 뺏지 않도록 제목 줄만 두고 기본은 접어 둔다. -->
+            <div data-super-only class="hidden border-t border-slate-200 shrink-0 bg-slate-50">
+                <button type="button" onclick="toggleReportMailPanel()" class="w-full px-5 py-2.5 flex items-center gap-2 text-left hover:bg-slate-100 transition">
+                    <i data-lucide="mail" class="w-4 h-4 text-brand-600 shrink-0"></i>
+                    <span class="text-sm font-bold text-slate-800 mr-auto">주간 점검 보고 메일</span>
+                    <span id="report-mail-hint" class="text-[11px] text-slate-400">매주 월요일 07:00 자동 발송</span>
+                    <i data-lucide="chevron-down" id="report-mail-chevron" class="w-4 h-4 text-slate-400 shrink-0 transition-transform"></i>
+                </button>
+                <div id="report-mail-panel" class="hidden px-5 pb-3.5 max-h-[45vh] overflow-y-auto custom-scroll">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <button type="button" onclick="connectGmail()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-slate-700 rounded hover:bg-slate-800 shadow-sm">Gmail 연결</button>
+                        <button type="button" onclick="checkReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-100">연결 확인</button>
+                        <button type="button" onclick="previewReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-brand-700 bg-white border border-brand-300 rounded hover:bg-brand-50">미리보기</button>
+                        <button type="button" onclick="sendReportMailTest()" class="px-2.5 py-1.5 text-[11px] font-bold text-amber-700 bg-white border border-amber-300 rounded hover:bg-amber-50">나에게 시험발송</button>
+                        <button type="button" onclick="sendReportMail()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-brand-600 rounded hover:bg-brand-700 shadow-sm">담당자에게 발송</button>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        담당자별로 <b>담당 라인의 점검지연 · 금주 점검예정 · 지난주 점검실적</b>을 한 통에 묶어 보냅니다.
+                        한 사람이 여러 라인을 맡으면 한 통에 함께 담기고, <b>담당 구분이 전기·기계면 그 구분의 항목만</b> 들어갑니다.
+                        보낼 내용이 하나도 없는 담당자는 건너뜁니다.
+                    </p>
+                    <div id="report-mail-status" class="hidden mt-2 text-[11px] rounded border p-2 leading-relaxed"></div>
                 </div>
-                <p class="text-[11px] text-slate-500 leading-relaxed">
-                    담당자별로 <b>담당 라인의 점검지연 · 금주 점검예정 · 지난주 점검실적</b>을 한 통에 묶어 보냅니다.
-                    한 사람이 여러 라인을 맡으면 한 통에 함께 담기고, <b>담당 구분이 전기·기계면 그 구분의 항목만</b> 들어갑니다.
-                    보낼 내용이 하나도 없는 담당자는 건너뜁니다.<br>
-                    <b class="text-brand-700">매주 월요일 아침 7시에 자동 발송</b>됩니다.
-                </p>
-                <div id="report-mail-status" class="hidden mt-2 text-[11px] rounded border p-2 leading-relaxed"></div>
             </div>
 
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-2.5 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
                 <span class="text-[11px] text-slate-400">변경은 즉시 저장됩니다.</span>
                 <button type="button" onclick="closeLineOwnerModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
             </div>
@@ -459,7 +469,7 @@
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
-            <button data-admin-only onclick="openLineOwnerModal()" id="nav-line-owner" class="hidden nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 예방점검 담당자 지정 (알림 수신자)">
+            <button onclick="openLineOwnerModal()" id="nav-line-owner" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 예방점검 담당자 지정 (알림·메일 수신자)">
                 <i data-lucide="users" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">라인별 담당자</span>
             </button>
             <button data-super-only onclick="openAdminModal()" id="nav-admin" class="hidden nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="관리자 계정 등록·삭제 (최고관리자 전용)">
@@ -2433,12 +2443,27 @@
         // ==========================================
         // settings/lineOwners = { lines: { CPL: ['a@seah.co.kr', ...], ... } }
         window.openLineOwnerModal = () => {
-            if (!requireAdmin('라인별 담당자 설정')) return;
+            // 담당자 지정은 전 직원이 할 수 있다. 현장에서 수신자를 직접 관리하도록.
             renderLineOwners();
             document.getElementById('line-owner-modal').classList.remove('hidden');
             if (window.lucide) lucide.createIcons();
         };
         window.closeLineOwnerModal = () => document.getElementById('line-owner-modal').classList.add('hidden');
+
+        // 사용법 · 메일 영역은 담당자 목록 자리를 뺏지 않도록 기본으로 접어 둔다
+        window.toggleLineOwnerHelp = () => {
+            const el = document.getElementById('lo-help');
+            const on = el.classList.toggle('hidden');
+            document.getElementById('lo-help-btn').classList.toggle('bg-brand-100', !on);
+        };
+        window.toggleReportMailPanel = () => {
+            const panel = document.getElementById('report-mail-panel');
+            const open = panel.classList.toggle('hidden') === false;
+            const chev = document.getElementById('report-mail-chevron');
+            if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+            const hint = document.getElementById('report-mail-hint');
+            if (hint) hint.classList.toggle('hidden', open); // 펼치면 안내 문구를 접어 폭을 넓힌다
+        };
 
         window.renderLineOwners = () => {
             const box = document.getElementById('line-owner-body');
@@ -2490,7 +2515,6 @@
         }
 
         window.addLineOwner = async (line) => {
-            if (!requireAdmin('담당자 추가')) return;
             const input = document.getElementById(`lo-input-${line}`);
             const em = normEmail(input && input.value);
             if (!em) return showToast('이메일을 입력하세요.', 'error');
@@ -2511,7 +2535,6 @@
 
         // 담당 구분(전체/전기/기계) 변경
         window.setLineOwnerCat = async (line, email, cat) => {
-            if (!requireAdmin('담당 구분 변경')) return renderLineOwners();
             const em = normEmail(email);
             const c = OWNER_CATS.includes(cat) ? cat : '전체';
             const nextCats = { ...lineOwnerCats, [line]: { ...(lineOwnerCats[line] || {}), [em]: c } };
@@ -2523,7 +2546,6 @@
         };
 
         window.removeLineOwner = async (line, email) => {
-            if (!requireAdmin('담당자 해제')) return;
             const em = normEmail(email);
             const next = { ...lineOwners, [line]: (lineOwners[line] || []).filter(a => normEmail(a) !== em) };
             const nextCats = { ...lineOwnerCats, [line]: { ...(lineOwnerCats[line] || {}) } };
