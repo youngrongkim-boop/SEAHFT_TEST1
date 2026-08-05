@@ -795,6 +795,7 @@
                                 <option value="OVERDUE">지연됨</option>
                             </select>
                             <input type="text" id="pm-search-keyword" onkeyup="pmListPage=1; debouncedRenderPMList()" placeholder="작업내용, 기준 검색..." class="w-full sm:w-36 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                            <button type="button" id="reset-pm-list" onclick="resetViewFilters('pm-list')" title="선택한 필터와 검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 text-[11px] md:text-xs font-bold transition"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-list-count">총 0건</span>
                             <button data-admin-only onclick="openPMMasterModal()" class="hidden ml-auto flex items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
                                 <i data-lucide="database" class="w-3.5 h-3.5 mr-1.5"></i> 일괄 관리
@@ -866,6 +867,7 @@
                                 <option value="YEAR">올해</option>
                             </select>
                             <input type="text" id="pm-res-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="설비, 내용, 점검자 검색..." class="w-full sm:w-40 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                            <button type="button" id="reset-pm-res" onclick="resetViewFilters('pm-res')" title="점검유형 탭·필터·검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 text-[11px] md:text-xs font-bold transition"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-res-count">총 0건</span>
                             <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200" id="pm-res-summary"></span>
                             <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded hidden transition font-bold">특정 항목 필터 해제</button>
@@ -1065,6 +1067,7 @@
                             </select>
                             <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
                             <input type="text" id="bd-search-keyword" onkeyup="bdListPage=1; debouncedRenderBDList()" placeholder="설비, 조치내용 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                            <button type="button" id="reset-bd-list" onclick="resetViewFilters('bd-list')" title="선택한 필터와 검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 sm:py-1 text-[11px] md:text-xs font-bold transition shrink-0"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
                             <button onclick="openBDReport()" class="bg-brand-600 hover:bg-brand-700 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center shrink-0" title="현재 조회 조건으로 보고서를 만들어 인쇄합니다">
                                 <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1"></i> 보고서 생성
                             </button>
@@ -1241,6 +1244,7 @@
                             </select>
                             <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
                             <input type="text" id="mlib-search" onkeyup="renderManualLibrary()" placeholder="파일명, 설비, 고장명 검색..." class="w-full sm:w-52 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-emerald-500 outline-none">
+                            <button type="button" id="reset-mlib" onclick="resetViewFilters('mlib')" title="선택한 필터와 검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 sm:py-1 text-[11px] md:text-xs font-bold transition shrink-0"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
                         </div>
                         <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed"><b>메뉴얼 등록</b>으로 여기서 직접 올릴 수 있습니다. 고장실적 연결은 선택이며, 나중에 <b>수정</b>으로 지정해도 됩니다. 고장 등록 화면에서 첨부한 메뉴얼도 함께 표시됩니다.</p>
                     </div>
@@ -5179,6 +5183,118 @@
                     : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${label} <span class="${on ? 'opacity-80' : 'text-slate-400'}">${n.toLocaleString()}</span></button>`;
             }).join('');
         }
+
+        // ── 화면별 필터 일괄 초기화 ─────────────────────────────────────────
+        // 각 리스트 화면의 콤보박스·검색어(+ 실적 화면의 유형 탭·항목 고정)를 한 번에 해제한다.
+        const FILTER_SETS = {
+            'pm-list': {
+                btn: 'reset-pm-list',
+                ids: ['pm-filter-line', 'pm-filter-equip', 'pm-filter-category', 'pm-filter-cycle', 'pm-filter-status', 'pm-search-keyword'],
+                apply: () => { pmListPage = 1; window.updatePMFilterEquip(); window.debouncedRenderPMList(); }
+            },
+            'pm-res': {
+                btn: 'reset-pm-res',
+                ids: ['pm-res-filter-line', 'pm-res-filter-equip', 'pm-res-filter-category', 'pm-res-filter-cycle', 'pm-res-filter-result', 'pm-res-filter-period', 'pm-res-search'],
+                // 유형 탭과 '특정 항목만 보기'도 필터이므로 함께 해제한다
+                extraCount: () => (pmResTypeFilter !== 'ALL' ? 1 : 0) + (selectedHistoryTaskId ? 1 : 0),
+                before: () => {
+                    pmResTypeFilter = 'ALL';
+                    selectedHistoryTaskId = null;
+                    document.getElementById('btn-clear-history-filter')?.classList.add('hidden');
+                },
+                apply: () => { pmHistPage = 1; window.updatePMResFilterEquip(); window.debouncedRenderPMHistory(); }
+            },
+            'bd-list': {
+                btn: 'reset-bd-list',
+                ids: ['bd-filter-year', 'bd-filter-line', 'bd-filter-workkind', 'bd-filter-category', 'bd-filter-main', 'bd-filter-sub', 'bd-filter-detail', 'bd-search-keyword'],
+                apply: () => { bdListPage = 1; window.updateSubFilterBD(); window.debouncedRenderBDList(); }
+            },
+            'mlib': {
+                btn: 'reset-mlib',
+                ids: ['mlib-filter-link', 'mlib-filter-year', 'mlib-filter-line', 'mlib-filter-category', 'mlib-filter-main', 'mlib-search'],
+                apply: () => window.renderManualLibrary()
+            }
+        };
+
+        function countActiveFilters(set) {
+            let n = set.extraCount ? set.extraCount() : 0;
+            set.ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.tagName === 'SELECT') { if (el.value && el.value !== 'ALL') n++; }
+                else if (String(el.value || '').trim()) n++;
+            });
+            return n;
+        }
+
+        // 좌측 사이드바의 라인 선택도 리스트 필터로 반영되므로 함께 푼다(탭 이동은 하지 않음)
+        function clearGlobalLineQuietly() {
+            if (currentLineFilter === 'ALL') return;
+            currentLineFilter = 'ALL';
+            document.querySelectorAll('.nav-line').forEach(el => {
+                el.classList.remove('bg-brand-900', 'text-blue-400', 'border-blue-500', 'font-bold');
+                el.classList.add('text-slate-300', 'border-transparent');
+            });
+            ['pm-filter-line', 'pm-res-filter-line', 'bd-filter-line'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = 'ALL';
+            });
+            if (window.updatePMFilterEquip) window.updatePMFilterEquip();
+            if (window.updatePMResFilterEquip) window.updatePMResFilterEquip();
+            updatePageTitle();
+            window.debouncedApplyFilterAndRender();
+        }
+
+        window.resetViewFilters = (key) => {
+            const set = FILTER_SETS[key];
+            if (!set) return;
+            set.ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.tagName === 'SELECT') {
+                    el.value = 'ALL';
+                    if (el.selectedIndex < 0) el.selectedIndex = 0; // 'ALL' 항목이 없는 경우 첫 항목
+                } else {
+                    el.value = '';
+                }
+            });
+            if (set.before) set.before();
+            clearGlobalLineQuietly();
+            set.apply();
+            refreshFilterResetBtns();
+        };
+
+        // 적용된 필터가 있으면 버튼을 강조하고 개수를 표시한다
+        function refreshFilterResetBtns() {
+            Object.values(FILTER_SETS).forEach(set => {
+                const btn = document.getElementById(set.btn);
+                if (!btn) return;
+                const n = countActiveFilters(set);
+                const badge = btn.querySelector('[data-reset-count]');
+                if (badge) {
+                    badge.textContent = n ? ` ${n}` : '';
+                    badge.classList.toggle('hidden', !n);
+                }
+                btn.classList.toggle('bg-amber-500', n > 0);
+                btn.classList.toggle('hover:bg-amber-600', n > 0);
+                btn.classList.toggle('border-amber-500', n > 0);
+                btn.classList.toggle('text-white', n > 0);
+                btn.classList.toggle('bg-white', n === 0);
+                btn.classList.toggle('hover:bg-slate-100', n === 0);
+                btn.classList.toggle('border-slate-300', n === 0);
+                btn.classList.toggle('text-slate-500', n === 0);
+            });
+        }
+        window.refreshFilterResetBtns = refreshFilterResetBtns;
+
+        let filterBtnSyncTimer = null;
+        const scheduleFilterBtnSync = () => {
+            clearTimeout(filterBtnSyncTimer);
+            filterBtnSyncTimer = setTimeout(refreshFilterResetBtns, 60);
+        };
+        document.addEventListener('change', scheduleFilterBtnSync, true);
+        document.addEventListener('input', scheduleFilterBtnSync, true);
+        document.addEventListener('click', scheduleFilterBtnSync, true);
 
         window.renderPMHistory = () => {
             const tbody = document.getElementById('pm-history-body');
