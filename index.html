@@ -192,6 +192,25 @@
                 height: 1.75rem;
             }
         }
+
+        /* 분 단위 입력칸 (표준시간·조치시간)
+           브라우저 기본 증감 화살표가 칸마다 다른 폭을 잡아먹어 상자가 삐뚤빼뚤해 보인다.
+           화살표를 없애고 크기를 고정해 위아래가 나란히 보이게 한다.
+           권한이 없어 값만 보여줄 때도 같은 크기의 상자로 그린다(.min-box). */
+        .min-input::-webkit-outer-spin-button,
+        .min-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .min-input { -moz-appearance: textfield; appearance: textfield; }
+        .min-input, .min-box {
+            width: 3.75rem;
+            height: 1.75rem;
+            line-height: 1.75rem;
+            padding: 0 0.25rem;
+            text-align: center;
+            font-size: 11px;
+            border-radius: 0.25rem;
+            box-sizing: border-box;
+        }
+        .min-box { display: inline-block; }
     </style>
 </head>
 <body class="flex h-screen w-full overflow-hidden text-slate-800 relative">
@@ -5688,10 +5707,10 @@
                 const stdMin = stdMinutesOf(item);
                 const actMin = actMinutesOf(item);
                 const numInput = (val, fn, ph, tip) =>
-                    `<input type="number" min="0" step="1" value="${val || ''}" onchange="${fn}('${item.id}', this.value)" placeholder="${ph}" title="${tip}" class="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50">`;
+                    `<input type="number" min="0" step="1" value="${val || ''}" onchange="${fn}('${item.id}', this.value)" placeholder="${ph}" title="${tip}" class="min-input border border-slate-200 outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50 text-slate-700">`;
                 const stdCell = canEditLine(item.line)
                     ? numInput(stdMin, 'updatePMStandardTime', '기준', '이 점검에 원래 걸리는 시간 (분)')
-                    : `<span class="text-[11px] text-slate-500" title="담당자·관리자만 수정할 수 있습니다">${stdMin ? fmtMinutes(stdMin) : '-'}</span>`;
+                    : `<span class="min-box border border-transparent text-slate-500" title="담당자·관리자만 수정할 수 있습니다">${stdMin || '-'}</span>`;
                 const actCell = numInput(actMin, 'updatePMActionTime', '실제', '이번에 실제로 걸린 시간 (분)');
 
                 html += `
@@ -5735,8 +5754,8 @@
                             ${remarksBtn}
                         </div>
                         <div class="flex items-center gap-2 mt-2 text-[11px]">
-                            <span class="text-slate-400 shrink-0">표준</span>${stdCell}
-                            <span class="text-slate-400 shrink-0 ml-1">조치</span>${actCell}
+                            <span class="text-slate-400 shrink-0">표준시간</span>${stdCell}
+                            <span class="text-slate-400 shrink-0 ml-1">조치시간</span>${actCell}
                             <span class="text-slate-400 shrink-0">분</span>
                         </div>
                         ${isDone ? '' : `
@@ -5927,13 +5946,26 @@
 
             // 현황판은 '실적을 찍고 확인하는' 화면이다. 시간 입력은 예방점검 리스트에서만 하고
             // 여기서는 그 값을 읽기 전용으로 보여 준다 (같은 값을 두 곳에서 고치면 어느 쪽이 맞는지 알 수 없다).
+            // 표(데스크톱)는 표준시간·소요시간을 각각 다른 칸에 담는다
+            const stdCell = (item) => {
+                const std = stdMinutesOf(item);
+                return `<span class="text-[11px] ${std ? 'text-slate-600' : 'text-slate-300'}">${std ? fmtMinutes(std) : '-'}</span>`;
+            };
+            const actCell = (item) => {
+                const std = stdMinutesOf(item), act = actMinutesOf(item);
+                const over = std && act && act > std;   // 표준보다 오래 걸린 건 눈에 띄게
+                return `<span class="text-[11px] font-bold ${act ? (over ? 'text-red-600' : 'text-slate-800') : 'text-slate-300'}"
+                    title="${over ? `표준시간(${fmtMinutes(std)})보다 오래 걸렸습니다` : '예방점검 리스트에서 입력합니다'}">${act ? fmtMinutes(act) : '미기록'}</span>`;
+            };
+            // 카드(모바일)는 칸이 없으니 이름을 붙여 나란히 보여 준다
             const timeCell = (item) => {
                 const std = stdMinutesOf(item), act = actMinutesOf(item);
-                if (!std && !act) return '<span class="text-slate-300 text-[11px]">-</span>';
-                const over = std && act && act > std;   // 표준보다 오래 걸린 건 눈에 띄게
-                return `<span class="inline-flex items-center gap-1 text-[11px] whitespace-nowrap" title="표준시간 대비 실제 조치시간 (예방점검 리스트에서 입력)">
-                    <span class="text-slate-500">${std ? fmtMinutes(std) : '-'}</span>
-                    <span class="text-slate-300">→</span>
+                const over = std && act && act > std;
+                return `<span class="inline-flex items-center gap-1 text-[11px] whitespace-nowrap">
+                    <span class="text-slate-400">표준시간</span>
+                    <span class="text-slate-600">${std ? fmtMinutes(std) : '-'}</span>
+                    <span class="text-slate-300">·</span>
+                    <span class="text-slate-400">소요시간</span>
                     <span class="font-bold ${act ? (over ? 'text-red-600' : 'text-slate-800') : 'text-slate-300'}">${act ? fmtMinutes(act) : '미기록'}</span>
                 </span>`;
             };
@@ -5986,7 +6018,8 @@
                             <th class="py-2 px-3 font-bold border-b border-slate-100">점검 내용</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">점검기준</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">예정일</th>
-                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center" title="표준시간 → 실제 조치시간">소요시간</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center w-24" title="이 점검에 원래 걸리는 시간">표준시간</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center w-24" title="이번에 실제로 걸린 시간 (예방점검 리스트에서 입력)">소요시간</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">상태</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">특이사항</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 등록</th>
@@ -6001,7 +6034,8 @@
                         <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[150px] leading-snug">${item.taskDetails || '-'}</td>
                         <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[130px] leading-snug text-center">${item.criteria || '-'}</td>
                         <td class="py-2 px-3 text-center ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}">${item.nextCheckDate || '-'}</td>
-                        <td class="py-2 px-3 text-center">${timeCell(item)}</td>
+                        <td class="py-2 px-3 text-center">${stdCell(item)}</td>
+                        <td class="py-2 px-3 text-center">${actCell(item)}</td>
                         <td class="py-2 px-3 text-center">${badgeOf(st)}</td>
                         <td class="py-2 px-3 text-center">${remarksCell(item)}</td>
                         <td class="py-2 px-3 text-center">${resultBtns(item)}</td>
