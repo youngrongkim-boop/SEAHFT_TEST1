@@ -1034,11 +1034,11 @@
                                 <option value="MONTH">이번 달</option>
                                 <option value="YEAR">올해</option>
                             </select>
-                            <select id="pm-res-filter-overdue" onchange="pmHistPage=1; debouncedRenderPMHistory()" title="예정일을 넘겨 점검한 실적만 골라 봅니다" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-red-500 outline-none bg-white font-medium text-red-600">
-                                <option value="ALL">지연: 전체</option>
-                                <option value="OVERDUE">지연 (사유 미확인)</option>
-                                <option value="EXCUSED">사유 확인됨</option>
-                                <option value="NORMAL">정상 (기한 내)</option>
+                            <select id="pm-res-filter-overdue" onchange="pmHistPage=1; debouncedRenderPMHistory()" title="정상실적 / 지연실적(사유 미확인) / 사유확인항목 으로 걸러 봅니다" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="ALL">전체</option>
+                                <option value="NORMAL">정상실적</option>
+                                <option value="OVERDUE">지연실적</option>
+                                <option value="EXCUSED">사유확인항목</option>
                             </select>
                             <input type="text" id="pm-res-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="설비, 내용, 점검자 검색..." class="w-full sm:w-40 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <button type="button" id="reset-pm-res" onclick="resetViewFilters('pm-res')" title="점검유형 탭·필터·검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 text-[11px] md:text-xs font-bold transition"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
@@ -8970,7 +8970,8 @@
                 ['검색어', document.getElementById('pm-res-search')?.value.trim()]
             ]);
 
-            const ovLabel = { OVERDUE: '지연(사유 미확인)', EXCUSED: '지연(사유 확인됨)', NORMAL: '정상' }[val('pm-res-filter-overdue')] || '';
+            // 화면 필터의 항목명과 같게 맞춘다 (보고서 조회조건과 화면이 어긋나지 않도록)
+            const ovLabel = { NORMAL: '정상실적', OVERDUE: '지연실적', EXCUSED: '사유확인항목' }[val('pm-res-filter-overdue')] || '';
             const L = [];
             L.push('# 예방점검 실적 보고서');
             L.push(`**조회 조건** ${ovLabel ? `지연여부 **${ovLabel}** · ` : ''}${cond}`);
