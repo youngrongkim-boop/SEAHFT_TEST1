@@ -48,6 +48,16 @@ const FIRESTORE_SCOPE = 'https://www.googleapis.com/auth/datastore';
 const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
+// ⚠️ 크론이 실제로 오는 한국 시각. vercel.json 의 schedule 과 반드시 같아야 한다.
+//    지금 "0 21 * * *" = 매일 21:00 UTC = 06:00 KST → [6]
+//
+//    Vercel 무료(Hobby) 요금제는 크론을 하루 한 번까지만 허용해서 시간당 실행이 거부된다.
+//    그래서 고를 수 있는 시각이 이 목록으로 제한된다. 시각을 자유롭게 고르려면
+//      · Vercel Pro 로 올려 schedule 을 "0 * * * *" 로 바꾸거나
+//      · Google Cloud Scheduler(Asia/Seoul, 매시)에서 이 주소를 호출하게 하면 된다.
+//    둘 중 무엇을 하든 여기와 index.html 의 RM_CRON_HOURS 를 0~23 전체로 넓히면 끝난다.
+const CRON_HOURS_KST = [6];
+
 // 서버는 UTC 로 도므로 한국 시각의 요일·시·날짜를 직접 계산한다
 function kstParts(d) {
     const k = new Date(d.getTime() + KST_OFFSET_MS);
@@ -76,6 +86,11 @@ function resolveSchedule(cfg) {
         weekday: num((cfg || {}).weekday, 1, -1, 6),
         hour: num((cfg || {}).hour, 6, 0, 23)
     };
+    // 크론이 오지 않는 시각이 저장돼 있으면 메일이 영영 안 나간다.
+    // 조용히 멈추는 것보다 실제로 크론이 오는 시각에 보내는 편이 안전하다.
+    s.hourAdjusted = !CRON_HOURS_KST.includes(s.hour);
+    if (s.hourAdjusted) s.hour = CRON_HOURS_KST[0];
+    s.cronHours = CRON_HOURS_KST;
     s.label = s.enabled
         ? `${s.weekday < 0 ? '매일' : '매주 ' + WEEKDAY_NAMES[s.weekday] + '요일'} ${String(s.hour).padStart(2, '0')}:00 자동 발송`
         : '자동 발송 꺼짐';

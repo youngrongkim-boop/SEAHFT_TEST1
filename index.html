@@ -449,7 +449,8 @@
                             <button type="button" onclick="saveReportMailSchedule()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-slate-700 rounded hover:bg-slate-800 shadow-sm shrink-0">시간 저장</button>
                             <span id="rm-last-run" class="text-[11px] text-slate-400 ml-auto"></span>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">한국 시각 기준 <b>정시</b>에 보냅니다(분 단위 지정은 없습니다). 끄면 아래 수동 발송 버튼만 동작합니다. 저장 즉시 적용되며 재배포는 필요 없습니다.</p>
+                        <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">한국 시각 기준 <b>정시</b>에 보냅니다(분 단위 지정은 없습니다). 끄면 아래 수동 발송 버튼만 동작합니다. <b>켜기·끄기와 요일은 저장 즉시 적용</b>되며 재배포가 필요 없습니다.</p>
+                        <p id="rm-hour-note" class="hidden text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1 leading-relaxed">발송 <b>시각</b>은 지금 <b>06:00 고정</b>입니다. 배포 서비스(Vercel) 무료 요금제가 예약 실행을 하루 한 번으로 제한하기 때문입니다. 다른 시각으로 바꾸려면 스케줄러 연결이 필요하니 관리자에게 요청하세요.</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 mb-2">
                         <button type="button" onclick="connectGmail()" class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-slate-700 rounded hover:bg-slate-800 shadow-sm">Gmail 연결</button>
@@ -2821,6 +2822,12 @@
         // 즉 여기서 바꾼 값은 재배포 없이 바로 다음 정시부터 적용된다.
         // ※ api/report-mail.js 의 resolveSchedule 과 기본값이 같아야 화면과 실제가 어긋나지 않는다.
         const RM_WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+        // ⚠️ 크론이 실제로 오는 한국 시각. vercel.json 및 api/report-mail.js 의
+        //    CRON_HOURS_KST 와 반드시 같아야 한다. (지금은 매일 06:00 KST 한 번)
+        //    Vercel 무료 요금제가 크론을 하루 한 번으로 제한해서 고를 수 있는 시각이 이것뿐이다.
+        //    Pro 로 올리거나 Cloud Scheduler 를 붙여 매시 호출하게 되면 여기를 0~23 으로 넓히면 된다.
+        const RM_CRON_HOURS = [6];
         let reportMailCfg = {};
 
         function resolveMailSchedule(cfg) {
@@ -2836,6 +2843,8 @@
                 weekday: num((cfg || {}).weekday, 1, -1, 6),
                 hour: num((cfg || {}).hour, 6, 0, 23)
             };
+            // 크론이 오지 않는 시각이면 실제로는 발송되지 않으므로, 서버와 같은 규칙으로 되돌린다
+            if (!RM_CRON_HOURS.includes(s.hour)) s.hour = RM_CRON_HOURS[0];
             s.label = s.enabled
                 ? `${s.weekday < 0 ? '매일' : '매주 ' + RM_WEEKDAY_NAMES[s.weekday] + '요일'} ${String(s.hour).padStart(2, '0')}:00 자동 발송`
                 : '자동 발송 꺼짐';
@@ -2851,10 +2860,17 @@
             const hourSel = document.getElementById('rm-hour');
             if (hourSel) {
                 if (!hourSel.options.length) {
-                    hourSel.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}:00</option>`).join('');
+                    hourSel.innerHTML = RM_CRON_HOURS.map(h => `<option value="${h}">${String(h).padStart(2, '0')}:00</option>`).join('');
+                    // 고를 수 있는 시각이 하나뿐이면 왜 그런지 알 수 있게 알려 준다
+                    hourSel.disabled = RM_CRON_HOURS.length < 2;
+                    hourSel.title = RM_CRON_HOURS.length < 2
+                        ? '지금은 06:00 만 가능합니다. 발송 시각을 자유롭게 고르려면 스케줄러 연결이 필요합니다 (관리자 문의).'
+                        : '한국 시각 기준 발송 시각';
                 }
                 hourSel.value = String(s.hour);
             }
+            const hourNote = document.getElementById('rm-hour-note');
+            if (hourNote) hourNote.classList.toggle('hidden', RM_CRON_HOURS.length > 1);
             const wdSel = document.getElementById('rm-weekday');
             if (wdSel) wdSel.value = String(s.weekday);
 
