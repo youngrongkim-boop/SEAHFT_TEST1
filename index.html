@@ -1042,26 +1042,21 @@
                             </select>
                             <input type="text" id="pm-res-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="설비, 내용, 점검자 검색..." class="w-full sm:w-40 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <button type="button" id="reset-pm-res" onclick="resetViewFilters('pm-res')" title="점검유형 탭·필터·검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 text-[11px] md:text-xs font-bold transition"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
-                            <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-res-count">총 0건</span>
-                            <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200" id="pm-res-summary"></span>
+                            <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200 whitespace-nowrap" id="pm-res-summary"></span>
                             <button id="btn-clear-history-filter" onclick="clearHistorySelection()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded hidden transition font-bold">특정 항목 필터 해제</button>
 
-                            <!-- 지연 일괄 처리 (관리자 전용). 라인·기간을 위에서 거른 뒤 전체 선택 → 일괄 확인 -->
-                            <span id="pm-bulk-group" class="hidden items-center gap-1.5 flex-wrap">
-                                <span class="text-[11px] md:text-xs font-bold px-2 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-200" id="pm-bulk-info">미확인 지연 0건</span>
-                                <button type="button" onclick="togglePMSelectMode()" id="pm-sel-btn" title="지연 건의 순번 자리에 선택칸을 띄웁니다" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">선택</button>
-                                <span id="pm-sel-tools" class="hidden items-center gap-1.5">
-                                    <button type="button" onclick="selectAllOverdue()" id="pm-bulk-all" title="지금 조회 조건에 맞는 미확인 지연을 모두 선택합니다" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">전체 선택</button>
-                                    <button type="button" onclick="clearOverdueSel()" id="pm-bulk-clear" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40">선택 해제</button>
-                                    <button type="button" onclick="bulkConfirmOverdue()" id="pm-bulk-btn" title="선택한 지연 실적에 같은 사유를 한 번에 기록합니다 (정기수리·휴동 등)" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50">일괄 사유 확인</button>
+                            <!-- 오른쪽 묶음: 지연 일괄 처리(관리자) + 엑셀 출력 -->
+                            <div class="ml-auto flex items-center gap-1.5 flex-wrap justify-end">
+                                <span id="pm-bulk-group" class="hidden items-center gap-1.5">
+                                    <span class="text-[11px] md:text-xs font-bold px-2 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-200 whitespace-nowrap" id="pm-bulk-info">미확인 지연 0건</span>
+                                    <button type="button" onclick="togglePMSelectMode()" id="pm-sel-btn" title="지연 건의 순번 자리에 선택칸을 띄웁니다" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">선택</button>
+                                    <span id="pm-sel-tools" class="hidden items-center gap-1.5">
+                                        <button type="button" onclick="selectAllOverdue()" id="pm-bulk-all" title="지금 조회 조건에 맞는 미확인 지연을 모두 선택합니다" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">전체 선택</button>
+                                        <button type="button" onclick="clearOverdueSel()" id="pm-bulk-clear" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40">선택 해제</button>
+                                        <button type="button" onclick="bulkConfirmOverdue()" id="pm-bulk-btn" title="선택한 지연 실적에 같은 사유를 한 번에 기록합니다 (정기수리·휴동 등)" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50">일괄 사유 확인</button>
+                                    </span>
                                 </span>
-                            </span>
-
-                            <div class="ml-auto flex flex-col gap-1 shrink-0">
-                                <button onclick="openPMResultReport()" class="bg-brand-600 hover:bg-brand-700 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center justify-center" title="현재 조회 조건으로 보고서를 만들어 인쇄합니다">
-                                    <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1"></i> 보고서 생성
-                                </button>
-                                <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center justify-center">
+                                <button onclick="exportPMHistoryToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center whitespace-nowrap">
                                     <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
                                 </button>
                             </div>
@@ -6462,12 +6457,15 @@
             const bad = list.filter(d => d.result === '불량').length;
             const overdueN = list.filter(d => d._overdue === 'OVERDUE').length;
             const excusedN = list.filter(d => d._overdue === 'EXCUSED').length;
-            const countEl = document.getElementById('pm-res-count');
-            if (countEl) countEl.innerText = `총 ${list.length.toLocaleString()}건`;
+            // 건수와 내역을 한 칸에 몰아 담는다 (칩을 여러 개 두면 줄만 길어진다)
             const sumEl = document.getElementById('pm-res-summary');
-            if (sumEl) sumEl.innerHTML = `<span class="text-blue-600">양호 ${good.toLocaleString()}</span><span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`
-                + `<span class="text-slate-300 mx-1">|</span><span class="text-red-600">지연 ${overdueN.toLocaleString()}</span>`
-                + `<span class="text-slate-300 mx-1">/</span><span class="text-emerald-600">사유확인 ${excusedN.toLocaleString()}</span>`;
+            if (sumEl) sumEl.innerHTML = `<span class="text-slate-700">총 ${list.length.toLocaleString()}</span>`
+                + `<span class="text-slate-300 mx-1">|</span><span class="text-blue-600">양호 ${good.toLocaleString()}</span>`
+                + `<span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`
+                + (overdueN || excusedN
+                    ? `<span class="text-slate-300 mx-1">|</span><span class="text-red-600">지연 ${overdueN.toLocaleString()}</span>`
+                      + `<span class="text-slate-300 mx-1">/</span><span class="text-emerald-600">확인 ${excusedN.toLocaleString()}</span>`
+                    : '');
 
             if (list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 예방점검 실적이 없습니다.</td></tr>`;
