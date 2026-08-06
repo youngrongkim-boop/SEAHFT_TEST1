@@ -1328,12 +1328,12 @@
                         <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
                             <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">라인</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">고장일시</th>
-                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">고장명</th>
-                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center text-xs w-20">고장시간</th>
-                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-14">근무<br>구분</th>
-                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-12">반복</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-16 text-center">라인</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-36">고장일시</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 min-w-[240px]">고장명</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 text-center text-xs w-24">고장시간</th>
+                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-16">근무<br>구분</th>
+                                    <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-14">반복</th>
                                     <th class="py-2.5 px-1.5 font-bold border-b border-slate-200 text-center text-xs w-12 text-blue-600">수정</th>
                                 </tr>
                             </thead>
@@ -4911,15 +4911,18 @@
 
         // 결과 칸 안에 함께 표시한다. 기한 내 점검이면 아무것도 붙이지 않는다
         // (양호 옆에 '정상'까지 적으면 같은 말을 두 번 하는 셈이라 읽기만 번거롭다).
+        // 결과 칸 안의 두 번째 자리. 너비를 고정해 행마다 들쭉날쭉하지 않게 한다.
+        // 기한 내 점검이면 빈 자리만 두고(양호 옆에 '정상'까지 적으면 같은 말을 두 번 하는 셈),
+        // 사유는 길어질 수 있으니 칩에는 '사유확인 N일'만 적고 전문은 말풍선으로 보여준다.
         const overdueBadgeOf = (r) => {
             const st = overdueStateOf(r);
-            if (st === 'NORMAL') return '';
+            const slot = (inner) => `<span class="inline-flex items-center justify-center w-[86px] shrink-0">${inner}</span>`;
+            if (st === 'NORMAL') return slot('');
             if (st === 'EXCUSED') {
                 const why = manualEsc(r.excuseReason || '사유 확인됨');
-                const days = r.overdueDays ? ` ${r.overdueDays}일` : '';
-                return `<span title="${r.overdueDays || 0}일 지연 · ${why}${r.excusedBy ? ' · ' + manualEsc(r.excusedBy) : ''}" class="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200 align-middle"><i data-lucide="check" class="w-3 h-3"></i>${why}${days}</span>`;
+                return slot(`<span title="${r.overdueDays || 0}일 지연 · ${why}${r.excusedBy ? ' · ' + manualEsc(r.excusedBy) : ''}" class="inline-flex items-center justify-center gap-0.5 w-full px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200"><i data-lucide="check" class="w-3 h-3 shrink-0"></i>사유확인 ${r.overdueDays || 0}일</span>`);
             }
-            return `<span title="예정일 ${manualEsc(r.dueDate || '-')} 을(를) 넘겨 점검했습니다" class="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold align-middle"><i data-lucide="alert-circle" class="w-3 h-3"></i>지연 ${r.overdueDays || 0}일</span>`;
+            return slot(`<span title="예정일 ${manualEsc(r.dueDate || '-')} 을(를) 넘겨 점검했습니다" class="inline-flex items-center justify-center gap-0.5 w-full px-1 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold"><i data-lucide="alert-circle" class="w-3 h-3 shrink-0"></i>지연 ${r.overdueDays || 0}일</span>`);
         };
 
         // 지연 처리는 세 가지 경우가 있다. 모달은 하나를 공유하고 mode 로 갈린다.
@@ -5101,7 +5104,27 @@
         };
         window.toggleOverdueSel = (id, on) => {
             if (on) selectedOverdueIds.add(id); else selectedOverdueIds.delete(id);
+            markOverdueRow(id, on);
             updateBulkBar();
+        };
+
+        // 선택된 행에 테두리를 둘러 한눈에 보이게 한다.
+        // 배경색은 불량(빨강)과 부딪히므로 ring 으로 표시한다.
+        function markOverdueRow(id, on) {
+            const box = document.querySelector(`[data-ovsel="${id}"]`);
+            const row = box && box.closest('tr, .ovsel-card');
+            if (!row) return;
+            ['ring-2', 'ring-emerald-400', 'ring-inset'].forEach(c => row.classList.toggle(c, on));
+        }
+
+        // 행의 아무 데나 눌러도 선택되게 한다 (체크박스만 노려 누르는 건 번거롭다).
+        // 버튼·링크·입력칸을 누른 경우는 그 동작을 그대로 두고 선택은 건드리지 않는다.
+        window.rowToggleOverdueSel = (e, id) => {
+            if (e.target.closest('button, a, input, select, textarea, label')) return;
+            const on = !selectedOverdueIds.has(id);
+            const box = document.querySelector(`[data-ovsel="${id}"]`);
+            if (box) box.checked = on;
+            window.toggleOverdueSel(id, on);
         };
         window.clearOverdueSel = () => {
             selectedOverdueIds.clear();
@@ -6471,13 +6494,15 @@
             const start = (pmHistPage - 1) * PM_LIST_PER_PAGE;
             const paginatedList = list.slice(start, start + PM_LIST_PER_PAGE);
 
-            const resBadgeOf = (r) => r === '양호'
-                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] md:text-[11px] font-bold border border-blue-200">양호</span>`
-                : r === '불량'
-                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] md:text-[11px] font-bold border border-red-200">불량</span>`
-                    : r === '미실시'
-                        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] md:text-[11px] font-bold border border-slate-300">미실시</span>`
-                        : `<span class="text-slate-400 text-[10px]">-</span>`;
+            // 결과 칸은 [결과][지연][버튼] 세 자리의 너비를 고정해 위아래가 나란히 보이게 한다
+            const RES_STYLE = {
+                '양호': 'bg-blue-100 text-blue-700 border-blue-200',
+                '불량': 'bg-red-100 text-red-700 border-red-200',
+                '미실시': 'bg-slate-200 text-slate-600 border-slate-300'
+            };
+            const resBadgeOf = (r) => RES_STYLE[r]
+                ? `<span class="inline-flex items-center justify-center w-12 shrink-0 py-0.5 rounded text-[10px] md:text-[11px] font-bold border ${RES_STYLE[r]}">${r}</span>`
+                : `<span class="inline-flex items-center justify-center w-12 shrink-0 text-slate-300 text-[10px]">-</span>`;
 
             let html = '';
             let cards = '';
@@ -6488,19 +6513,28 @@
                     ? `<button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
                     : '<span class="text-slate-300 text-xs">-</span>';
                 // 지연 실적은 관리자가 사유를 확인해 정상 실적으로 바꿀 수 있다
+                const btnSlot = (inner) => `<span class="inline-flex items-center justify-center w-14 shrink-0">${inner}</span>`;
                 const excuseBtn = !isAdmin ? ''
                     : item._overdue === 'OVERDUE'
-                        ? `<button onclick="openOverdueExcuseModal('${item.id}')" title="그날 사유가 있어 못 한 것이면 확인 처리합니다" class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold">사유확인</button>`
+                        ? btnSlot(`<button onclick="openOverdueExcuseModal('${item.id}')" title="그날 사유가 있어 못 한 것이면 확인 처리합니다" class="w-full px-1 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold">사유확인</button>`)
                         : item._overdue === 'EXCUSED'
-                            ? `<button onclick="revertOverdueExcuse('${item.id}')" title="확인을 취소하고 다시 지연으로 되돌립니다" class="ml-1 px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-500 text-[10px] font-bold">취소</button>`
-                            : '';
+                            ? btnSlot(`<button onclick="revertOverdueExcuse('${item.id}')" title="확인을 취소하고 다시 지연으로 되돌립니다" class="w-full px-1 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-500 text-[10px] font-bold">취소</button>`)
+                            : btnSlot('');
                 // 여러 건을 한 번에 처리하기 위한 선택칸. [선택] 을 누른 동안, 미확인 지연 행에만 나온다.
                 const selBox = (isAdmin && pmSelectMode && item._overdue === 'OVERDUE')
                     ? `<input type="checkbox" data-ovsel="${item.id}" ${selectedOverdueIds.has(item.id) ? 'checked' : ''} onchange="toggleOverdueSel('${item.id}', this.checked)" title="일괄 확인 대상으로 선택" class="align-middle w-3.5 h-3.5 accent-emerald-600 cursor-pointer">`
                     : '';
 
+                // 선택 모드에서는 행의 아무 데나 눌러도 선택된다
+                const rowSel = selBox
+                    ? ` onclick="rowToggleOverdueSel(event, '${item.id}')" title="눌러서 선택/해제"`
+                    : '';
+                const rowSelCls = selBox
+                    ? ` cursor-pointer select-none${selectedOverdueIds.has(item.id) ? ' ring-2 ring-emerald-400 ring-inset' : ''}`
+                    : '';
+
                 html += `
-                    <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100">
+                    <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100${rowSelCls}"${rowSel}>
                         <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${selBox || absIndex}</td>
                         <td class="py-2.5 px-3 font-medium text-slate-500">${item._when || '-'}</td>
                         <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line || '-'}</td>
@@ -6509,7 +6543,7 @@
                         <td class="py-2.5 px-2 text-center text-blue-600 font-bold">${item._cycle || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails || '-'}</td>
                         <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
-                        <td class="py-2.5 px-2 text-center whitespace-nowrap">${resBadgeOf(item.result)}${overdueBadgeOf(item)}${excuseBtn}</td>
+                        <td class="py-2.5 px-2 whitespace-nowrap"><div class="flex items-center justify-center gap-1">${resBadgeOf(item.result)}${overdueBadgeOf(item)}${excuseBtn}</div></td>
                         <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
                         <td class="py-2.5 px-2 text-center ${item.checkedByName ? 'text-slate-700 font-medium' : 'text-slate-300'}">${item.checkedByName || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${delBtn}</td>
@@ -6518,16 +6552,17 @@
 
                 // 모바일 카드
                 cards += `
-                    <div class="bg-white border ${isBad ? 'border-red-200 ring-1 ring-red-100' : 'border-slate-200'} rounded-xl p-3 shadow-sm">
+                    <div class="ovsel-card bg-white border ${isBad ? 'border-red-200 ring-1 ring-red-100' : 'border-slate-200'} rounded-xl p-3 shadow-sm${rowSelCls}"${rowSel}>
                         <div class="flex items-center justify-between gap-2 mb-1.5">
                             <div class="flex items-center gap-1.5 min-w-0">
+                                ${selBox}
                                 <span class="font-bold text-brand-600 text-[11px] shrink-0">${item.line || '-'}</span>
                                 <span class="font-semibold text-slate-800 text-sm truncate">${item.equipmentName || '-'}</span>
                             </div>
                             ${resBadgeOf(item.result)}
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 text-[10px] mb-1">
-                            ${selBox}${overdueBadgeOf(item)}${excuseBtn}
+                            ${overdueBadgeOf(item)}${excuseBtn}
                             <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">${item._category || '-'}</span>
                             <span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100">${item._cycle || '-'}</span>
                             ${item.checkedByName ? `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold">점검자 ${item.checkedByName}</span>` : ''}
@@ -7150,18 +7185,27 @@
 
                 const photoCount = Array.isArray(item.photos) ? item.photos.length : 0;
                 const photoBadge = photoCount
-                    ? ` <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold align-middle" title="현장 사진 ${photoCount}장"><i data-lucide="camera" class="w-3 h-3"></i>${photoCount}</span>`
+                    ? `<span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold shrink-0" title="현장 사진 ${photoCount}장"><i data-lucide="camera" class="w-3 h-3"></i>${photoCount}</span>`
                     : '';
-                const shiftBadge = `<span class="px-1.5 py-0.5 rounded ${shiftBadgeClass(shift)} text-[10px] font-bold">${shift}</span>`;
+                // 근무구분·반복은 열 너비를 채우는 고정폭 배지로 만들어 위아래가 나란히 보이게 한다
+                const shiftBadge = `<span class="inline-flex items-center justify-center w-11 py-0.5 rounded ${shiftBadgeClass(shift)} text-[10px] font-bold">${shift}</span>`;
                 const repeatBadge = isRepeat
-                    ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회</span>`
-                    : '<span class="text-slate-300">-</span>';
+                    ? `<span class="inline-flex items-center justify-center w-10 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회</span>`
+                    : '<span class="inline-flex items-center justify-center w-10 text-slate-300">-</span>';
+                // 고장명 줄: [작업구분][중대][사진] 배지를 앞에 모으고 이름은 남는 폭을 쓴다
+                const nameBadges = [
+                    normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) : '',
+                    isCritical ? '<span class="inline-flex items-center justify-center px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold shrink-0">중대</span>' : '',
+                    photoBadge
+                ].filter(Boolean).join('');
 
                 html += `
                     <tr class="hover:bg-blue-50/60 transition-colors border-b border-slate-50 cursor-pointer ${isCritical ? 'bg-red-50' : ''}" onclick="openBDDetail('${item.id}')" title="클릭하면 상세 내용">
-                        <td class="py-2.5 px-3 font-bold text-brand-600">${item.line || '-'}</td>
+                        <td class="py-2.5 px-3 font-bold text-brand-600 text-center">${item.line || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-700">${startStr}</td>
-                        <td class="py-2.5 px-3 font-semibold text-slate-800">${normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) + ' ' : ''}${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}${photoBadge}</td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-800">
+                            <div class="flex items-center gap-1 min-w-0">${nameBadges}<span class="truncate">${item.faultName || '-'}</span></div>
+                        </td>
                         <td class="py-2.5 px-2 text-center text-red-500 font-bold text-xs">${durStr}</td>
                         <td class="py-2.5 px-1.5 text-center">${shiftBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${repeatBadge}</td>
@@ -7184,7 +7228,7 @@
                             </div>
                             ${canEditLine(item.line) ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
                         </div>
-                        <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.faultName || '-'}${photoBadge}</p>
+                        <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.faultName || '-'} ${photoBadge}</p>
                         <div class="flex items-center justify-between gap-2 mt-1.5 text-[11px] text-slate-500">
                             <span>${startStr}</span>
                             <span class="text-red-500 font-bold shrink-0">${durStr}</span>
