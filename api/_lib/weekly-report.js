@@ -103,7 +103,7 @@ function buildLineSection(line, pmTasks, pmResults, win, cat) {
             overdue: overdue.length,
             dueThisWeek: dueThisWeek.length,
             done: done.length,
-            good: done.length - bad.length,
+            good: done.filter(r => r.result === '양호').length,
             bad: bad.length
         },
         // 볼 것이 하나도 없으면 메일을 보내지 않기 위한 판단 근거

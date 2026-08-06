@@ -300,7 +300,8 @@
                     <label class="block text-xs font-bold text-slate-600 mb-1.5">상세 설명 <span class="font-normal text-slate-400">(선택)</span></label>
                     <textarea id="pmo-note" rows="3" maxlength="300" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="예: 8/1~8/4 라인 휴동으로 설비 정지 불가"></textarea>
                 </div>
-                <p class="text-[11px] text-slate-500 leading-relaxed">확인하면 이 실적의 <b>점검지연 표시가 사라지고 정상 실적</b>으로 집계됩니다. 누가 언제 확인했는지는 기록으로 남습니다.</p>
+                <p id="pmo-effect" class="text-[11px] text-slate-500 leading-relaxed"></p>
+                <p class="text-[11px] text-slate-400 leading-relaxed">누가 언제 어떤 사유로 처리했는지는 <b>데이터 수정 이력</b>에 남습니다.</p>
             </div>
             <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2">
                 <button type="button" onclick="closeOverdueExcuseModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
@@ -993,6 +994,17 @@
             <div id="view-pm-result" class="view-section hidden flex-col gap-3 min-w-0 pb-4">
                 <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
                     <p class="text-[11px] text-slate-500 mb-2 shrink-0 leading-relaxed"><b class="text-brand-700">예방점검</b>(주기가 있는 점검)의 실적만 표시합니다. 일반·긴급 점검은 좌측 <b>일반·긴급 점검 실적</b> 탭에서 확인하세요.</p>
+
+                    <!-- 아직 점검하지 않은 지연 항목 (예방점검 리스트에 남아 있는 것) -->
+                    <div id="pm-overdue-panel" class="hidden mb-2 shrink-0 rounded-lg border border-red-200 bg-red-50/60">
+                        <button type="button" onclick="toggleOverduePanel()" class="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-red-100/60 transition rounded-lg">
+                            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 shrink-0"></i>
+                            <span class="text-xs font-bold text-red-800">아직 점검하지 않은 지연 항목 <span id="pm-overdue-panel-count">0</span>건</span>
+                            <span class="text-[11px] text-red-600/80 hidden sm:inline">— 점검을 하거나, 사유가 있어 못 했다면 관리자가 마감 처리하세요</span>
+                            <i data-lucide="chevron-down" id="pm-overdue-chevron" class="w-4 h-4 text-red-500 shrink-0 ml-auto transition-transform"></i>
+                        </button>
+                        <div id="pm-overdue-list" class="hidden px-3 pb-3 max-h-56 overflow-y-auto custom-scroll space-y-1.5"></div>
+                    </div>
                     <div class="mb-2 shrink-0">
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
                             <select id="pm-res-filter-line" onchange="pmHistPage=1; updatePMResFilterEquip(); debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
@@ -1014,6 +1026,7 @@
                                 <option value="ALL">결과: 전체</option>
                                 <option value="양호">양호</option>
                                 <option value="불량">불량</option>
+                                <option value="미실시">미실시 (지연 마감)</option>
                             </select>
                             <select id="pm-res-filter-period" onchange="pmHistPage=1; debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
                                 <option value="ALL">전체 기간</option>
@@ -2577,6 +2590,7 @@
             if (currentTabId === 'bd-list') window.debouncedRenderBDList();
             if (currentTabId === 'pm-list') window.debouncedRenderPMList();
             if (!isAdmin && currentTabId === 'edit-history') switchTab('dashboard'); // 권한이 회수되면 즉시 이탈
+            if (currentTabId === 'pm-result' && typeof window.renderOverduePanel === 'function') window.renderOverduePanel();
             if (typeof updateReqBadge === 'function') updateReqBadge();
             if (currentTabId === 'req-board' && typeof renderRequestBoard === 'function') renderRequestBoard();
             if (!document.getElementById('admin-modal').classList.contains('hidden')) renderAdminList();
@@ -3761,6 +3775,7 @@
                     return { id: doc.id, ...data, cycleType: normalizeCycle(data.cycleType) };
                 });
                 updateTaskDetailsCombo();
+                if (currentTabId === 'pm-result') window.renderOverduePanel();
                 window.debouncedApplyFilterAndRender();
                 maybeShowPMAlert();
             });
@@ -4746,56 +4761,157 @@
             return `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold"><i data-lucide="alert-circle" class="w-3 h-3"></i>지연 ${r.overdueDays || 0}일</span>`;
         };
 
-        let pendingOverdueId = null;
+        // 지연 처리는 두 가지 경우가 있다. 모달은 하나를 공유하고 mode 로 갈린다.
+        //   'result' — 늦게라도 점검을 했다. 이미 남은 실적의 지연 표시를 사유 확인으로 지운다.
+        //   'task'   — 끝내 점검을 못 했다. 리스트에 지연으로 남아 있는 항목을 사유로 마감하면서
+        //              '미실시' 실적을 새로 남기고 다음 회차로 넘긴다.
+        let pendingOverdue = null;
 
+        // 아직 점검하지 않은 지연 항목 (예방점검 리스트에 남아 있는 것)
+        function getOverduePMTasks() {
+            const today = getLocalTodayString();
+            return rawPMData
+                .filter(d => d.status !== '점검'
+                    && normalizeWorkType(d.workType) === '예방점검'
+                    && d.nextCheckDate && d.nextCheckDate < today)
+                .sort((a, b) => String(a.nextCheckDate).localeCompare(String(b.nextCheckDate)));
+        }
+
+        window.toggleOverduePanel = () => {
+            const box = document.getElementById('pm-overdue-list');
+            const open = box.classList.toggle('hidden') === false;
+            const chev = document.getElementById('pm-overdue-chevron');
+            if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+        };
+
+        function renderOverduePanel() {
+            const panel = document.getElementById('pm-overdue-panel');
+            const box = document.getElementById('pm-overdue-list');
+            if (!panel || !box) return;
+            const list = getOverduePMTasks();
+            panel.classList.toggle('hidden', list.length === 0);
+            document.getElementById('pm-overdue-panel-count').innerText = list.length.toLocaleString();
+            if (!list.length) { box.innerHTML = ''; return; }
+
+            const today = getLocalTodayString();
+            box.innerHTML = list.map(t => {
+                const days = overdueInfoOf(t.nextCheckDate, today).days;
+                return `<div class="flex items-center gap-2 bg-white border border-red-200 rounded-md px-2.5 py-1.5">
+                    <span class="px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold shrink-0">${days}일</span>
+                    <span class="font-bold text-brand-600 text-[11px] shrink-0">${manualEsc(t.line || '-')}</span>
+                    <span class="text-xs font-semibold text-slate-800 truncate">${manualEsc(t.equipmentName || '-')}</span>
+                    <span class="text-[11px] text-slate-500 truncate hidden sm:inline flex-1">${manualEsc(t.taskDetails || '')}</span>
+                    <span class="text-[10px] text-slate-400 shrink-0">예정 ${manualEsc(t.nextCheckDate || '-')} · ${manualEsc(normalizeCycle(t.cycleType))}</span>
+                    ${isAdmin
+                        ? `<button type="button" onclick="openOverdueCloseModal('${t.id}')" title="사유가 있어 점검하지 못한 것이면 마감 처리합니다" class="shrink-0 px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold">사유 마감</button>`
+                        : `<span class="shrink-0 text-[10px] text-slate-400">관리자만 마감</span>`}
+                </div>`;
+            }).join('');
+        }
+        window.renderOverduePanel = renderOverduePanel;
+
+        function openOverdueModal(mode, id, targetHtml, presetReason, presetNote, saveLabel) {
+            pendingOverdue = { mode, id };
+            document.getElementById('pmo-target').innerHTML = targetHtml;
+            const sel = document.getElementById('pmo-reason');
+            sel.innerHTML = OVERDUE_REASONS.map(x => `<option value="${x}">${x}</option>`).join('');
+            if (presetReason && OVERDUE_REASONS.includes(presetReason)) sel.value = presetReason;
+            document.getElementById('pmo-note').value = presetNote || '';
+            document.getElementById('pmo-save-btn').innerText = saveLabel;
+            document.getElementById('pmo-effect').innerHTML = mode === 'task'
+                ? '마감하면 <b>미실시 실적</b>이 한 건 남고, 이 항목은 <b>다음 회차로 넘어가</b> 지연 목록에서 사라집니다. 점검을 하지 않은 것이므로 양호/불량 통계에는 들어가지 않습니다.'
+                : '확인하면 이 실적의 <b>점검지연 표시가 사라지고 정상 실적</b>으로 집계됩니다.';
+            const modal = document.getElementById('pm-overdue-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons({ root: modal });
+        }
+
+        // (1) 늦게라도 점검을 마친 실적의 지연 표시를 지운다
         window.openOverdueExcuseModal = (resultId) => {
             if (!requireAdmin('점검지연 사유 확인')) return;
             const r = rawPMResultsData.find(x => x.id === resultId);
             if (!r) return showToast('실적을 찾을 수 없습니다.', 'error');
-            pendingOverdueId = resultId;
-
-            document.getElementById('pmo-target').innerHTML = `
+            openOverdueModal('result', resultId, `
                 <p class="font-bold text-slate-800">${manualEsc(r.line || '-')} · ${manualEsc(r.equipmentName || '-')}</p>
                 <p class="text-slate-600 mt-0.5">${manualEsc(r.taskDetails || '-')}</p>
                 <p class="text-slate-500 mt-1">예정일 <b>${manualEsc(r.dueDate || '-')}</b> → 점검일 <b>${manualEsc(pmResultTimeStr(r) || '-')}</b>
-                   <span class="text-red-600 font-bold">(${r.overdueDays || 0}일 지연)</span></p>`;
+                   <span class="text-red-600 font-bold">(${r.overdueDays || 0}일 지연)</span></p>`,
+                r.excuseReason, r.excuseNote, '사유 확인');
+        };
 
-            const sel = document.getElementById('pmo-reason');
-            sel.innerHTML = OVERDUE_REASONS.map(x => `<option value="${x}">${x}</option>`).join('');
-            if (r.excuseReason && OVERDUE_REASONS.includes(r.excuseReason)) sel.value = r.excuseReason;
-            document.getElementById('pmo-note').value = r.excuseNote || '';
-
-            const modal = document.getElementById('pm-overdue-modal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            if (window.lucide) lucide.createIcons({ root: modal });
+        // (2) 끝내 점검하지 못한 지연 항목을 사유로 마감한다
+        window.openOverdueCloseModal = (taskId) => {
+            if (!requireAdmin('점검지연 마감')) return;
+            const t = rawPMData.find(x => x.id === taskId);
+            if (!t) return showToast('점검 항목을 찾을 수 없습니다.', 'error');
+            const today = getLocalTodayString();
+            const days = overdueInfoOf(t.nextCheckDate, today).days;
+            const nextDue = calculatePeriodEndDate(today, normalizeCycle(t.cycleType), 0);
+            openOverdueModal('task', taskId, `
+                <p class="font-bold text-slate-800">${manualEsc(t.line || '-')} · ${manualEsc(t.equipmentName || '-')}</p>
+                <p class="text-slate-600 mt-0.5">${manualEsc(t.taskDetails || '-')}</p>
+                <p class="text-slate-500 mt-1">예정일 <b>${manualEsc(t.nextCheckDate || '-')}</b>
+                   <span class="text-red-600 font-bold">(오늘까지 ${days}일 지연 · 미점검)</span></p>
+                <p class="text-slate-500 mt-1">마감하면 다음 예정일은 <b>${manualEsc(nextDue)}</b> 로 다시 잡힙니다.</p>`,
+                '', '', '지연 마감');
         };
 
         window.closeOverdueExcuseModal = () => {
-            pendingOverdueId = null;
+            pendingOverdue = null;
             const modal = document.getElementById('pm-overdue-modal');
             modal.classList.add('hidden'); modal.classList.remove('flex');
         };
 
         window.saveOverdueExcuse = async () => {
-            if (!requireAdmin('점검지연 사유 확인')) return;
-            if (!pendingOverdueId) return;
+            if (!pendingOverdue) return;
+            if (!requireAdmin('점검지연 처리')) return;
+            const { mode, id } = pendingOverdue;
             const btn = document.getElementById('pmo-save-btn');
             const reason = document.getElementById('pmo-reason').value;
             const note = document.getElementById('pmo-note').value.trim();
-            const r = rawPMResultsData.find(x => x.id === pendingOverdueId);
             btn.disabled = true;
             try {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', pendingOverdueId), {
-                    overdueExcused: true, excuseReason: reason, excuseNote: note,
-                    excusedBy: (currentUser && currentUser.email) || '', excusedAt: serverTimestamp()
-                });
-                await logEditHistory('예방점검 (지연 사유 확인)', (r && r.line) || '-', (r && r.equipmentName) || '-',
-                    `${(r && r.dueDate) || ''} 예정 · ${(r && r.overdueDays) || 0}일 지연 → ${reason}${note ? ' · ' + note : ''}`);
-                showToast('지연 사유를 확인했습니다. 정상 실적으로 처리됩니다.');
+                if (mode === 'result') {
+                    const r = rawPMResultsData.find(x => x.id === id);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', id), {
+                        overdueExcused: true, excuseReason: reason, excuseNote: note,
+                        excusedBy: (currentUser && currentUser.email) || '', excusedAt: serverTimestamp()
+                    });
+                    await logEditHistory('예방점검 (지연 사유 확인)', (r && r.line) || '-', (r && r.equipmentName) || '-',
+                        `${(r && r.dueDate) || ''} 예정 · ${(r && r.overdueDays) || 0}일 지연 → ${reason}${note ? ' · ' + note : ''}`);
+                    showToast('지연 사유를 확인했습니다. 정상 실적으로 처리됩니다.');
+                } else {
+                    const t = rawPMData.find(x => x.id === id);
+                    if (!t) throw new Error('점검 항목을 찾을 수 없습니다.');
+                    const today = getLocalTodayString();
+                    const cycle = normalizeCycle(t.cycleType);
+                    const days = overdueInfoOf(t.nextCheckDate, today).days;
+
+                    // 실적 기록 + 항목 이월을 한 번에 (둘 중 하나만 반영되면 지연이 사라지거나 중복 기록된다)
+                    const batch = writeBatch(db);
+                    batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_results')), {
+                        taskId: id, workType: '예방점검', line: t.line, equipmentName: t.equipmentName,
+                        category: t.category || '', cycleType: cycle, criteria: t.criteria || '',
+                        taskDetails: t.taskDetails, result: '미실시', remarks: t.remarks || '',
+                        checkedByName: currentEditorFields().editorName,
+                        dueDate: t.nextCheckDate || '', wasOverdue: true, overdueDays: days,
+                        overdueExcused: true, excuseReason: reason, excuseNote: note, notPerformed: true,
+                        excusedBy: (currentUser && currentUser.email) || '', excusedAt: serverTimestamp(),
+                        checkTime: getLocalDateTimeString(), checkedAt: serverTimestamp()
+                    });
+                    // 이 회차는 닫고 현재 주기로 다시 잡는다 (status 는 '미점검' 그대로)
+                    batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', id), {
+                        nextCheckDate: calculatePeriodEndDate(today, cycle, 0)
+                    });
+                    await batch.commit();
+                    await logEditHistory('예방점검 (지연 마감)', t.line || '-', t.equipmentName || '-',
+                        `${t.nextCheckDate || ''} 예정 · ${days}일 미점검 → ${reason}${note ? ' · ' + note : ''}`);
+                    showToast('지연을 마감했습니다. 미실시 실적으로 남았습니다.');
+                }
                 closeOverdueExcuseModal();
             } catch (e) {
                 console.error(e);
-                showToast('저장 실패 — 관리자 권한을 확인하세요.', 'error');
+                showToast(`저장 실패 — ${e.message || '관리자 권한을 확인하세요.'}`, 'error');
             } finally { btn.disabled = false; }
         };
 
@@ -5911,10 +6027,11 @@
             if (!tbody) return;
             const cardsEl = document.getElementById('pm-res-cards');
             const pagEl = document.getElementById('pm-history-pagination');
+            renderOverduePanel(); // 아직 점검하지 않은 지연 항목은 실적이 아니므로 위쪽 패널에 따로 보여준다
             const list = getFilteredPMHistory();
 
             const good = list.filter(d => d.result === '양호').length;
-            const bad = list.length - good;
+            const bad = list.filter(d => d.result === '불량').length;
             const overdueN = list.filter(d => d._overdue === 'OVERDUE').length;
             const excusedN = list.filter(d => d._overdue === 'EXCUSED').length;
             const countEl = document.getElementById('pm-res-count');
@@ -5940,7 +6057,9 @@
                 ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] md:text-[11px] font-bold border border-blue-200">양호</span>`
                 : r === '불량'
                     ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] md:text-[11px] font-bold border border-red-200">불량</span>`
-                    : `<span class="text-slate-400 text-[10px]">-</span>`;
+                    : r === '미실시'
+                        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] md:text-[11px] font-bold border border-slate-300">미실시</span>`
+                        : `<span class="text-slate-400 text-[10px]">-</span>`;
 
             let html = '';
             let cards = '';
@@ -6124,7 +6243,7 @@
             const list = getFilteredAdhocResults();
 
             const good = list.filter(d => d.result === '양호').length;
-            const bad = list.length - good;
+            const bad = list.filter(d => d.result === '불량').length;
             document.getElementById('ah-count').innerText = `총 ${list.length.toLocaleString()}건`;
             document.getElementById('ah-summary').innerHTML =
                 `<span class="text-blue-600">양호 ${good.toLocaleString()}</span><span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`;
@@ -7556,13 +7675,13 @@
             L.push('');
             if (!res.length) return L.join('\n') + '이 범위에 등록된 **점검 실적이 없습니다.**';
             const bad = res.filter(r => r.result === '불량');
-            L.push(`실적 **${laNum(res.length)}건** · 양호 ${laNum(res.length - bad.length)} / 불량 ${laNum(bad.length)} (불량률 ${laPct(bad.length, res.length)})`);
+            L.push(`실적 **${laNum(res.length)}건** · 양호 ${laNum(res.filter(r => r.result === '양호').length)} / 불량 ${laNum(bad.length)} (불량률 ${laPct(bad.length, res.length)})`);
 
             L.push('');
             L.push('### 점검유형별');
             L.push(laTable(['점검유형', '실적', '양호', '불량', '불량률'], laSort(laGroup(res, d => normalizeWorkType(d.workType)), 'count').map(([k, v]) => {
                 const b = v.items.filter(d => d.result === '불량').length;
-                return [k, `${laNum(v.count)}건`, `${laNum(v.count - b)}건`, `${laNum(b)}건`, laPct(b, v.count)];
+                return [k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '양호').length)}건`, `${laNum(b)}건`, laPct(b, v.count)];
             })));
 
             if (sc.line === 'ALL') {
@@ -7570,7 +7689,7 @@
                 L.push('### 라인별');
                 L.push(laTable(['라인', '실적', '양호', '불량', '불량률'], laSort(laGroup(res, d => d.line), 'count').map(([k, v]) => {
                     const b = v.items.filter(d => d.result === '불량').length;
-                    return [k, `${laNum(v.count)}건`, `${laNum(v.count - b)}건`, `${laNum(b)}건`, laPct(b, v.count)];
+                    return [k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '양호').length)}건`, `${laNum(b)}건`, laPct(b, v.count)];
                 })));
             }
 
@@ -7595,7 +7714,7 @@
             L.push(laTable(['점검자', '실적', '양호', '불량', '불량률', '최근 점검일'], laSort(g, 'count').map(([k, v]) => {
                 const bad = v.items.filter(d => d.result === '불량').length;
                 const last = v.items.map(pmResultTimeStr).filter(Boolean).sort().pop() || '-';
-                return [k, `${laNum(v.count)}건`, `${laNum(v.count - bad)}건`, `${laNum(bad)}건`, laPct(bad, v.count), last];
+                return [k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '양호').length)}건`, `${laNum(bad)}건`, laPct(bad, v.count), last];
             })));
             if (g.has('(이름 미기록)')) L.push('\n_점검자 이름은 기능 추가 이후 등록된 실적부터 기록됩니다. 그 이전 실적은 (이름 미기록)으로 모입니다._');
             return L.join('\n');
@@ -8415,7 +8534,7 @@
                     const n = list.filter(d => d._workType === t).length;
                     return [t, `${laNum(n)}건 (${laPct(n, list.length)})`];
                 }),
-                ['양호', `${laNum(list.length - bad.length)}건`],
+                ['양호', `${laNum(list.filter(r => r.result === '양호').length)}건`],
                 ['불량', `${laNum(bad.length)}건`],
                 ['불량률', laPct(bad.length, list.length)],
                 ['점검 설비 수', `${laNum(equipSet.size)}대`],
@@ -8430,7 +8549,7 @@
                 L.push(title);
                 L.push(laTable([headLabel, '실적', '양호', '불량', '불량률'], rows.map(([k, v]) => {
                     const b = v.items.filter(d => d.result === '불량').length;
-                    return [k, `${laNum(v.count)}건`, `${laNum(v.count - b)}건`, `${laNum(b)}건`, laPct(b, v.count)];
+                    return [k, `${laNum(v.count)}건`, `${laNum(v.items.filter(d => d.result === '양호').length)}건`, `${laNum(b)}건`, laPct(b, v.count)];
                 })));
             };
             section('## 2. 점검유형별', d => d._workType, '점검유형');
