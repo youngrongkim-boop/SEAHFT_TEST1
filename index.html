@@ -2209,7 +2209,10 @@
         const storage = getStorage(app);
 
         // Constants
-        const LINES = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL'];
+        // 생산 라인 + 공무(유틸리티). 유틸리티는 생산 라인은 아니지만 점검·고장 관리 단위가 같아
+        // 라인과 나란히 둔다. 여기에 넣으면 BD_LINES·NAV_LINES 로 자동 전파되어
+        // 사이드바 라인별 현황, 예방점검, 고장실적, 담당자, 목표 설정에 모두 나타난다.
+        const LINES = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', '유틸리티'];
         const BD_LINES = [...LINES.filter(l => l !== 'ARP'), 'SSCL']; // 고장실적: ARP 제외, SSCL 추가
         const NAV_LINES = [...LINES, ...BD_LINES.filter(l => !LINES.includes(l))]; // 사이드바 라인 내비 = 예방점검 라인 + 고장 전용 라인(SSCL)
         const EQUIPMENT_MAP = {
@@ -2219,7 +2222,10 @@
             'CGL': ['CGL 포트', 'CGL 쿨링타워', 'CGL 스킨패스', '기타(CGL)'],
             '1CCL': ['1CCL 코터', '1CCL 오븐', '1CCL 권출기', '기타(1CCL)'],
             '2CCL': ['2CCL 코터', '2CCL 오븐', '2CCL 냉각존', '기타(2CCL)'],
-            '3CCL': ['3CCL 프라이머', '3CCL 롤코터', '3CCL 소각로', '기타(3CCL)']
+            '3CCL': ['3CCL 프라이머', '3CCL 롤코터', '3CCL 소각로', '기타(3CCL)'],
+            // 처음 쓰기 편하도록 넣어 둔 기본 목록일 뿐이다.
+            // 실제 설비는 등록 화면의 [설비명 관리]에서 추가·삭제하면 여기 값과 무관하게 반영된다.
+            '유틸리티': ['공기압축기', '보일러', '냉각탑', '수배전반', '폐수처리설비', '기타(유틸리티)']
         };
         const CATEGORY_MAP = {
             "기계": { "펌프": ["베어링", "씰", "임펠러", "축"], "모터": ["베어링", "코일", "냉각팬", "하우징"], "감속기": ["기어", "베어링", "오일씰", "샤프트"], "유압기기": ["실린더", "밸브", "호스/배관"] },
@@ -7328,7 +7334,9 @@
                     try {
                         const workbook = XLSX.read(evt.target.result, {type: 'binary'});
                         const sheetNames = workbook.SheetNames;
-                        const validLines = ['CPL', 'ARP', 'CRM', 'CGL', '1CCL', '2CCL', '3CCL', 'SSCL'];
+                        // 라인 목록은 한 곳(NAV_LINES)에서 가져온다. 여기에 따로 적어 두면
+                        // 라인을 추가했을 때 엑셀 업로드만 조용히 옛 목록을 쓰게 된다.
+                        const validLines = NAV_LINES;
                         
                         let totalRows = 0;
                         let batch = writeBatch(db);
