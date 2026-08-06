@@ -283,6 +283,25 @@
         </div>
     </div>
 
+    <!-- 사진 크게 보기 (현장 사진 뷰어) -->
+    <div id="photo-viewer-modal" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-slate-900/90 p-3" onclick="closePhotoViewer()">
+        <div class="w-full max-w-5xl max-h-full flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between gap-2 mb-2 shrink-0">
+                <p id="photo-viewer-title" class="text-sm font-bold text-white truncate">사진</p>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a id="photo-viewer-open" href="#" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-800 bg-white/90 hover:bg-white flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> 새 창</a>
+                    <button type="button" onclick="closePhotoViewer()" class="w-8 h-8 flex items-center justify-center rounded-md text-white bg-white/10 hover:bg-white/20"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            <div class="flex-1 min-h-0 flex items-center justify-center relative">
+                <button type="button" id="photo-viewer-prev" onclick="stepPhotoViewer(-1)" class="absolute left-0 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 text-white"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+                <img id="photo-viewer-img" src="" alt="현장 사진" class="max-w-full max-h-[78vh] object-contain rounded-lg">
+                <button type="button" id="photo-viewer-next" onclick="stepPhotoViewer(1)" class="absolute right-0 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 text-white"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+            </div>
+            <p id="photo-viewer-count" class="text-center text-xs text-white/70 mt-2 shrink-0"></p>
+        </div>
+    </div>
+
     <!-- 요청사항 등록 / 수정 모달 -->
     <div id="req-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -1267,6 +1286,22 @@
                                     <div id="bd-manual-chips" class="flex flex-wrap gap-1 mt-1.5"></div>
                                 </div>
                             </div>
+
+                            <!-- 현장 사진 첨부 (업로드 전에 자동으로 용량을 줄인다) -->
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                                    <label class="block text-sm font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="camera" class="w-4 h-4 text-red-500"></i> 현장 사진 <span class="font-normal text-slate-400 text-xs">(선택 · 최대 10장)</span></label>
+                                    <div class="flex gap-1.5 shrink-0">
+                                        <button type="button" onclick="pickBDRegPhoto('camera')" class="px-2.5 py-1.5 rounded-md text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 flex items-center gap-1 transition shadow-sm"><i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 촬영</button>
+                                        <button type="button" onclick="pickBDRegPhoto('file')" class="px-2.5 py-1.5 rounded-md text-[11px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 flex items-center gap-1 transition"><i data-lucide="image-plus" class="w-3.5 h-3.5"></i> 사진 선택</button>
+                                    </div>
+                                    <input type="file" id="bd-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="onBDRegPhotoPicked(this)">
+                                    <input type="file" id="bd-photo-file" accept="image/*" multiple class="hidden" onchange="onBDRegPhotoPicked(this)">
+                                </div>
+                                <div id="bd-photo-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2"></div>
+                                <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">휴대폰으로 찍은 큰 사진도 <b>올리기 전에 자동으로 화질을 낮춰 용량을 줄입니다</b> (긴 변 1920px · 보통 200~500KB). 원본을 그대로 올리지 않으므로 데이터 사용량과 저장 공간이 적게 듭니다.</p>
+                            </div>
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
                                 <div>
                                     <label class="block text-sm font-bold text-blue-900 mb-1.5">고장 발생 일시</label>
@@ -1914,6 +1949,19 @@
                             <div id="edit-bd-manual-list" class="space-y-1"></div>
                         </div>
                     </div>
+                    <!-- 현장 사진 (수정 모달) -->
+                    <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                            <label class="block text-xs font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="camera" class="w-3.5 h-3.5 text-red-500"></i> 현장 사진 <span class="font-normal text-slate-400">(최대 10장)</span></label>
+                            <div class="flex gap-1.5 shrink-0">
+                                <button type="button" onclick="pickBDEditPhoto('camera')" class="px-2 py-1 rounded-md text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 flex items-center gap-1 transition"><i data-lucide="camera" class="w-3 h-3"></i> 촬영</button>
+                                <button type="button" onclick="pickBDEditPhoto('file')" class="px-2 py-1 rounded-md text-[11px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 flex items-center gap-1 transition"><i data-lucide="image-plus" class="w-3 h-3"></i> 추가</button>
+                            </div>
+                            <input type="file" id="edit-bd-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="onBDEditPhotoPicked(this)">
+                            <input type="file" id="edit-bd-photo-file" accept="image/*" multiple class="hidden" onchange="onBDEditPhotoPicked(this)">
+                        </div>
+                        <div id="edit-bd-photo-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2"></div>
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">발생 일시</label>
@@ -2040,6 +2088,8 @@
         let rawManualDocs = []; // 자료실에서 직접 등록한 메뉴얼 (고장 연결은 선택)
         let bdRegManuals = [];  // 등록 폼에서 첨부 대기 중인 파일 [File]
         let bdEditManuals = []; // 수정 모달의 첨부 목록 [{name, url, storagePath, size} | {file}] (저장 시 확정)
+        let bdRegPhotos = [];   // 등록 폼의 현장 사진 [{name, url, storagePath, size, origSize, width, height}]
+        let bdEditPhotos = [];  // 수정 모달의 현장 사진 (저장 시 확정)
         let rawRequests = [];   // 요청사항 게시판 (시스템 수정·개선 요청)
         let activeReqDetailId = null; // 상세 모달에 열려 있는 요청 id
         let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
@@ -3307,6 +3357,7 @@
                     } else if (tabId === 'bd-reg') {
                         initCategorySelects(); // 등록 폼 진입 시 실제 사용된 분류값을 반영
                         window.setBDWorkKind('고장');
+                        window.renderBDRegPhotos();
                     } else if (tabId === 'manual-lib') {
                         renderManualLibrary();
                     } else if (tabId === 'req-board') {
@@ -4216,6 +4267,8 @@
             // 첨부 메뉴얼은 사본으로 편집하고 '수정 내용 저장'을 눌러야 확정된다
             bdEditManuals = (Array.isArray(item.manuals) ? item.manuals : []).map(m => ({ ...m }));
             renderBDEditManuals();
+            bdEditPhotos = (Array.isArray(item.photos) ? item.photos : []).map(p => ({ ...p }));
+            window.renderBDEditPhotos();
 
             const modal = document.getElementById('bd-edit-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
@@ -4237,6 +4290,7 @@
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', id));
                 if (rec) await deleteRemovedManualFiles(rec.manuals, []); // 첨부 메뉴얼 파일도 함께 정리
+                if (rec) await deleteRemovedPhotoFiles(rec.photos, []);  // 현장 사진 파일도 함께 정리
                 if (rec) await logEditHistory('고장실적 (삭제)', rec.line, rec.equipmentName, `항목 삭제 (${rec.faultName || rec.content || ''})`);
                 showToast('삭제되었습니다.');
                 closeBDEditModal();
@@ -4260,12 +4314,15 @@
 
             // 첨부는 이미 업로드된 상태이므로 목록만 확정한다 (목록에서 뺀 기존 파일은 저장 후 삭제)
             if (hasPendingManualUpload(bdEditManuals)) return;
+            if (hasPendingPhotoUpload(bdEditPhotos)) return;
             const finalManuals = bdEditManuals.map(toManualRecord);
+            const finalPhotos = bdEditPhotos.map(toPhotoRecord);
             const saveBtn = document.getElementById('bd-edit-save-btn');
             if (saveBtn) { saveBtn.disabled = true; saveBtn.innerText = '저장 중…'; }
 
             const newData = {
                 manuals: finalManuals,
+                photos: finalPhotos,
                 line: document.getElementById('edit-bd-line').value,
                 equipmentName: document.getElementById('edit-bd-equip').value.trim(),
                 category: document.getElementById('edit-bd-category').value,
@@ -4284,16 +4341,19 @@
             };
 
             const oldManuals = Array.isArray(old.manuals) ? old.manuals : [];
+            const oldPhotos = Array.isArray(old.photos) ? old.photos : [];
             let diffs = [];
             if(normalizeWorkKind(old.workKind) !== newData.workKind) diffs.push(`작업구분 변경(${normalizeWorkKind(old.workKind)}->${newData.workKind})`);
             if(old.content !== newData.content) diffs.push("조치내용 변경");
             if(old.durationMinutes !== newData.durationMinutes) diffs.push(`시간 변경(${old.durationMinutes}분->${newData.durationMinutes}분)`);
             if(old.detailCategory !== newData.detailCategory) diffs.push(`소분류 변경(${old.detailCategory}->${newData.detailCategory})`);
             if(oldManuals.length !== finalManuals.length) diffs.push(`메뉴얼 변경(${oldManuals.length}건->${finalManuals.length}건)`);
+            if(oldPhotos.length !== finalPhotos.length) diffs.push(`사진 변경(${oldPhotos.length}장->${finalPhotos.length}장)`);
 
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs', id), newData);
                 await deleteRemovedManualFiles(oldManuals, finalManuals);
+                await deleteRemovedPhotoFiles(oldPhotos, finalPhotos);
                 if(diffs.length > 0) {
                     await logEditHistory('고장실적', newData.line, newData.equipmentName, diffs.join(', '));
                 }
@@ -5625,10 +5685,12 @@
             try {
                 // 메뉴얼은 첨부 버튼을 누른 시점에 이미 업로드돼 있으므로 목록만 그대로 저장한다
                 if (hasPendingManualUpload(bdRegManuals)) return;
+                if (hasPendingPhotoUpload(bdRegPhotos)) return;
                 const uploadedManuals = bdRegManuals.map(toManualRecord);
+                const uploadedPhotos = bdRegPhotos.map(toPhotoRecord);
                 const bdWorkKind = normalizeWorkKind(document.getElementById('bd-workkind').value);
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'breakdown_logs'), {
-                    manuals: uploadedManuals, workKind: bdWorkKind,
+                    manuals: uploadedManuals, photos: uploadedPhotos, workKind: bdWorkKind,
                     line: document.getElementById('bd-line').value, equipmentName: document.getElementById('bd-equip').value,
                     category: document.getElementById('bd-category').value, mainCategory: document.getElementById('bd-main-cat').value,
                     subCategory: document.getElementById('bd-sub-cat').value, detailCategory: document.getElementById('bd-detail-cat').value,
@@ -5641,9 +5703,14 @@
                 });
                 // 등록자(누가 넣었는지)를 데이터 수정 이력에 기록 (양식 초기화 전에 값 읽음)
                 await logEditHistory(`고장실적 (등록·${bdWorkKind})`, document.getElementById('bd-line').value, document.getElementById('bd-equip').value, `수동 등록 (${document.getElementById('bd-fault-name').value.trim() || '고장명 미입력'})`);
-                showToast(uploadedManuals.length ? `${bdWorkKind} 실적이 등록되었습니다. (메뉴얼 ${uploadedManuals.length}건 첨부)` : `${bdWorkKind} 실적이 등록되었습니다.`);
+                const attachNote = [
+                    uploadedManuals.length ? `메뉴얼 ${uploadedManuals.length}건` : '',
+                    uploadedPhotos.length ? `사진 ${uploadedPhotos.length}장` : ''
+                ].filter(Boolean).join(' · ');
+                showToast(attachNote ? `${bdWorkKind} 실적이 등록되었습니다. (${attachNote} 첨부)` : `${bdWorkKind} 실적이 등록되었습니다.`);
                 e.target.reset();
                 bdRegManuals = []; renderBDRegManuals();
+                bdRegPhotos = []; window.renderBDRegPhotos();
                 document.getElementById('bd-equip').innerHTML = '<option value="">라인을 먼저 선택하세요</option>';
                 document.getElementById('bd-sub-cat').innerHTML = '<option value="">선택</option>';
                 document.getElementById('bd-detail-cat').innerHTML = '<option value="">선택</option>';
@@ -5833,6 +5900,7 @@
             const cell = (label, value, cls = '') => `<div class="${cls}"><dt class="text-[11px] font-bold text-slate-400 mb-0.5">${label}</dt><dd class="text-sm text-slate-800 whitespace-pre-wrap break-words">${value || '-'}</dd></div>`;
             // 방지대책 옆 메뉴얼 버튼: 이 고장 건에 첨부된 PDF + 자료실에서 이 고장에 연결한 메뉴얼
             const attached = Array.isArray(item.manuals) ? item.manuals : [];
+            const photos = (Array.isArray(item.photos) ? item.photos : []).filter(p => p && p.url);
             const linkedDocs = rawManualDocs.filter(m => m.bdId === item.id && m.url);
             const manualBtnsHtml = attached.map((mn, i) =>
                 `<button type="button" onclick="openBDManual('${item.id}',${i})" title="${manualEsc(mn.name)}" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition max-w-[220px]"><i data-lucide="book-open" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${manualEsc(mn.name)}</span></button>`
@@ -5866,6 +5934,14 @@
                         <dd class="text-sm text-slate-800 whitespace-pre-wrap break-words">${item.prevention || '-'}</dd>
                     </div>
                 </div>
+                ${photos.length ? `<div class="mt-4">
+                    <p class="text-[11px] font-bold text-slate-400 mb-1.5 flex items-center gap-1"><i data-lucide="camera" class="w-3.5 h-3.5"></i> 현장 사진 (${photos.length}장) · 눌러서 크게 보기</p>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                        ${photos.map((p, i) => `<button type="button" onclick="openPhotoAt('detail',${i})" class="block w-full aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:ring-2 hover:ring-red-400 transition">
+                            <img src="${manualEsc(p.url)}" alt="${manualEsc(p.name)}" loading="lazy" class="w-full h-full object-cover">
+                        </button>`).join('')}
+                    </div>
+                </div>` : ''}
                 ${getSpecType(item) ? `<div id="bd-detail-spec" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">${specDisplayHtml(item)}</div>` : ''}
             `;
             if (window.lucide) lucide.createIcons({ root: body });
@@ -5941,6 +6017,10 @@
                 const repeatCount = getRepeatOccurrences(item).length;
                 const isRepeat = repeatCount >= 2;
 
+                const photoCount = Array.isArray(item.photos) ? item.photos.length : 0;
+                const photoBadge = photoCount
+                    ? ` <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold align-middle" title="현장 사진 ${photoCount}장"><i data-lucide="camera" class="w-3 h-3"></i>${photoCount}</span>`
+                    : '';
                 const shiftBadge = `<span class="px-1.5 py-0.5 rounded ${shiftBadgeClass(shift)} text-[10px] font-bold">${shift}</span>`;
                 const repeatBadge = isRepeat
                     ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회</span>`
@@ -5950,7 +6030,7 @@
                     <tr class="hover:bg-blue-50/60 transition-colors border-b border-slate-50 cursor-pointer ${isCritical ? 'bg-red-50' : ''}" onclick="openBDDetail('${item.id}')" title="클릭하면 상세 내용">
                         <td class="py-2.5 px-3 font-bold text-brand-600">${item.line || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-700">${startStr}</td>
-                        <td class="py-2.5 px-3 font-semibold text-slate-800">${normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) + ' ' : ''}${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}</td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-800">${normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) + ' ' : ''}${item.faultName || '-'}${isCritical ? ' <span class="px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold align-middle">중대</span>' : ''}${photoBadge}</td>
                         <td class="py-2.5 px-2 text-center text-red-500 font-bold text-xs">${durStr}</td>
                         <td class="py-2.5 px-1.5 text-center">${shiftBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${repeatBadge}</td>
@@ -5973,7 +6053,7 @@
                             </div>
                             ${canEditLine(item.line) ? `<button onclick="event.stopPropagation(); openBDEditModal('${item.id}')" class="text-slate-400 hover:text-red-600 p-1 bg-slate-100 rounded-lg shrink-0"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
                         </div>
-                        <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.faultName || '-'}</p>
+                        <p class="font-bold text-slate-800 text-sm leading-snug break-words">${item.faultName || '-'}${photoBadge}</p>
                         <div class="flex items-center justify-between gap-2 mt-1.5 text-[11px] text-slate-500">
                             <span>${startStr}</span>
                             <span class="text-red-500 font-bold shrink-0">${durStr}</span>
@@ -8156,6 +8236,266 @@
             }).join('');
             if (window.lucide) lucide.createIcons({ root: box });
         };
+
+        // ==========================================
+        // 현장 사진 첨부 (고장실적 1건에 딸린 사진)
+        // ==========================================
+        // 휴대폰 사진은 한 장에 5~12MB나 되므로 그대로 올리면 현장 통신망에서 등록이 오래 걸리고
+        // 저장 공간도 금방 찬다. 그래서 브라우저에서 캔버스로 축소·재압축한 뒤에 업로드한다.
+        //   - 긴 변을 1920px 로 줄이고 JPEG 품질 0.75 로 재인코딩 → 보통 200~500KB
+        //   - 그래도 800KB 를 넘으면 품질과 크기를 단계적으로 더 낮춘다
+        // PDF 로 바꾸는 방법도 있지만 PDF 는 사진을 그대로 품기만 해서 용량이 오히려 늘고,
+        // 목록에서 미리보기도 안 되므로 이미지를 압축해 저장한다.
+        // 사진은 고장 문서의 `photos` 배열에, 파일은 Storage `bd_photos/` 에 둔다.
+        const BD_PHOTO_MAX_COUNT = 10;
+        const BD_PHOTO_MAX_EDGE = 1920;          // 긴 변 기준 최대 픽셀
+        const BD_PHOTO_TARGET_BYTES = 800 * 1024; // 이 크기 아래로 떨어질 때까지 재압축
+        const BD_PHOTO_SRC_MAX_BYTES = 40 * 1024 * 1024; // 원본이 이보다 크면 브라우저가 버티지 못한다
+
+        const photoSizeStr = (n) => !n ? '' : (n >= 1048576 ? `${(n / 1048576).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`);
+        const isImageFile = (file) => /^image\//.test(file.type || '') || /\.(png|jpe?g|gif|webp|bmp|heic|heif)$/i.test(file.name || '');
+
+        // 파일 → 그릴 수 있는 이미지 객체. createImageBitmap 이 EXIF 회전을 반영해 주므로 우선 쓴다.
+        async function loadPhotoSource(file) {
+            if (window.createImageBitmap) {
+                try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+                catch (e) {
+                    try { return await createImageBitmap(file); } catch (e2) { /* 아래 <img> 방식으로 폴백 */ }
+                }
+            }
+            return await new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode-failed')); };
+                img.src = url;
+            });
+        }
+
+        // 원본을 줄이고 다시 JPEG 로 인코딩한다. 목표 용량에 닿을 때까지 단계적으로 낮춘다.
+        async function compressPhoto(file) {
+            const src = await loadPhotoSource(file);
+            const sw = src.width || src.naturalWidth;
+            const sh = src.height || src.naturalHeight;
+            if (!sw || !sh) throw new Error('decode-failed');
+
+            let edge = BD_PHOTO_MAX_EDGE, quality = 0.75, blob = null, w = sw, h = sh;
+            for (let attempt = 0; attempt < 4; attempt++) {
+                const scale = Math.min(1, edge / Math.max(sw, sh));
+                w = Math.max(1, Math.round(sw * scale));
+                h = Math.max(1, Math.round(sh * scale));
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';        // 투명 배경 PNG 가 검게 나오지 않도록
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(src, 0, 0, w, h);
+                blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+                if (!blob) throw new Error('encode-failed');
+                if (blob.size <= BD_PHOTO_TARGET_BYTES) break;
+                if (attempt === 0) quality = 0.6;
+                else if (attempt === 1) { edge = 1440; quality = 0.6; }
+                else { edge = 1080; quality = 0.55; }
+            }
+            if (src.close) src.close(); // ImageBitmap 메모리 해제
+            return { blob, width: w, height: h };
+        }
+
+        async function uploadBDPhoto(blob, originalName, onProgress) {
+            const path = `bd_photos/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+            const task = uploadBytesResumable(storageRef(storage, path), blob, {
+                contentType: 'image/jpeg',
+                contentDisposition: 'inline',
+                customMetadata: { originalName: String(originalName || '').slice(0, 100) }
+            });
+            const url = await new Promise((resolve, reject) => {
+                task.on('state_changed',
+                    (snap) => { if (onProgress && snap.totalBytes) onProgress(Math.round(snap.bytesTransferred / snap.totalBytes * 100)); },
+                    reject,
+                    () => getDownloadURL(task.snapshot.ref).then(resolve, reject));
+            });
+            const name = String(originalName || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+            return { name, url, storagePath: path, size: blob.size, contentType: 'image/jpeg' };
+        }
+
+        async function deletePhotoObject(path) {
+            if (!path) return;
+            try { await deleteObject(storageRef(storage, path)); }
+            catch (e) { console.warn('사진 파일 삭제 실패', path, e); }
+        }
+
+        // 문서에 저장할 형태만 추린다 (진행률 등 화면 전용 필드 제외)
+        const toPhotoRecord = (p) => ({
+            name: p.name, url: p.url, storagePath: p.storagePath, size: p.size || 0,
+            width: p.width || 0, height: p.height || 0, contentType: p.contentType || 'image/jpeg',
+            origSize: p.origSize || 0, uploadedBy: p.uploadedBy || (currentUser && currentUser.email) || ''
+        });
+
+        function photoErrorMessage(e, fileName) {
+            if (String((e && e.code) || '').startsWith('storage/')) return manualStorageErrorMessage(e);
+            if (e && e.message === 'decode-failed') {
+                return `'${fileName}' 사진을 읽지 못했습니다. 아이폰 HEIC 사진이면 [설정 → 카메라 → 포맷 → 높은 호환성]으로 바꾸거나 JPG로 저장해 올려주세요.`;
+            }
+            return `'${fileName}' 사진 처리에 실패했습니다.`;
+        }
+
+        // 고른 사진들을 압축 → 업로드해서 목록(list)에 채운다. markNew 는 수정 모달에서 새 사진 표시용.
+        async function attachBDPhotos(input, list, rerender, markNew) {
+            const files = Array.from(input.files || []);
+            input.value = ''; // 같은 파일 재선택 가능하도록 초기화
+            for (const file of files) {
+                if (list.length >= BD_PHOTO_MAX_COUNT) { showToast(`사진은 최대 ${BD_PHOTO_MAX_COUNT}장까지 첨부할 수 있습니다.`, 'error'); break; }
+                if (!isImageFile(file)) { showToast(`'${file.name}' 은(는) 이미지 파일이 아닙니다.`, 'error'); continue; }
+                if (file.size > BD_PHOTO_SRC_MAX_BYTES) { showToast(`'${file.name}' 원본이 너무 큽니다. (40MB 초과)`, 'error'); continue; }
+
+                const entry = { name: file.name, size: 0, origSize: file.size, uploading: true, pct: 0, stage: '압축 중' };
+                if (markNew) entry.isNew = true;
+                list.push(entry);
+                rerender();
+                try {
+                    const c = await compressPhoto(file);
+                    entry.stage = '올리는 중';
+                    rerender();
+                    const meta = await uploadBDPhoto(c.blob, file.name, (pct) => { entry.pct = pct; rerender(); });
+                    Object.assign(entry, meta, { width: c.width, height: c.height, origSize: file.size, uploading: false, pct: 100, stage: '' });
+                } catch (e) {
+                    console.error(e);
+                    const i = list.indexOf(entry);
+                    if (i >= 0) list.splice(i, 1);
+                    showToast(photoErrorMessage(e, file.name), 'error');
+                }
+                rerender();
+            }
+        }
+
+        function hasPendingPhotoUpload(list) {
+            if (list.some(p => p.uploading)) { showToast('사진 업로드가 끝난 뒤 진행해 주세요.', 'error'); return true; }
+            return false;
+        }
+
+        // 저장 시 목록에서 빠진 기존 사진의 실제 파일을 정리
+        async function deleteRemovedPhotoFiles(oldList, keptList) {
+            const kept = new Set((keptList || []).map(p => p.storagePath).filter(Boolean));
+            for (const p of (oldList || [])) {
+                if (p.storagePath && !kept.has(p.storagePath)) await deletePhotoObject(p.storagePath);
+            }
+        }
+
+        // ----- 썸네일 그리드 (등록 폼 · 수정 모달 공용) -----
+        function photoGridHtml(list, src, removeFn) {
+            if (!list.length) {
+                return `<p class="col-span-full text-[11px] text-slate-400 py-2">첨부된 사진이 없습니다. <b>사진 촬영</b> 또는 <b>사진 선택</b>으로 추가하세요.</p>`;
+            }
+            return list.map((p, i) => {
+                if (p.uploading) {
+                    return `<div class="aspect-square rounded-lg border border-slate-200 bg-white flex flex-col items-center justify-center gap-1 text-center px-1">
+                        <i data-lucide="loader" class="w-4 h-4 text-red-500 animate-spin"></i>
+                        <span class="text-[10px] font-bold text-slate-500">${p.stage || ''}</span>
+                        <span class="text-[10px] text-slate-400">${p.stage === '올리는 중' ? (p.pct || 0) + '%' : photoSizeStr(p.origSize)}</span>
+                    </div>`;
+                }
+                const saved = p.origSize && p.size ? `${photoSizeStr(p.origSize)} → <b class="text-emerald-600">${photoSizeStr(p.size)}</b>` : photoSizeStr(p.size);
+                return `<div class="relative group">
+                    <button type="button" onclick="openPhotoAt('${src}',${i})" class="block w-full aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                        <img src="${manualEsc(p.url)}" alt="${manualEsc(p.name)}" loading="lazy" class="w-full h-full object-cover">
+                    </button>
+                    <button type="button" onclick="${removeFn}(${i})" title="사진 삭제" class="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-white border border-slate-300 text-slate-400 hover:bg-red-500 hover:text-white hover:border-red-500 shadow-sm transition"><i data-lucide="x" class="w-3 h-3"></i></button>
+                    ${p.isNew ? '<span class="absolute top-1 left-1 px-1 py-0.5 text-[9px] font-bold text-white bg-emerald-500 rounded">새 사진</span>' : ''}
+                    <p class="text-[9px] text-slate-400 text-center mt-0.5 leading-tight">${saved}</p>
+                </div>`;
+            }).join('');
+        }
+
+        // ----- 등록 폼 -----
+        window.pickBDRegPhoto = (mode) => document.getElementById(mode === 'camera' ? 'bd-photo-camera' : 'bd-photo-file').click();
+        window.onBDRegPhotoPicked = (input) => attachBDPhotos(input, bdRegPhotos, window.renderBDRegPhotos, false);
+        window.removeBDRegPhoto = async (idx) => {
+            const p = bdRegPhotos[idx];
+            if (!p || p.uploading) return;
+            bdRegPhotos.splice(idx, 1);
+            window.renderBDRegPhotos();
+            await deletePhotoObject(p.storagePath); // 등록 전이라 어느 문서도 참조하지 않는다
+        };
+        window.renderBDRegPhotos = () => {
+            const box = document.getElementById('bd-photo-grid');
+            if (!box) return;
+            box.innerHTML = photoGridHtml(bdRegPhotos, 'reg', 'removeBDRegPhoto');
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
+        // ----- 수정 모달 -----
+        window.pickBDEditPhoto = (mode) => document.getElementById(mode === 'camera' ? 'edit-bd-photo-camera' : 'edit-bd-photo-file').click();
+        window.onBDEditPhotoPicked = (input) => attachBDPhotos(input, bdEditPhotos, window.renderBDEditPhotos, true);
+        window.removeBDEditPhoto = async (idx) => {
+            const p = bdEditPhotos[idx];
+            if (!p || p.uploading) return;
+            bdEditPhotos.splice(idx, 1);
+            window.renderBDEditPhotos();
+            // 이번에 새로 올린 사진만 즉시 삭제. 원래 있던 사진은 '수정 내용 저장'을 눌러야 지워진다.
+            if (p.isNew) await deletePhotoObject(p.storagePath);
+        };
+        window.renderBDEditPhotos = () => {
+            const box = document.getElementById('edit-bd-photo-grid');
+            if (!box) return;
+            box.innerHTML = photoGridHtml(bdEditPhotos, 'edit', 'removeBDEditPhoto');
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
+        // ----- 사진 크게 보기 -----
+        let photoViewerList = [];
+        let photoViewerIdx = 0;
+
+        function photoSourceList(src) {
+            if (src === 'reg') return bdRegPhotos;
+            if (src === 'edit') return bdEditPhotos;
+            const it = rawBDData.find(d => d.id === activeBDDetailId);
+            return Array.isArray(it && it.photos) ? it.photos : [];
+        }
+
+        window.openPhotoAt = (src, idx) => {
+            const all = photoSourceList(src);
+            photoViewerList = all.filter(p => p && p.url);
+            if (!photoViewerList.length) return;
+            const pos = photoViewerList.indexOf(all[idx]);
+            photoViewerIdx = pos >= 0 ? pos : 0;
+            renderPhotoViewer();
+            const modal = document.getElementById('photo-viewer-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons({ root: modal });
+        };
+
+        window.stepPhotoViewer = (d) => {
+            if (!photoViewerList.length) return;
+            photoViewerIdx = (photoViewerIdx + d + photoViewerList.length) % photoViewerList.length;
+            renderPhotoViewer();
+        };
+
+        function renderPhotoViewer() {
+            const p = photoViewerList[photoViewerIdx];
+            if (!p) return;
+            document.getElementById('photo-viewer-img').src = p.url;
+            document.getElementById('photo-viewer-title').innerText = p.name || '현장 사진';
+            document.getElementById('photo-viewer-open').href = p.url;
+            document.getElementById('photo-viewer-count').innerText =
+                `${photoViewerIdx + 1} / ${photoViewerList.length}${p.size ? ' · ' + photoSizeStr(p.size) : ''}`;
+            const many = photoViewerList.length > 1;
+            document.getElementById('photo-viewer-prev').classList.toggle('hidden', !many);
+            document.getElementById('photo-viewer-next').classList.toggle('hidden', !many);
+        }
+
+        window.closePhotoViewer = () => {
+            const modal = document.getElementById('photo-viewer-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+            document.getElementById('photo-viewer-img').src = '';
+        };
+
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('photo-viewer-modal');
+            if (!modal || modal.classList.contains('hidden')) return;
+            if (e.key === 'Escape') window.closePhotoViewer();
+            else if (e.key === 'ArrowLeft') window.stepPhotoViewer(-1);
+            else if (e.key === 'ArrowRight') window.stepPhotoViewer(1);
+        });
 
         // ----- 메뉴얼 자료실 (첨부된 메뉴얼 모아보기) -----
         // 메뉴얼은 고장실적 문서 안에 들어 있으므로, 별도 저장소 없이 rawBDData를 펼쳐서 목록을 만든다.
