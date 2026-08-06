@@ -993,20 +993,18 @@
             <!-- VIEW: 점검 실적 (예방·법정·특별 + 돌발·긴급 모든 점검 이력) -->
             <div id="view-pm-result" class="view-section hidden flex-col gap-3 min-w-0 pb-4">
                 <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
-                    <p class="text-[11px] text-slate-500 mb-2 shrink-0 leading-relaxed"><b class="text-brand-700">예방점검</b>(주기가 있는 점검)의 실적만 표시합니다. 일반·긴급 점검은 좌측 <b>일반·긴급 점검 실적</b> 탭에서 확인하세요.</p>
-
                     <!-- 아직 점검하지 않은 지연 항목 (예방점검 리스트에 남아 있는 것) -->
-                    <div id="pm-overdue-panel" class="hidden mb-2 shrink-0 rounded-lg border border-red-200 bg-red-50/60">
-                        <button type="button" onclick="toggleOverduePanel()" class="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-red-100/60 transition rounded-lg">
-                            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 shrink-0"></i>
-                            <span class="text-xs font-bold text-red-800">아직 점검하지 않은 지연 항목 <span id="pm-overdue-panel-count">0</span>건</span>
-                            <span class="text-[11px] text-red-600/80 hidden sm:inline">— 점검을 하거나, 사유가 있어 못 했다면 관리자가 마감 처리하세요</span>
-                            <i data-lucide="chevron-down" id="pm-overdue-chevron" class="w-4 h-4 text-red-500 shrink-0 ml-auto transition-transform"></i>
+                    <div id="pm-overdue-panel" class="hidden mb-1.5 shrink-0 rounded-lg border border-red-200 bg-red-50/60">
+                        <button type="button" onclick="toggleOverduePanel()" class="w-full px-3 py-1.5 flex items-center gap-2 text-left hover:bg-red-100/60 transition rounded-lg">
+                            <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-600 shrink-0"></i>
+                            <span class="text-[11px] font-bold text-red-800">아직 점검하지 않은 지연 항목 <span id="pm-overdue-panel-count">0</span>건</span>
+                            <span class="text-[10px] text-red-600/80 hidden sm:inline">— 점검을 하거나, 사유가 있어 못 했다면 관리자가 마감 처리하세요</span>
+                            <i data-lucide="chevron-down" id="pm-overdue-chevron" class="w-3.5 h-3.5 text-red-500 shrink-0 ml-auto transition-transform"></i>
                         </button>
-                        <div id="pm-overdue-list" class="hidden px-3 pb-3 max-h-56 overflow-y-auto custom-scroll space-y-1.5"></div>
+                        <div id="pm-overdue-list" class="hidden px-3 pb-2.5 max-h-56 overflow-y-auto custom-scroll space-y-1.5"></div>
                     </div>
 
-                    <div class="mb-2 shrink-0">
+                    <div class="mb-1.5 shrink-0">
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
                             <select id="pm-res-filter-line" onchange="pmHistPage=1; updatePMResFilterEquip(); debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
                                 <option value="ALL">전체 라인</option>
@@ -1051,9 +1049,12 @@
                             <!-- 지연 일괄 처리 (관리자 전용). 라인·기간을 위에서 거른 뒤 전체 선택 → 일괄 확인 -->
                             <span id="pm-bulk-group" class="hidden items-center gap-1.5 flex-wrap">
                                 <span class="text-[11px] md:text-xs font-bold px-2 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-200" id="pm-bulk-info">미확인 지연 0건</span>
-                                <button type="button" onclick="selectAllOverdue()" id="pm-bulk-all" title="지금 필터 조건에 맞는 미확인 지연을 모두 선택합니다" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">전체 선택</button>
-                                <button type="button" onclick="clearOverdueSel()" id="pm-bulk-clear" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40">선택 해제</button>
-                                <button type="button" onclick="bulkConfirmOverdue()" id="pm-bulk-btn" title="선택한 지연 실적에 같은 사유를 한 번에 기록합니다 (정기수리·휴동 등)" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50">일괄 사유 확인</button>
+                                <button type="button" onclick="togglePMSelectMode()" id="pm-sel-btn" title="지연 건의 순번 자리에 선택칸을 띄웁니다" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">선택</button>
+                                <span id="pm-sel-tools" class="hidden items-center gap-1.5">
+                                    <button type="button" onclick="selectAllOverdue()" id="pm-bulk-all" title="지금 조회 조건에 맞는 미확인 지연을 모두 선택합니다" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">전체 선택</button>
+                                    <button type="button" onclick="clearOverdueSel()" id="pm-bulk-clear" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40">선택 해제</button>
+                                    <button type="button" onclick="bulkConfirmOverdue()" id="pm-bulk-btn" title="선택한 지연 실적에 같은 사유를 한 번에 기록합니다 (정기수리·휴동 등)" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50">일괄 사유 확인</button>
+                                </span>
                                 <button type="button" onclick="runPMRolloverNow()" id="pm-roll-btn" title="예정일이 지난 회차를 지금 바로 미실시 실적으로 만듭니다 (평소에는 접속할 때 자동 처리됩니다)" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-400 text-slate-700 hover:bg-slate-100">지금 지연 정리</button>
                             </span>
 
@@ -1068,7 +1069,7 @@
                         </div>
                     </div>
 
-                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-175px)] hidden md:block">
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-152px)] hidden md:block">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -1090,7 +1091,7 @@
                         </table>
                     </div>
                     <!-- 모바일 카드 뷰 -->
-                    <div id="pm-res-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-175px)] pb-2"></div>
+                    <div id="pm-res-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-152px)] pb-2"></div>
                     <div id="pm-history-pagination"></div>
                 </div>
             </div>
@@ -4936,6 +4937,7 @@
         //              (정기수리·라인 휴동처럼 며칠씩 못 한 경우)
         let pendingOverdue = null;
         let selectedOverdueIds = new Set();
+        let pmSelectMode = false;   // [선택] 을 눌렀을 때만 순번 자리에 선택칸을 띄운다
 
         // ==========================================
         // 예방점검 지연 자동 기록 (화면 쪽)
@@ -5096,6 +5098,13 @@
             showToast(`미실시 실적 ${r.created}건을 기록했습니다.`);
         };
 
+        // [선택] 을 누르면 순번 자리에 선택칸이 나타난다 (평소에는 표를 깔끔하게 둔다)
+        window.togglePMSelectMode = () => {
+            if (!requireAdmin('지연 일괄 처리')) return;
+            pmSelectMode = !pmSelectMode;
+            if (!pmSelectMode) selectedOverdueIds.clear();
+            window.debouncedRenderPMHistory();
+        };
         window.toggleOverdueSel = (id, on) => {
             if (on) selectedOverdueIds.add(id); else selectedOverdueIds.delete(id);
             updateBulkBar();
@@ -5121,16 +5130,30 @@
             if (!isAdmin) return;
             const openCount = getFilteredPMHistory().filter(d => d._overdue === 'OVERDUE').length;
             const n = selectedOverdueIds.size;
+
             const info = document.getElementById('pm-bulk-info');
             info.innerText = openCount
-                ? `미확인 지연 ${openCount.toLocaleString()}건${n ? ` · 선택 ${n.toLocaleString()}` : ''}`
+                ? `미확인 지연 ${openCount.toLocaleString()}건${pmSelectMode && n ? ` · 선택 ${n.toLocaleString()}` : ''}`
                 : '미확인 지연 0건';
             info.className = `text-[11px] md:text-xs font-bold px-2 py-1.5 rounded border ${openCount
                 ? 'bg-amber-100 text-amber-900 border-amber-200'
                 : 'bg-slate-100 text-slate-400 border-slate-200'}`;
+
+            const selBtn = document.getElementById('pm-sel-btn');
+            selBtn.innerText = pmSelectMode ? '선택 종료' : '선택';
+            selBtn.disabled = !pmSelectMode && openCount === 0;
+            selBtn.className = `px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold disabled:opacity-40 ${pmSelectMode
+                ? 'bg-amber-500 text-white border border-amber-500 shadow-sm hover:bg-amber-600'
+                : 'bg-white border border-amber-300 text-amber-800 hover:bg-amber-50'}`;
+
+            const tools = document.getElementById('pm-sel-tools');
+            tools.classList.toggle('hidden', !pmSelectMode);
+            tools.classList.toggle('flex', pmSelectMode);
             document.getElementById('pm-bulk-all').disabled = openCount === 0;
             document.getElementById('pm-bulk-clear').disabled = n === 0;
-            document.getElementById('pm-bulk-btn').disabled = n === 0;
+            const bulkBtn = document.getElementById('pm-bulk-btn');
+            bulkBtn.disabled = n === 0;
+            bulkBtn.innerText = n ? `일괄 사유 확인 ${n}건` : '일괄 사유 확인';
         }
 
         window.bulkConfirmOverdue = () => {
@@ -6481,14 +6504,14 @@
                         : item._overdue === 'EXCUSED'
                             ? `<button onclick="revertOverdueExcuse('${item.id}')" title="확인을 취소하고 다시 지연으로 되돌립니다" class="ml-1 px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-500 text-[10px] font-bold">취소</button>`
                             : '';
-                // 여러 건을 한 번에 처리하기 위한 선택칸 (미확인 지연에만)
-                const selBox = (isAdmin && item._overdue === 'OVERDUE')
-                    ? `<input type="checkbox" data-ovsel="${item.id}" ${selectedOverdueIds.has(item.id) ? 'checked' : ''} onchange="toggleOverdueSel('${item.id}', this.checked)" title="일괄 확인 대상으로 선택" class="mr-1 align-middle accent-emerald-600 cursor-pointer">`
+                // 여러 건을 한 번에 처리하기 위한 선택칸. [선택] 을 누른 동안, 미확인 지연 행에만 나온다.
+                const selBox = (isAdmin && pmSelectMode && item._overdue === 'OVERDUE')
+                    ? `<input type="checkbox" data-ovsel="${item.id}" ${selectedOverdueIds.has(item.id) ? 'checked' : ''} onchange="toggleOverdueSel('${item.id}', this.checked)" title="일괄 확인 대상으로 선택" class="align-middle w-3.5 h-3.5 accent-emerald-600 cursor-pointer">`
                     : '';
 
                 html += `
                     <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100">
-                        <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
+                        <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${selBox || absIndex}</td>
                         <td class="py-2.5 px-3 font-medium text-slate-500">${item._when || '-'}</td>
                         <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line || '-'}</td>
                         <td class="py-2.5 px-3 font-bold text-slate-800">${item.equipmentName || '-'}</td>
@@ -6496,7 +6519,7 @@
                         <td class="py-2.5 px-2 text-center text-blue-600 font-bold">${item._cycle || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails || '-'}</td>
                         <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
-                        <td class="py-2.5 px-2 text-center whitespace-nowrap">${selBox}${resBadgeOf(item.result)}${overdueBadgeOf(item)}${excuseBtn}</td>
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">${resBadgeOf(item.result)}${overdueBadgeOf(item)}${excuseBtn}</td>
                         <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
                         <td class="py-2.5 px-2 text-center ${item.checkedByName ? 'text-slate-700 font-medium' : 'text-slate-300'}">${item.checkedByName || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${delBtn}</td>
