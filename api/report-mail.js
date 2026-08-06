@@ -12,7 +12,9 @@
 //        to    : 담당자 대신 이 주소로만 보냄 (시험 발송용)
 //        includeEmpty : 지연·예정·실적이 모두 0인 담당자에게도 보낼지 (기본 false)
 //
-// 스케줄: vercel.json 의 크론이 매주 일요일 22:00 UTC = 월요일 07:00 KST 에 호출한다.
+// 스케줄: vercel.json 의 크론이 매시 정각(UTC)에 호출하고, 실제로 보낼지는
+//   Firestore 의 settings/reportMail (켜짐·요일·시각)을 보고 이 함수가 정한다.
+//   화면(라인별 담당자 → 주간 점검 보고 메일)에서 바꾸면 재배포 없이 바로 적용된다.
 //
 // 인증
 //   - 사람이 부를 때 : Firebase ID 토큰(Authorization: Bearer ...) + 관리자만
@@ -26,12 +28,59 @@
 
 const {
     SUPER_ADMIN, normEmail, verifyIdToken, serviceAccount, getAccessToken,
-    SECRET_PATH, DATA_PARENT, dataPath, fsGet, fsList, fsQuerySince
+    SECRET_PATH, DATA_PARENT, dataPath, fsGet, fsList, fsQuerySince, fsSet
 } = require('./_lib/google');
 const { sendMail, mailMode } = require('./_lib/mailer');
 const { weekWindows, buildLineSection, composeMail } = require('./_lib/weekly-report');
 
 const FIRESTORE_SCOPE = 'https://www.googleapis.com/auth/datastore';
+
+// ---------------------------------------------------------------------------
+// 자동 발송 스케줄
+//
+// vercel.json 의 크론은 매시 정각(UTC)에 이 함수를 부른다. 실제로 보낼지는
+// Firestore 의 settings/reportMail 을 보고 여기서 정한다. 이렇게 해두면
+// 최고관리자가 화면에서 켜고 끄거나 요일·시각을 바꿔도 재배포가 필요 없다.
+//   enabled : 자동 발송 사용 여부 (기본 켜짐)
+//   weekday : 0=일 … 6=토, -1 이면 매일 (기본 1=월요일)
+//   hour    : 한국 시각 0~23 (기본 6시). 크론이 정시에만 돌므로 분 단위는 없다.
+// ---------------------------------------------------------------------------
+const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+// 서버는 UTC 로 도므로 한국 시각의 요일·시·날짜를 직접 계산한다
+function kstParts(d) {
+    const k = new Date(d.getTime() + KST_OFFSET_MS);
+    const y = k.getUTCFullYear();
+    const m = String(k.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(k.getUTCDate()).padStart(2, '0');
+    const hour = k.getUTCHours();
+    return {
+        weekday: k.getUTCDay(), hour,
+        date: `${y}-${m}-${day}`,
+        key: `${y}-${m}-${day}-${String(hour).padStart(2, '0')}`
+    };
+}
+
+// 저장된 값이 비었거나 이상해도 항상 쓸 수 있는 값으로 정리한다
+function resolveSchedule(cfg) {
+    // null·빈 문자열은 Number() 가 0 으로 바꿔 버린다. 0 은 '일요일'·'0시'로 유효한 값이라
+    // 그대로 두면 값이 비었을 때 엉뚱한 시각에 발송된다. 먼저 걸러 기본값으로 되돌린다.
+    const num = (v, dflt, min, max) => {
+        if (v === null || v === undefined || v === '') return dflt;
+        const n = Number(v);
+        return Number.isFinite(n) && n >= min && n <= max ? Math.floor(n) : dflt;
+    };
+    const s = {
+        enabled: (cfg || {}).enabled !== false,
+        weekday: num((cfg || {}).weekday, 1, -1, 6),
+        hour: num((cfg || {}).hour, 6, 0, 23)
+    };
+    s.label = s.enabled
+        ? `${s.weekday < 0 ? '매일' : '매주 ' + WEEKDAY_NAMES[s.weekday] + '요일'} ${String(s.hour).padStart(2, '0')}:00 자동 발송`
+        : '자동 발송 꺼짐';
+    return s;
+}
 
 // 발송 실패 한 건이 전체를 멈추지 않도록, 사람 단위로 나눠 보내고 결과를 모은다.
 async function sendAll(jobs, ctx) {
@@ -113,11 +162,13 @@ module.exports = async (req, res) => {
 
     // 저장된 Gmail 연결(본인 1회 동의)을 읽어야 발송 경로가 정해진다.
     let mailCtx = {};
+    let mailCfg = {};
     let diag = { ...baseDiag, mailMode: 'none' };
     try {
         const t = await getAccessToken(sa, FIRESTORE_SCOPE);
         const auth = await fsGet(t, `${SECRET_PATH}/gmailAuth`);
         if (auth && auth.refreshToken) mailCtx = { oauth: { refreshToken: auth.refreshToken, email: auth.email } };
+        mailCfg = (await fsGet(t, dataPath('settings/reportMail'))) || {};
         diag = {
             ...baseDiag,
             mailMode: mailMode(mailCtx),
@@ -126,6 +177,29 @@ module.exports = async (req, res) => {
         };
     } catch (e) {
         return res.status(500).json({ ...baseDiag, error: `설정을 읽지 못했습니다: ${e.message}` });
+    }
+
+    // ---- 자동 발송 스케줄 판정 ----
+    // 크론은 매시 정각에 오지만, 실제로 보내는 것은 설정한 요일·시각 한 번뿐이다.
+    const schedule = resolveSchedule(mailCfg);
+    const nowKst = kstParts(new Date());
+    diag.schedule = schedule;
+    diag.nowKst = { weekday: WEEKDAY_NAMES[nowKst.weekday], hour: nowKst.hour, date: nowKst.date };
+    diag.lastRunKey = mailCfg.lastRunKey || null;
+    diag.lastRunAt = mailCfg.lastRunAt || null;
+    diag.lastRunResult = mailCfg.lastRunResult || null;
+
+    if (isCron) {
+        const skip = (why) => res.status(200).json({ ...diag, skipped: why });
+        if (!schedule.enabled) return skip('자동 발송이 꺼져 있습니다.');
+        if (schedule.weekday >= 0 && nowKst.weekday !== schedule.weekday) {
+            return skip(`발송 요일이 아닙니다. (설정 ${WEEKDAY_NAMES[schedule.weekday]}요일 · 오늘 ${WEEKDAY_NAMES[nowKst.weekday]}요일)`);
+        }
+        if (nowKst.hour !== schedule.hour) {
+            return skip(`발송 시각이 아닙니다. (설정 ${schedule.hour}시 · 지금 ${nowKst.hour}시 KST)`);
+        }
+        // 같은 시각에 크론이 두 번 오더라도 두 번 보내지 않는다
+        if (mailCfg.lastRunKey === nowKst.key) return skip(`이미 이 시각에 발송했습니다. (${nowKst.key})`);
     }
 
     // ---- 설정 진단 (발송 없음) ----
@@ -250,6 +324,24 @@ module.exports = async (req, res) => {
         if (!jobs.length) return res.status(200).json({ ...summary, sent: [], failed: [], message: '보낼 대상이 없습니다.' });
 
         const { sent, failed } = await sendAll(jobs, mailCtx);
+
+        // 자동 발송이었으면 실행 기록을 남긴다 (같은 시각 중복 발송 방지 + 화면 표시용).
+        // fsSet 은 문서를 통째로 덮어쓰므로 남길 필드를 모두 적어 준다.
+        if (isCron) {
+            try {
+                await fsSet(token, dataPath('settings/reportMail'), {
+                    enabled: schedule.enabled,
+                    weekday: schedule.weekday,
+                    hour: schedule.hour,
+                    lastRunKey: nowKst.key,
+                    lastRunAt: new Date(),
+                    lastRunResult: `발송 ${sent.length}명${failed.length ? ` · 실패 ${failed.length}명` : ''}`,
+                    updatedBy: '자동 발송'
+                });
+            } catch (e) {
+                console.error('자동 발송 기록 저장 실패:', e.message);
+            }
+        }
         return res.status(failed.length && !sent.length ? 502 : 200).json({ ...summary, sent, failed });
     } catch (e) {
         return res.status(500).json({ ...diag, error: e.message });
