@@ -1035,7 +1035,7 @@
                                 <option value="YEAR">올해</option>
                             </select>
                             <select id="pm-res-filter-overdue" onchange="pmHistPage=1; debouncedRenderPMHistory()" title="정상실적 / 지연실적(사유 미확인) / 사유확인항목 으로 걸러 봅니다" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-medium">
-                                <option value="ALL">전체</option>
+                                <option value="ALL">지연: 전체</option>
                                 <option value="NORMAL">정상실적</option>
                                 <option value="OVERDUE">지연실적</option>
                                 <option value="EXCUSED">사유확인항목</option>
@@ -1074,7 +1074,7 @@
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">주기</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px] text-center">점검기준</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-left min-w-[130px]">결과</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center min-w-[130px]">결과</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">점검자</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-red-500 w-14">삭제</th>
@@ -2914,8 +2914,7 @@
         };
         window.goToPMListFromAlert = () => {
             closePMAlert();
-            const el = document.getElementById('pm-filter-status');
-            if (el) el.value = 'PENDING';
+            window.__pmListStatusOverride = 'PENDING';
             if (myLines.length === 1) window.__pmListLineOverride = myLines[0];
             switchTab('pm-list');
         };
@@ -3361,18 +3360,17 @@
         };
 
         // KPI Card Deep Linking
+        // 딥링크는 필터 값을 요소에 직접 쓰지 않고 override 로 넘긴다.
+        // 직접 쓰면 그 값이 탭에 계속 남아, 나중에 새로 등록한 항목이 걸러져 안 보인다.
         window.goToPMListPending = () => {
-            const pmStatusEl = document.getElementById('pm-filter-status');
-            if(pmStatusEl) pmStatusEl.value = 'PENDING';
+            window.__pmListStatusOverride = 'PENDING';
             window.__pmListLineOverride = currentLineFilter; // 현재 선택된 라인(예: CPL)으로 필터 유지
             switchTab('pm-list');
         };
 
         window.goToPMListThisWeek = () => {
-            const pmStatusEl = document.getElementById('pm-filter-status');
-            const pmCycleEl = document.getElementById('pm-filter-cycle');
-            if(pmStatusEl) pmStatusEl.value = 'PENDING';
-            if(pmCycleEl) pmCycleEl.value = '주별';
+            window.__pmListStatusOverride = 'PENDING';
+            window.__pmListCycleOverride = '주별';
             window.__pmListLineOverride = currentLineFilter; // 현재 선택된 라인으로 필터 유지
             switchTab('pm-list');
         };
@@ -3394,8 +3392,7 @@
                 }, 60);
                 return;
             }
-            const pmStatusEl = document.getElementById('pm-filter-status');
-            if(pmStatusEl) pmStatusEl.value = 'OVERDUE';
+            window.__pmListStatusOverride = 'OVERDUE';
             window.__pmListLineOverride = currentLineFilter; // 현재 선택된 라인으로 필터 유지
             switchTab('pm-list');
         };
@@ -3735,13 +3732,21 @@
                     } else if (tabId === 'edit-history') {
                         renderEditHistory();
                     } else if (tabId === 'pm-list') {
-                        // 예방점검 리스트 탭 진입 시 라인 필터 초기화 (딥링크로 특정 라인 지정 시 해당 라인 유지)
+                        // 예방점검 리스트 탭 진입 시 필터 초기화 (딥링크로 지정한 값만 유지).
+                        // 초기화하지 않으면 예전에 걸어 둔 상태·주기 필터가 남아
+                        // 새로 등록한 항목이 걸러진 채 "왜 안 보이지?" 가 된다.
                         const pmLineEl = document.getElementById('pm-filter-line');
                         if (pmLineEl) {
                             pmLineEl.value = window.__pmListLineOverride || 'ALL';
                             window.updatePMFilterEquip();
                         }
+                        const pmStatusEl = document.getElementById('pm-filter-status');
+                        if (pmStatusEl) pmStatusEl.value = window.__pmListStatusOverride || 'ALL';
+                        const pmCycleEl = document.getElementById('pm-filter-cycle');
+                        if (pmCycleEl) pmCycleEl.value = window.__pmListCycleOverride || 'ALL';
                         window.__pmListLineOverride = null;
+                        window.__pmListStatusOverride = null;
+                        window.__pmListCycleOverride = null;
 
                         pmListPage = 1;
                         window.debouncedRenderPMList();
@@ -4916,16 +4921,19 @@
         // 사유는 길어질 수 있으니 칩에는 '사유확인 N일'만 적고 전문은 말풍선으로 보여준다.
         const overdueBadgeOf = (r) => {
             const st = overdueStateOf(r);
-            const slot = (inner) => `<span class="inline-flex items-center justify-center w-[86px] shrink-0">${inner}</span>`;
-            if (st === 'NORMAL') return slot('');
+            // 표시할 게 없으면 빈 자리를 남기지 않는다. 빈 자리를 두면 배지 하나뿐인 행에서
+            // 그 자리만큼 한쪽으로 밀려 가운데가 어긋나 보인다.
+            if (st === 'NORMAL') return '';
+            // 칩 자체는 폭을 고정해 지연/사유확인이 서로 같은 크기로 보이게 한다
+            const chip = 'inline-flex items-center justify-center gap-0.5 w-[84px] shrink-0 px-1 py-0.5 rounded text-[10px] font-bold';
             if (st === 'EXCUSED') {
                 const why = manualEsc(r.excuseReason || '사유 확인됨');
-                return slot(`<span title="${r.overdueDays || 0}일 지연 · ${why}${r.excusedBy ? ' · ' + manualEsc(r.excusedBy) : ''}" class="inline-flex items-center justify-center gap-0.5 w-full px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200"><i data-lucide="check" class="w-3 h-3 shrink-0"></i>사유확인 ${r.overdueDays || 0}일</span>`);
+                return `<span title="${r.overdueDays || 0}일 지연 · ${why}${r.excusedBy ? ' · ' + manualEsc(r.excusedBy) : ''}" class="${chip} bg-emerald-50 text-emerald-700 border border-emerald-200"><i data-lucide="check" class="w-3 h-3 shrink-0"></i>사유확인</span>`;
             }
             const why = (r.result === '미실시' || r.notPerformed)
                 ? `예정일 ${manualEsc(r.dueDate || '-')} 에 점검하지 못했습니다`
                 : `예정일 ${manualEsc(r.dueDate || '-')} 을(를) 넘겨 점검했습니다`;
-            return slot(`<span title="${why}" class="inline-flex items-center justify-center gap-0.5 w-full px-1 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold"><i data-lucide="alert-circle" class="w-3 h-3 shrink-0"></i>지연 ${r.overdueDays || 0}일</span>`);
+            return `<span title="${why}" class="${chip} bg-red-500 text-white"><i data-lucide="alert-circle" class="w-3 h-3 shrink-0"></i>지연 ${r.overdueDays || 0}일</span>`;
         };
 
         // 지연 처리는 세 가지 경우가 있다. 모달은 하나를 공유하고 mode 로 갈린다.
@@ -6510,13 +6518,13 @@
                     ? `<button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
                     : '<span class="text-slate-300 text-xs">-</span>';
                 // 지연 실적은 관리자가 사유를 확인해 정상 실적으로 바꿀 수 있다
-                const btnSlot = (inner) => `<span class="inline-flex items-center justify-center w-14 shrink-0">${inner}</span>`;
+                // 버튼도 폭만 고정하고, 해당 없으면 자리를 남기지 않는다 (가운데가 밀리지 않도록)
                 const excuseBtn = !isAdmin ? ''
                     : item._overdue === 'OVERDUE'
-                        ? btnSlot(`<button onclick="openOverdueExcuseModal('${item.id}')" title="그날 사유가 있어 못 한 것이면 확인 처리합니다" class="w-full px-1 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold">사유확인</button>`)
+                        ? `<button onclick="openOverdueExcuseModal('${item.id}')" title="그날 사유가 있어 못 한 것이면 확인 처리합니다" class="w-14 shrink-0 px-1 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold">사유확인</button>`
                         : item._overdue === 'EXCUSED'
-                            ? btnSlot(`<button onclick="revertOverdueExcuse('${item.id}')" title="확인을 취소하고 다시 지연으로 되돌립니다" class="w-full px-1 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-500 text-[10px] font-bold">취소</button>`)
-                            : btnSlot('');
+                            ? `<button onclick="revertOverdueExcuse('${item.id}')" title="확인을 취소하고 다시 지연으로 되돌립니다" class="w-14 shrink-0 px-1 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-500 text-[10px] font-bold">취소</button>`
+                            : '';
                 // 여러 건을 한 번에 처리하기 위한 선택칸. [선택] 을 누른 동안, 미확인 지연 행에만 나온다.
                 const selBox = (isAdmin && pmSelectMode && item._overdue === 'OVERDUE')
                     ? `<input type="checkbox" data-ovsel="${item.id}" ${selectedOverdueIds.has(item.id) ? 'checked' : ''} onchange="toggleOverdueSel('${item.id}', this.checked)" title="일괄 확인 대상으로 선택" class="align-middle w-3.5 h-3.5 accent-emerald-600 cursor-pointer">`
@@ -6538,7 +6546,7 @@
                         <td class="py-2.5 px-2 text-center text-blue-600 font-bold">${item._cycle || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails || '-'}</td>
                         <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
-                        <td class="py-2.5 px-2 whitespace-nowrap"><div class="flex items-center justify-start gap-1">${resBadgeOf(item.result)}${overdueBadgeOf(item)}${excuseBtn}</div></td>
+                        <td class="py-2.5 px-2 whitespace-nowrap"><div class="flex items-center justify-center gap-1">${resBadgeOf(item.result)}${overdueBadgeOf(item)}${excuseBtn}</div></td>
                         <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
                         <td class="py-2.5 px-2 text-center ${item.checkedByName ? 'text-slate-700 font-medium' : 'text-slate-300'}">${item.checkedByName || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${delBtn}</td>
