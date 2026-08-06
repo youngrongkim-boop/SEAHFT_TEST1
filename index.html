@@ -1055,7 +1055,6 @@
                                     <button type="button" onclick="clearOverdueSel()" id="pm-bulk-clear" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40">선택 해제</button>
                                     <button type="button" onclick="bulkConfirmOverdue()" id="pm-bulk-btn" title="선택한 지연 실적에 같은 사유를 한 번에 기록합니다 (정기수리·휴동 등)" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50">일괄 사유 확인</button>
                                 </span>
-                                <button type="button" onclick="runPMRolloverNow()" id="pm-roll-btn" title="예정일이 지난 회차를 지금 바로 미실시 실적으로 만듭니다 (평소에는 접속할 때 자동 처리됩니다)" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-400 text-slate-700 hover:bg-slate-100">지금 지연 정리</button>
                             </span>
 
                             <div class="ml-auto flex flex-col gap-1 shrink-0">
@@ -5084,7 +5083,8 @@
             }, 1500);
         }
 
-        // 관리자가 자정을 기다리지 않고 지금 바로 정리하고 싶을 때
+        // 수동 실행용 비상구. 평소에는 관리자가 접속할 때 자동으로 돌고 자정에 서버도 한 번 더 돌므로
+        // 화면에 버튼을 두지 않았다. 필요하면 개발자 콘솔에서 runPMRolloverNow() 로 부른다.
         window.runPMRolloverNow = async () => {
             if (!requireAdmin('지연 자동 기록')) return;
             const today = getLocalTodayString();
