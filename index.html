@@ -283,6 +283,32 @@
         </div>
     </div>
 
+    <!-- 점검지연 사유 확인 (관리자 전용) -->
+    <div id="pm-overdue-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i> 점검지연 사유 확인</h3>
+                <button type="button" onclick="closeOverdueExcuseModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <div id="pmo-target" class="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 leading-relaxed"></div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">지연 사유 <span class="text-red-500">*</span></label>
+                    <select id="pmo-reason" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">상세 설명 <span class="font-normal text-slate-400">(선택)</span></label>
+                    <textarea id="pmo-note" rows="3" maxlength="300" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="예: 8/1~8/4 라인 휴동으로 설비 정지 불가"></textarea>
+                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">확인하면 이 실적의 <b>점검지연 표시가 사라지고 정상 실적</b>으로 집계됩니다. 누가 언제 확인했는지는 기록으로 남습니다.</p>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2">
+                <button type="button" onclick="closeOverdueExcuseModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
+                <button type="button" id="pmo-save-btn" onclick="saveOverdueExcuse()" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-60">사유 확인</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 사진 크게 보기 (현장 사진 뷰어) -->
     <div id="photo-viewer-modal" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-slate-900/90 p-3" onclick="closePhotoViewer()">
         <div class="w-full max-w-5xl max-h-full flex flex-col" onclick="event.stopPropagation()">
@@ -578,8 +604,11 @@
             <button onclick="switchTab('pm-list')" id="nav-pm-list" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 리스트">
                 <i data-lucide="list-checks" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 리스트</span>
             </button>
-            <button onclick="switchTab('pm-result')" id="nav-pm-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="점검 실적 (예방·돌발·긴급 등 모든 점검 이력)">
-                <i data-lucide="clipboard-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">점검 실적</span>
+            <button onclick="switchTab('pm-result')" id="nav-pm-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 실적 (주기가 있는 예방점검 이력만)">
+                <i data-lucide="clipboard-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 실적</span>
+            </button>
+            <button onclick="switchTab('adhoc-result')" id="nav-adhoc-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="일반·긴급 점검 실적 (주기 없이 수시로 수행한 점검)">
+                <i data-lucide="zap" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">일반·긴급 점검 실적</span>
             </button>
             <button onclick="switchTab('pm-reg')" id="nav-pm-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방·법정·특별·돌발·긴급 등 모든 점검 등록">
                 <i data-lucide="plus-square" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">점검항목 등록</span>
@@ -963,8 +992,7 @@
             <!-- VIEW: 점검 실적 (예방·법정·특별 + 돌발·긴급 모든 점검 이력) -->
             <div id="view-pm-result" class="view-section hidden flex-col gap-3 min-w-0 pb-4">
                 <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
-                    <!-- 점검유형 탭: 주기 유무(정기/수시)로 묶어 보거나 개별 유형으로 본다 -->
-                    <div id="pm-res-type-tabs" class="flex flex-wrap gap-1.5 mb-2 shrink-0"></div>
+                    <p class="text-[11px] text-slate-500 mb-2 shrink-0 leading-relaxed"><b class="text-brand-700">예방점검</b>(주기가 있는 점검)의 실적만 표시합니다. 일반·긴급 점검은 좌측 <b>일반·긴급 점검 실적</b> 탭에서 확인하세요.</p>
                     <div class="mb-2 shrink-0">
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
                             <select id="pm-res-filter-line" onchange="pmHistPage=1; updatePMResFilterEquip(); debouncedRenderPMHistory()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white font-bold text-blue-700 min-w-[70px]">
@@ -994,6 +1022,12 @@
                                 <option value="MONTH">이번 달</option>
                                 <option value="YEAR">올해</option>
                             </select>
+                            <select id="pm-res-filter-overdue" onchange="pmHistPage=1; debouncedRenderPMHistory()" title="예정일을 넘겨 점검한 실적만 골라 봅니다" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-red-500 outline-none bg-white font-medium text-red-600">
+                                <option value="ALL">지연: 전체</option>
+                                <option value="OVERDUE">지연 (사유 미확인)</option>
+                                <option value="EXCUSED">사유 확인됨</option>
+                                <option value="NORMAL">정상 (기한 내)</option>
+                            </select>
                             <input type="text" id="pm-res-search" onkeyup="pmHistPage=1; debouncedRenderPMHistory()" placeholder="설비, 내용, 점검자 검색..." class="w-full sm:w-40 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                             <button type="button" id="reset-pm-res" onclick="resetViewFilters('pm-res')" title="점검유형 탭·필터·검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 text-[11px] md:text-xs font-bold transition"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
                             <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="pm-res-count">총 0건</span>
@@ -1013,7 +1047,7 @@
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">유형</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-28">지연 여부</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 w-32">점검 일시</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">라인</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
@@ -1023,7 +1057,6 @@
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px] text-center">점검기준</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">결과</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">점검자</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24">발생사유</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-red-500 w-14">삭제</th>
                                 </tr>
@@ -1034,6 +1067,76 @@
                     <!-- 모바일 카드 뷰 -->
                     <div id="pm-res-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-175px)] pb-2"></div>
                     <div id="pm-history-pagination"></div>
+                </div>
+            </div>
+
+            <!-- VIEW: 일반·긴급 점검 실적 (주기 없이 수시로 수행한 점검) -->
+            <div id="view-adhoc-result" class="view-section hidden flex-col gap-3 min-w-0 pb-4">
+                <div class="bg-white p-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+                    <div id="adhoc-type-tabs" class="flex flex-wrap gap-1.5 mb-2 shrink-0"></div>
+                    <div class="mb-2 shrink-0">
+                        <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                            <select id="ah-filter-line" onchange="adhocPage=1; updateAdhocFilterEquip(); renderAdhocResults()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-amber-500 outline-none bg-white font-bold text-amber-700 min-w-[70px]">
+                                <option value="ALL">전체 라인</option>
+                            </select>
+                            <select id="ah-filter-equip" onchange="adhocPage=1; renderAdhocResults()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-amber-500 outline-none bg-white font-bold text-amber-700 min-w-[90px]">
+                                <option value="ALL">모든 설비</option>
+                            </select>
+                            <select id="ah-filter-category" onchange="adhocPage=1; renderAdhocResults()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-amber-500 outline-none bg-white font-medium">
+                                <option value="ALL">구분: 전체</option>
+                                <option value="전기">전기</option>
+                                <option value="기계">기계</option>
+                            </select>
+                            <select id="ah-filter-reason" onchange="adhocPage=1; renderAdhocResults()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-amber-500 outline-none bg-white font-medium">
+                                <option value="ALL">발생사유: 전체</option>
+                            </select>
+                            <select id="ah-filter-result" onchange="adhocPage=1; renderAdhocResults()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-amber-500 outline-none bg-white font-medium text-amber-600">
+                                <option value="ALL">결과: 전체</option>
+                                <option value="양호">양호</option>
+                                <option value="불량">불량</option>
+                            </select>
+                            <select id="ah-filter-period" onchange="adhocPage=1; renderAdhocResults()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-amber-500 outline-none bg-white font-medium">
+                                <option value="ALL">전체 기간</option>
+                                <option value="TODAY">오늘</option>
+                                <option value="WEEK">이번 주</option>
+                                <option value="MONTH">이번 달</option>
+                                <option value="YEAR">올해</option>
+                            </select>
+                            <input type="text" id="ah-search" onkeyup="adhocPage=1; renderAdhocResults()" placeholder="설비, 내용, 점검자 검색..." class="w-full sm:w-40 border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-amber-500 outline-none">
+                            <button type="button" id="reset-adhoc" onclick="resetViewFilters('adhoc')" title="점검유형 탭·필터·검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 text-[11px] md:text-xs font-bold transition"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
+                            <span class="text-[11px] md:text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1.5 rounded" id="ah-count">총 0건</span>
+                            <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200" id="ah-summary"></span>
+                            <button onclick="exportAdhocToExcel()" class="ml-auto bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center">
+                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">주기 없이 수시로 수행한 <b class="text-amber-700">일반점검·긴급점검</b> 실적입니다. 좌측 <b>점검항목 등록</b>에서 유형을 일반점검·긴급점검으로 고르고 등록하면 여기에 쌓입니다.</p>
+                    </div>
+
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-190px)] hidden md:block">
+                        <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
+                            <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">유형</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 w-32">점검 일시</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">라인</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200">설비명</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center">구분</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-28">발생사유</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px] text-center">점검기준</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">결과</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">점검자</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-red-500 w-14">삭제</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ah-body" class="divide-y divide-slate-200 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                    <div id="ah-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-190px)] pb-2"></div>
+                    <div id="ah-pagination"></div>
                 </div>
             </div>
 
@@ -3504,6 +3607,9 @@
 
                         pmHistPage = 1;
                         window.debouncedRenderPMHistory();
+                    } else if (tabId === 'adhoc-result') {
+                        adhocPage = 1;
+                        window.renderAdhocResults();
                     } else if (tabId === 'bd-list') {
                         bdListPage = 1;
                         window.debouncedRenderBDList();
@@ -3561,7 +3667,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '점검 실적', 'pm-reg': '점검항목 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'req-board': '요청사항 등록', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '예방점검 실적', 'adhoc-result': '일반·긴급 점검 실적', 'pm-reg': '점검항목 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'req-board': '요청사항 등록', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -3672,6 +3778,7 @@
             });
             onSnapshot(pmResRef, (snapshot) => {
                 rawPMResultsData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => (b.checkedAt?.seconds || 0) - (a.checkedAt?.seconds || 0));
+                if (currentTabId === 'adhoc-result') window.renderAdhocResults();
                 window.debouncedApplyFilterAndRender();
             });
             onSnapshot(histRef, (snapshot) => {
@@ -4603,6 +4710,112 @@
         };
 
         // ==========================================
+        // 점검지연 판정 · 사유 확인
+        // ==========================================
+        // 일별 항목을 예로 들면, 예정일(nextCheckDate)이 지나도 새 항목이 따로 생기지 않는다.
+        // 항목 1건이 계속 '점검지연'으로 남아 있다가, 뒤늦게 점검을 찍으면 그 1건만 실적이 된다.
+        // 그래서 '며칠 늦었는지'는 실적을 남기는 순간에 계산해 실적 문서에 새겨 둬야 한다.
+        // (항목은 점검 직후 다음 회차 예정일로 넘어가 버려 나중에는 되짚을 수 없다)
+        //
+        // 사유 확인: 관리자가 '그날은 사유가 있어 못 했다'고 확인하면 overdueExcused=true 가 되고,
+        //           화면·집계에서 지연으로 세지 않는다. 원본 wasOverdue 는 지우지 않고 남겨
+        //           나중에 '확인된 지연이 몇 건이었나'를 추적할 수 있게 한다.
+        const OVERDUE_REASONS = ['설비 가동 중 (정지 불가)', '라인 휴동 · 비가동', '자재 · 부품 수급 지연',
+            '인력 부재 (휴가 · 교육)', '상위 작업 우선 수행', '점검 항목 자체가 불필요했음', '기타'];
+
+        // 예정일과 실제 점검일시를 비교해 지연 여부·일수를 구한다
+        function overdueInfoOf(dueDate, checkTime) {
+            const due = String(dueDate || '').slice(0, 10);
+            const done = String(checkTime || '').slice(0, 10) || getLocalTodayString();
+            if (!due || !/^\d{4}-\d{2}-\d{2}$/.test(due) || done <= due) return { overdue: false, days: 0 };
+            const days = Math.round((new Date(`${done}T00:00:00`) - new Date(`${due}T00:00:00`)) / 86400000);
+            return { overdue: days > 0, days: Math.max(0, days) };
+        }
+
+        // 실적 1건의 지연 상태: 'NORMAL'(기한 내) · 'OVERDUE'(지연·미확인) · 'EXCUSED'(사유 확인됨)
+        // wasOverdue 필드가 없는 과거 실적은 판단할 근거가 없으므로 NORMAL 로 둔다.
+        const overdueStateOf = (r) => !r.wasOverdue ? 'NORMAL' : (r.overdueExcused ? 'EXCUSED' : 'OVERDUE');
+
+        const overdueBadgeOf = (r) => {
+            const st = overdueStateOf(r);
+            if (st === 'NORMAL') return `<span class="text-slate-300 text-[10px]">정상</span>`;
+            if (st === 'EXCUSED') {
+                const why = manualEsc(r.excuseReason || '사유 확인됨');
+                return `<span title="${why}${r.excusedBy ? ' · ' + manualEsc(r.excusedBy) : ''}" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200"><i data-lucide="check" class="w-3 h-3"></i>사유확인</span>`;
+            }
+            return `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold"><i data-lucide="alert-circle" class="w-3 h-3"></i>지연 ${r.overdueDays || 0}일</span>`;
+        };
+
+        let pendingOverdueId = null;
+
+        window.openOverdueExcuseModal = (resultId) => {
+            if (!requireAdmin('점검지연 사유 확인')) return;
+            const r = rawPMResultsData.find(x => x.id === resultId);
+            if (!r) return showToast('실적을 찾을 수 없습니다.', 'error');
+            pendingOverdueId = resultId;
+
+            document.getElementById('pmo-target').innerHTML = `
+                <p class="font-bold text-slate-800">${manualEsc(r.line || '-')} · ${manualEsc(r.equipmentName || '-')}</p>
+                <p class="text-slate-600 mt-0.5">${manualEsc(r.taskDetails || '-')}</p>
+                <p class="text-slate-500 mt-1">예정일 <b>${manualEsc(r.dueDate || '-')}</b> → 점검일 <b>${manualEsc(pmResultTimeStr(r) || '-')}</b>
+                   <span class="text-red-600 font-bold">(${r.overdueDays || 0}일 지연)</span></p>`;
+
+            const sel = document.getElementById('pmo-reason');
+            sel.innerHTML = OVERDUE_REASONS.map(x => `<option value="${x}">${x}</option>`).join('');
+            if (r.excuseReason && OVERDUE_REASONS.includes(r.excuseReason)) sel.value = r.excuseReason;
+            document.getElementById('pmo-note').value = r.excuseNote || '';
+
+            const modal = document.getElementById('pm-overdue-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons({ root: modal });
+        };
+
+        window.closeOverdueExcuseModal = () => {
+            pendingOverdueId = null;
+            const modal = document.getElementById('pm-overdue-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+
+        window.saveOverdueExcuse = async () => {
+            if (!requireAdmin('점검지연 사유 확인')) return;
+            if (!pendingOverdueId) return;
+            const btn = document.getElementById('pmo-save-btn');
+            const reason = document.getElementById('pmo-reason').value;
+            const note = document.getElementById('pmo-note').value.trim();
+            const r = rawPMResultsData.find(x => x.id === pendingOverdueId);
+            btn.disabled = true;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', pendingOverdueId), {
+                    overdueExcused: true, excuseReason: reason, excuseNote: note,
+                    excusedBy: (currentUser && currentUser.email) || '', excusedAt: serverTimestamp()
+                });
+                await logEditHistory('예방점검 (지연 사유 확인)', (r && r.line) || '-', (r && r.equipmentName) || '-',
+                    `${(r && r.dueDate) || ''} 예정 · ${(r && r.overdueDays) || 0}일 지연 → ${reason}${note ? ' · ' + note : ''}`);
+                showToast('지연 사유를 확인했습니다. 정상 실적으로 처리됩니다.');
+                closeOverdueExcuseModal();
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패 — 관리자 권한을 확인하세요.', 'error');
+            } finally { btn.disabled = false; }
+        };
+
+        // 잘못 확인한 경우 되돌리기 (다시 지연으로)
+        window.revertOverdueExcuse = async (resultId) => {
+            if (!requireAdmin('점검지연 사유 확인 취소')) return;
+            const r = rawPMResultsData.find(x => x.id === resultId);
+            if (!r) return;
+            if (!confirm('사유 확인을 취소하고 다시 점검지연으로 되돌릴까요?')) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', resultId), {
+                    overdueExcused: false, excuseReason: '', excuseNote: '',
+                    excusedBy: (currentUser && currentUser.email) || '', excusedAt: serverTimestamp()
+                });
+                await logEditHistory('예방점검 (지연 사유 확인 취소)', r.line || '-', r.equipmentName || '-', `${r.dueDate || ''} 예정 · ${r.overdueDays || 0}일 지연`);
+                showToast('점검지연으로 되돌렸습니다.');
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        // ==========================================
         // PM Logic
         // ==========================================
         // ----- 점검 등록 폼: 유형에 따라 입력 항목을 바꾼다 -----
@@ -4933,11 +5146,15 @@
                 // 구분·주기·점검기준도 함께 남긴다 (실적 화면에서 원본 항목 없이도 분류·조회 가능)
                 // checkedByName = 점검자 이름(구글 계정 표시이름, 없으면 이메일 아이디). 과거 실적에는 값이 없다.
                 const wt = normalizeWorkType(task.workType); // 항목의 점검유형을 실적과 다음 회차에 그대로 잇는다
+                // 예정일을 넘겨 점검했는지 실적에 새겨 둔다.
+                // 항목(pm_tasks)은 점검 즉시 다음 회차로 넘어가 버려서 나중에는 되짚을 수 없기 때문이다.
+                const od = overdueInfoOf(task.nextCheckDate, checkTime);
                 batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_results')), {
                     taskId: taskId, workType: wt, line: task.line, equipmentName: task.equipmentName,
                     category: task.category || '', cycleType: normalizeCycle(task.cycleType), criteria: task.criteria || '',
                     taskDetails: task.taskDetails, result: resultType, remarks: task.remarks || '',
                     checkedByName: currentEditorFields().editorName,
+                    dueDate: task.nextCheckDate || '', wasOverdue: od.overdue, overdueDays: od.days, overdueExcused: false,
                     checkTime: checkTime, checkedAt: serverTimestamp()
                 });
                 batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks')), {
@@ -5479,6 +5696,7 @@
             const fCat = val('pm-res-filter-category', 'ALL');
             const fCycle = val('pm-res-filter-cycle', 'ALL');
             const fResult = val('pm-res-filter-result', 'ALL');
+            const fOverdue = val('pm-res-filter-overdue', 'ALL');
 
             const idx = buildPMTaskIndex();
             let list = rawPMResultsData.map(r => {
@@ -5494,12 +5712,15 @@
                     _cycle: isAdhocType(wt) ? '수시' : normalizeCycle(rawCycle),
                     _criteria: r.criteria || (t && t.criteria) || '',
                     _reason: r.triggerReason || '',
+                    _overdue: overdueStateOf(r),
                     _when: when,
                     _date: when.slice(0, 10)
                 };
             });
 
-            if (pmResTypeFilter !== 'ALL') list = list.filter(d => d._workType === pmResTypeFilter);
+            // 이 화면은 '예방점검 실적' 전용이다. 일반·긴급은 별도 탭(view-adhoc-result)에서 본다.
+            list = list.filter(d => d._workType === '예방점검');
+            if (fOverdue !== 'ALL') list = list.filter(d => d._overdue === fOverdue);
 
             if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
             if (fEquip !== 'ALL') list = list.filter(d => String(d.equipmentName || '').trim() === fEquip);
@@ -5537,28 +5758,27 @@
             return list;
         }
 
-        // 점검 실적 화면의 유형 탭 (ALL / PLANNED / ADHOC / 개별 유형)
-        let pmResTypeFilter = 'ALL';
-        window.setPMResType = (v) => { pmResTypeFilter = v; pmHistPage = 1; renderPMHistory(); };
+        // 일반·긴급 점검 실적 화면의 유형 탭 (전체 / 일반점검 / 긴급점검)
+        let adhocTypeFilter = 'ALL';
+        let adhocPage = 1;
+        window.setAdhocType = (v) => { adhocTypeFilter = v; adhocPage = 1; renderAdhocResults(); };
+        window.changeAdhocPage = (p) => { adhocPage = p; renderAdhocResults(); };
 
-        function renderPMResTypeTabs() {
-            const el = document.getElementById('pm-res-type-tabs');
+        function renderAdhocTypeTabs() {
+            const el = document.getElementById('adhoc-type-tabs');
             if (!el) return;
             const counts = {};
             rawPMResultsData.forEach(r => {
                 const t = normalizeWorkType(r.workType);
-                counts[t] = (counts[t] || 0) + 1;
+                if (isAdhocType(t)) counts[t] = (counts[t] || 0) + 1;
             });
-            const planned = PLANNED_WORK_TYPES.reduce((a, t) => a + (counts[t] || 0), 0);
-            const adhoc = ADHOC_WORK_TYPES.reduce((a, t) => a + (counts[t] || 0), 0);
-
-            // 전체 + 점검유형 3종. 건수가 0이어도 항상 보여 어떤 유형이 있는지 알 수 있게 한다.
-            const tabs = [['ALL', '전체', planned + adhoc], ...WORK_TYPES.map(t => [t, t, counts[t] || 0])];
+            const total = ADHOC_WORK_TYPES.reduce((a, t) => a + (counts[t] || 0), 0);
+            // 건수가 0이어도 항상 보여 어떤 유형이 있는지 알 수 있게 한다.
+            const tabs = [['ALL', '전체', total], ...ADHOC_WORK_TYPES.map(t => [t, t, counts[t] || 0])];
             el.innerHTML = tabs.map(([v, label, n]) => {
-                const on = pmResTypeFilter === v;
-                const accent = ADHOC_WORK_TYPES.includes(v) ? 'amber' : 'brand';
-                return `<button type="button" onclick="setPMResType('${v}')" class="px-2.5 py-1.5 rounded-md text-[11px] md:text-xs font-bold transition border ${on
-                    ? (accent === 'amber' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-brand-600 text-white border-brand-600 shadow-sm')
+                const on = adhocTypeFilter === v;
+                return `<button type="button" onclick="setAdhocType('${v}')" class="px-2.5 py-1.5 rounded-md text-[11px] md:text-xs font-bold transition border ${on
+                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
                     : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${label} <span class="${on ? 'opacity-80' : 'text-slate-400'}">${n.toLocaleString()}</span></button>`;
             }).join('');
         }
@@ -5573,15 +5793,21 @@
             },
             'pm-res': {
                 btn: 'reset-pm-res',
-                ids: ['pm-res-filter-line', 'pm-res-filter-equip', 'pm-res-filter-category', 'pm-res-filter-cycle', 'pm-res-filter-result', 'pm-res-filter-period', 'pm-res-search'],
-                // 유형 탭과 '특정 항목만 보기'도 필터이므로 함께 해제한다
-                extraCount: () => (pmResTypeFilter !== 'ALL' ? 1 : 0) + (selectedHistoryTaskId ? 1 : 0),
+                ids: ['pm-res-filter-line', 'pm-res-filter-equip', 'pm-res-filter-category', 'pm-res-filter-cycle', 'pm-res-filter-result', 'pm-res-filter-period', 'pm-res-filter-overdue', 'pm-res-search'],
+                // '특정 항목만 보기'도 필터이므로 함께 해제한다
+                extraCount: () => (selectedHistoryTaskId ? 1 : 0),
                 before: () => {
-                    pmResTypeFilter = 'ALL';
                     selectedHistoryTaskId = null;
                     document.getElementById('btn-clear-history-filter')?.classList.add('hidden');
                 },
                 apply: () => { pmHistPage = 1; window.updatePMResFilterEquip(); window.debouncedRenderPMHistory(); }
+            },
+            'adhoc': {
+                btn: 'reset-adhoc',
+                ids: ['ah-filter-line', 'ah-filter-equip', 'ah-filter-category', 'ah-filter-reason', 'ah-filter-result', 'ah-filter-period', 'ah-search'],
+                extraCount: () => (adhocTypeFilter !== 'ALL' ? 1 : 0),
+                before: () => { adhocTypeFilter = 'ALL'; },
+                apply: () => { adhocPage = 1; window.updateAdhocFilterEquip(); window.renderAdhocResults(); }
             },
             'bd-list': {
                 btn: 'reset-bd-list',
@@ -5683,21 +5909,24 @@
         window.renderPMHistory = () => {
             const tbody = document.getElementById('pm-history-body');
             if (!tbody) return;
-            renderPMResTypeTabs();
             const cardsEl = document.getElementById('pm-res-cards');
             const pagEl = document.getElementById('pm-history-pagination');
             const list = getFilteredPMHistory();
 
             const good = list.filter(d => d.result === '양호').length;
             const bad = list.length - good;
+            const overdueN = list.filter(d => d._overdue === 'OVERDUE').length;
+            const excusedN = list.filter(d => d._overdue === 'EXCUSED').length;
             const countEl = document.getElementById('pm-res-count');
             if (countEl) countEl.innerText = `총 ${list.length.toLocaleString()}건`;
             const sumEl = document.getElementById('pm-res-summary');
-            if (sumEl) sumEl.innerHTML = `<span class="text-blue-600">양호 ${good.toLocaleString()}</span><span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`;
+            if (sumEl) sumEl.innerHTML = `<span class="text-blue-600">양호 ${good.toLocaleString()}</span><span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`
+                + `<span class="text-slate-300 mx-1">|</span><span class="text-red-600">지연 ${overdueN.toLocaleString()}</span>`
+                + `<span class="text-slate-300 mx-1">/</span><span class="text-emerald-600">사유확인 ${excusedN.toLocaleString()}</span>`;
 
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="14" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검 실적이 없습니다.</td></tr>`;
-                if (cardsEl) cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">조건에 맞는 점검 실적이 없습니다.</div>`;
+                tbody.innerHTML = `<tr><td colspan="13" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 예방점검 실적이 없습니다.</td></tr>`;
+                if (cardsEl) cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">조건에 맞는 예방점검 실적이 없습니다.</div>`;
                 if (pagEl) pagEl.innerHTML = '';
                 return;
             }
@@ -5721,11 +5950,18 @@
                 const delBtn = canEditLine(item.line)
                     ? `<button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
                     : '<span class="text-slate-300 text-xs">-</span>';
+                // 지연 실적은 관리자가 사유를 확인해 정상 실적으로 바꿀 수 있다
+                const excuseBtn = !isAdmin ? ''
+                    : item._overdue === 'OVERDUE'
+                        ? `<button onclick="openOverdueExcuseModal('${item.id}')" title="그날 사유가 있어 못 한 것이면 확인 처리합니다" class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold">사유확인</button>`
+                        : item._overdue === 'EXCUSED'
+                            ? `<button onclick="revertOverdueExcuse('${item.id}')" title="확인을 취소하고 다시 지연으로 되돌립니다" class="ml-1 px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-500 text-[10px] font-bold">취소</button>`
+                            : '';
 
                 html += `
                     <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100">
                         <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
-                        <td class="py-2.5 px-2 text-center">${workTypeBadge(item._workType)}</td>
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">${overdueBadgeOf(item)}${excuseBtn}</td>
                         <td class="py-2.5 px-3 font-medium text-slate-500">${item._when || '-'}</td>
                         <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line || '-'}</td>
                         <td class="py-2.5 px-3 font-bold text-slate-800">${item.equipmentName || '-'}</td>
@@ -5735,7 +5971,6 @@
                         <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${resBadgeOf(item.result)}</td>
                         <td class="py-2.5 px-2 text-center ${item.checkedByName ? 'text-slate-700 font-medium' : 'text-slate-300'}">${item.checkedByName || '-'}</td>
-                        <td class="py-2.5 px-2 text-center ${item._reason ? 'text-amber-700 font-medium' : 'text-slate-300'}">${item._reason || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${delBtn}</td>
                     </tr>
@@ -5752,11 +5987,10 @@
                             ${resBadgeOf(item.result)}
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 text-[10px] mb-1">
-                            ${workTypeBadge(item._workType)}
+                            ${overdueBadgeOf(item)}${excuseBtn}
                             <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">${item._category || '-'}</span>
                             <span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100">${item._cycle || '-'}</span>
                             ${item.checkedByName ? `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold">점검자 ${item.checkedByName}</span>` : ''}
-                            ${item._reason ? `<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-bold border border-amber-200">${item._reason}</span>` : ''}
                             <span class="text-slate-400 ml-auto">${item._when || '-'}</span>
                         </div>
                         <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
@@ -5782,16 +6016,212 @@
             const list = getFilteredPMHistory();
             if(list.length === 0) return showToast('출력할 데이터가 없습니다.', 'error');
 
-            const ws_data = [["점검유형", "점검일시", "라인", "설비명", "구분", "주기", "작업 세부사항", "점검기준", "결과", "점검자", "발생사유", "특이사항"]];
+            const stLabel = { NORMAL: '정상', OVERDUE: '지연', EXCUSED: '지연(사유확인)' };
+            const ws_data = [["지연여부", "예정일", "지연일수", "지연사유", "점검일시", "라인", "설비명", "구분", "주기", "작업 세부사항", "점검기준", "결과", "점검자", "특이사항"]];
             list.forEach(item => {
-                ws_data.push([item._workType || '', item._when || '', item.line || '', item.equipmentName || '', item._category || '', item._cycle || '',
-                              item.taskDetails || '', item._criteria || '', item.result || '', item.checkedByName || '', item._reason || '', item.remarks || '']);
+                ws_data.push([stLabel[item._overdue] || '', item.dueDate || '', item.wasOverdue ? (item.overdueDays || 0) : '',
+                              item.excuseReason || '', item._when || '', item.line || '', item.equipmentName || '', item._category || '', item._cycle || '',
+                              item.taskDetails || '', item._criteria || '', item.result || '', item.checkedByName || '', item.remarks || '']);
             });
 
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "PM_Results");
             XLSX.writeFile(wb, "Seah_PM_Results.xlsx");
+        };
+
+        // ==========================================
+        // 일반·긴급 점검 실적 (주기 없이 수시로 수행한 점검)
+        // ==========================================
+        window.updateAdhocFilterEquip = () => {
+            const lineSel = document.getElementById('ah-filter-line');
+            const eqSel = document.getElementById('ah-filter-equip');
+            if (!lineSel || !eqSel) return;
+            const line = lineSel.value;
+            const prev = eqSel.value;
+            const names = [...new Set(rawPMResultsData
+                .filter(r => isAdhocType(r.workType) && (line === 'ALL' || r.line === line))
+                .map(r => String(r.equipmentName || '').trim()).filter(Boolean))].sort();
+            eqSel.innerHTML = '<option value="ALL">모든 설비</option>' + names.map(n => `<option value="${manualEsc(n)}">${manualEsc(n)}</option>`).join('');
+            eqSel.value = names.includes(prev) ? prev : 'ALL';
+        };
+
+        function initAdhocFilters() {
+            const lineSel = document.getElementById('ah-filter-line');
+            if (lineSel && lineSel.options.length <= 1) {
+                lineSel.innerHTML = '<option value="ALL">전체 라인</option>' + NAV_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            }
+            const rsnSel = document.getElementById('ah-filter-reason');
+            if (rsnSel && rsnSel.options.length <= 1) {
+                rsnSel.innerHTML = '<option value="ALL">발생사유: 전체</option>' + ADHOC_REASONS.map(r => `<option value="${r}">${r}</option>`).join('');
+            }
+            window.updateAdhocFilterEquip();
+        }
+
+        function getFilteredAdhocResults() {
+            const val = (id, dflt) => (document.getElementById(id)?.value ?? dflt);
+            const kw = String(val('ah-search', '')).toLowerCase().trim();
+            const fLine = val('ah-filter-line', 'ALL');
+            const fEquip = val('ah-filter-equip', 'ALL');
+            const fCat = val('ah-filter-category', 'ALL');
+            const fReason = val('ah-filter-reason', 'ALL');
+            const fResult = val('ah-filter-result', 'ALL');
+            const period = val('ah-filter-period', 'ALL');
+
+            let list = rawPMResultsData
+                .filter(r => isAdhocType(r.workType))
+                .map(r => {
+                    const when = pmResultTimeStr(r);
+                    return {
+                        ...r,
+                        _workType: normalizeWorkType(r.workType),
+                        _category: r.category || '',
+                        _criteria: r.criteria || '',
+                        _reason: r.triggerReason || '',
+                        _when: when,
+                        _date: when.slice(0, 10)
+                    };
+                });
+
+            if (adhocTypeFilter !== 'ALL') list = list.filter(d => d._workType === adhocTypeFilter);
+            if (fLine !== 'ALL') list = list.filter(d => d.line === fLine);
+            if (fEquip !== 'ALL') list = list.filter(d => String(d.equipmentName || '').trim() === fEquip);
+            if (fCat !== 'ALL') list = list.filter(d => d._category === fCat);
+            if (fReason !== 'ALL') list = list.filter(d => d._reason === fReason);
+            if (fResult !== 'ALL') list = list.filter(d => d.result === fResult);
+            if (kw) {
+                list = list.filter(d => [d.equipmentName, d.taskDetails, d.remarks, d.result, d.line, d._criteria, d._category, d.checkedByName, d._workType, d._reason]
+                    .some(v => String(v || '').toLowerCase().includes(kw)));
+            }
+            if (period !== 'ALL') {
+                const todayStr = getLocalTodayString();
+                const weekStart = (() => {
+                    const d = new Date(todayStr);
+                    d.setDate(d.getDate() - d.getDay());
+                    const off = d.getTimezoneOffset() * 60000;
+                    return new Date(d - off).toISOString().slice(0, 10);
+                })();
+                list = list.filter(d => {
+                    const ds = d._date;
+                    if (!ds) return false;
+                    if (period === 'TODAY') return ds === todayStr;
+                    if (period === 'WEEK') return ds >= weekStart && ds <= todayStr;
+                    if (period === 'MONTH') return ds.slice(0, 7) === todayStr.slice(0, 7);
+                    if (period === 'YEAR') return ds.slice(0, 4) === todayStr.slice(0, 4);
+                    return true;
+                });
+            }
+            return list;
+        }
+
+        window.renderAdhocResults = () => {
+            const tbody = document.getElementById('ah-body');
+            if (!tbody) return;
+            initAdhocFilters();
+            renderAdhocTypeTabs();
+            const cardsEl = document.getElementById('ah-cards');
+            const pagEl = document.getElementById('ah-pagination');
+            const list = getFilteredAdhocResults();
+
+            const good = list.filter(d => d.result === '양호').length;
+            const bad = list.length - good;
+            document.getElementById('ah-count').innerText = `총 ${list.length.toLocaleString()}건`;
+            document.getElementById('ah-summary').innerHTML =
+                `<span class="text-blue-600">양호 ${good.toLocaleString()}</span><span class="text-slate-300 mx-1">/</span><span class="text-red-600">불량 ${bad.toLocaleString()}</span>`;
+
+            if (!list.length) {
+                const msg = rawPMResultsData.some(r => isAdhocType(r.workType))
+                    ? '조건에 맞는 일반·긴급 점검 실적이 없습니다.'
+                    : '아직 등록된 일반·긴급 점검 실적이 없습니다.<br><span class="text-[11px]">좌측 <b>점검항목 등록</b>에서 유형을 <b>일반점검</b> 또는 <b>긴급점검</b>으로 골라 등록하세요.</span>';
+                tbody.innerHTML = `<tr><td colspan="13" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">${msg}</td></tr>`;
+                if (cardsEl) cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">${msg}</div>`;
+                if (pagEl) pagEl.innerHTML = '';
+                if (window.refreshFilterResetBtns) window.refreshFilterResetBtns();
+                return;
+            }
+
+            const totalPages = Math.ceil(list.length / PM_LIST_PER_PAGE);
+            if (adhocPage > totalPages) adhocPage = Math.max(1, totalPages);
+            const start = (adhocPage - 1) * PM_LIST_PER_PAGE;
+            const paginated = list.slice(start, start + PM_LIST_PER_PAGE);
+
+            const resBadgeOf = (r) => r === '양호'
+                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] md:text-[11px] font-bold border border-blue-200">양호</span>`
+                : r === '불량'
+                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] md:text-[11px] font-bold border border-red-200">불량</span>`
+                    : `<span class="text-slate-400 text-[10px]">-</span>`;
+
+            let html = '', cards = '';
+            paginated.forEach((item, i) => {
+                const absIndex = start + i + 1;
+                const isBad = item.result === '불량';
+                const delBtn = canEditLine(item.line)
+                    ? `<button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
+                    : '<span class="text-slate-300 text-xs">-</span>';
+
+                html += `
+                    <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100">
+                        <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
+                        <td class="py-2.5 px-2 text-center">${workTypeBadge(item._workType)}</td>
+                        <td class="py-2.5 px-3 font-medium text-slate-500">${item._when || '-'}</td>
+                        <td class="py-2.5 px-3 text-center font-bold text-brand-600">${item.line || '-'}</td>
+                        <td class="py-2.5 px-3 font-bold text-slate-800">${item.equipmentName || '-'}</td>
+                        <td class="py-2.5 px-2 text-center text-slate-600">${item._category || '-'}</td>
+                        <td class="py-2.5 px-2 text-center ${item._reason ? 'text-amber-700 font-medium' : 'text-slate-300'}">${item._reason || '-'}</td>
+                        <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails || '-'}</td>
+                        <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
+                        <td class="py-2.5 px-2 text-center">${resBadgeOf(item.result)}</td>
+                        <td class="py-2.5 px-2 text-center ${item.checkedByName ? 'text-slate-700 font-medium' : 'text-slate-300'}">${item.checkedByName || '-'}</td>
+                        <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
+                        <td class="py-2.5 px-2 text-center">${delBtn}</td>
+                    </tr>`;
+
+                cards += `
+                    <div class="bg-white border ${isBad ? 'border-red-200 ring-1 ring-red-100' : 'border-slate-200'} rounded-xl p-3 shadow-sm">
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="font-bold text-brand-600 text-[11px] shrink-0">${item.line || '-'}</span>
+                                <span class="font-semibold text-slate-800 text-sm truncate">${item.equipmentName || '-'}</span>
+                            </div>
+                            ${resBadgeOf(item.result)}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 text-[10px] mb-1">
+                            ${workTypeBadge(item._workType)}
+                            <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">${item._category || '-'}</span>
+                            ${item._reason ? `<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-bold border border-amber-200">${item._reason}</span>` : ''}
+                            ${item.checkedByName ? `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold">점검자 ${item.checkedByName}</span>` : ''}
+                            <span class="text-slate-400 ml-auto">${item._when || '-'}</span>
+                        </div>
+                        <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
+                        <div class="flex items-end justify-between gap-2 mt-1.5">
+                            <div class="text-xs text-slate-500 leading-snug min-w-0"><span class="text-slate-400 mr-1">특이</span>${item.remarks || '-'}</div>
+                            <div class="shrink-0">${delBtn}</div>
+                        </div>
+                    </div>`;
+            });
+
+            tbody.innerHTML = html;
+            if (cardsEl) cardsEl.innerHTML = cards;
+            if (pagEl) pagEl.innerHTML = getPaginationHTML(adhocPage, totalPages, 'window.changeAdhocPage');
+            if (window.lucide) {
+                lucide.createIcons({ root: tbody });
+                if (cardsEl) lucide.createIcons({ root: cardsEl });
+            }
+            if (window.refreshFilterResetBtns) window.refreshFilterResetBtns();
+        };
+
+        window.exportAdhocToExcel = () => {
+            const list = getFilteredAdhocResults();
+            if (!list.length) return showToast('출력할 데이터가 없습니다.', 'error');
+            const ws_data = [["점검유형", "점검일시", "라인", "설비명", "구분", "발생사유", "작업 세부사항", "점검기준", "결과", "점검자", "특이사항"]];
+            list.forEach(item => {
+                ws_data.push([item._workType || '', item._when || '', item.line || '', item.equipmentName || '', item._category || '',
+                              item._reason || '', item.taskDetails || '', item._criteria || '', item.result || '', item.checkedByName || '', item.remarks || '']);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Adhoc_Results");
+            XLSX.writeFile(wb, "Seah_Adhoc_Results.xlsx");
         };
 
         // ==========================================
@@ -7966,10 +8396,10 @@
                 ['검색어', document.getElementById('pm-res-search')?.value.trim()]
             ]);
 
-            const typeLabel = pmResTypeFilter === 'ALL' ? '' : pmResTypeFilter;
+            const ovLabel = { OVERDUE: '지연(사유 미확인)', EXCUSED: '지연(사유 확인됨)', NORMAL: '정상' }[val('pm-res-filter-overdue')] || '';
             const L = [];
-            L.push('# 점검 실적 보고서');
-            L.push(`**조회 조건** ${typeLabel ? `유형 **${typeLabel}** · ` : ''}${cond}`);
+            L.push('# 예방점검 실적 보고서');
+            L.push(`**조회 조건** ${ovLabel ? `지연여부 **${ovLabel}** · ` : ''}${cond}`);
             L.push(`**대상** 총 ${laNum(list.length)}건  |  **출력일** ${getLocalTodayString()}`);
             L.push('');
             if (!list.length) { L.push('조건에 맞는 점검 실적이 없습니다.'); return L.join('\n'); }
