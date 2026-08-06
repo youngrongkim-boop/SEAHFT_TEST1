@@ -2046,8 +2046,8 @@
         </div>
     </div>
 
-    <div id="bd-edit-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[110] backdrop-blur-sm p-3 md:p-6">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden transform scale-95 transition-transform" id="bd-edit-modal-content">
+    <div id="bd-edit-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[110] backdrop-blur-sm p-2 md:p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-[1600px] h-[96vh] flex flex-col overflow-hidden transform scale-95 transition-transform" id="bd-edit-modal-content">
             <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="edit" class="w-5 h-5 mr-2 text-red-500"></i> 고장실적 데이터 수정</h3>
                 <button onclick="closeBDEditModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -2055,7 +2055,9 @@
             <div class="p-5 flex-1 overflow-y-auto custom-scroll">
                 <form id="bd-edit-form" class="space-y-4">
                     <input type="hidden" id="edit-bd-id">
-                    <div class="grid grid-cols-2 gap-4">
+                    <!-- 짧은 입력들은 넓은 폭을 활용해 한 줄에 여러 개씩 담는다.
+                         위쪽을 압축한 만큼 아래 원인·조치·대책 칸이 커진다. -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">라인</label>
                             <select id="edit-bd-line" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none"></select>
@@ -2064,8 +2066,6 @@
                             <label class="block text-xs font-bold text-slate-700 mb-1">설비명</label>
                             <input type="text" id="edit-bd-equip" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
                         </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">구분</label>
                             <select id="edit-bd-category" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
@@ -2073,11 +2073,15 @@
                             </select>
                         </div>
                         <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">작업구분</label>
+                            <select id="edit-bd-workkind" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none bg-white font-bold">
+                                <option value="고장">고장</option><option value="정기수리">정기수리</option>
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">대분류</label>
                             <input type="text" id="edit-bd-main" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
                         </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">중분류</label>
                             <input type="text" id="edit-bd-sub" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
@@ -2086,28 +2090,20 @@
                             <label class="block text-xs font-bold text-slate-700 mb-1">소분류</label>
                             <input type="text" id="edit-bd-detail" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
                         </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">작업구분</label>
-                            <select id="edit-bd-workkind" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none bg-white font-bold">
-                                <option value="고장">고장</option><option value="정기수리">정기수리</option>
-                            </select>
-                        </div>
-                        <div class="sm:col-span-2">
                             <label class="block text-xs font-bold text-slate-700 mb-1">고장명</label>
                             <input type="text" id="edit-bd-fault" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
                         </div>
                     </div>
-                    <!-- 원인·조치·대책은 실제로 길게 적는 칸이라 넓게 잡고 직접 늘릴 수 있게 둔다 -->
+                    <!-- 원인·조치·대책은 실제로 길게 적는 칸이라 화면 높이에 맞춰 크게 잡는다 -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">발생원인</label>
-                            <textarea id="edit-bd-cause" rows="8" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y min-h-[120px]"></textarea>
+                            <textarea id="edit-bd-cause" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38vh] min-h-[200px]"></textarea>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">조치내용</label>
-                            <textarea id="edit-bd-content" rows="8" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y min-h-[120px]"></textarea>
+                            <textarea id="edit-bd-content" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38vh] min-h-[200px]"></textarea>
                         </div>
                         <div>
                             <div class="flex items-center justify-between gap-2 mb-1">
@@ -2115,34 +2111,36 @@
                                 <button type="button" onclick="pickBDEditManual()" title="PDF 메뉴얼을 추가합니다 (최대 20MB)" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 shrink-0"><i data-lucide="paperclip" class="w-3.5 h-3.5"></i> 메뉴얼 추가</button>
                                 <input type="file" id="edit-bd-manual-file" accept="application/pdf,.pdf" multiple class="hidden" onchange="onBDEditManualPicked(this)">
                             </div>
-                            <textarea id="edit-bd-prevention" rows="8" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y min-h-[120px]"></textarea>
+                            <textarea id="edit-bd-prevention" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38vh] min-h-[200px]"></textarea>
                         </div>
                     </div>
-                    <div>
-                        <p class="text-[10px] font-bold text-slate-400 mb-1">첨부 메뉴얼</p>
-                        <div id="edit-bd-manual-list" class="space-y-1"></div>
-                    </div>
-                    <!-- 현장 사진 (수정 모달) -->
-                    <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                        <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                            <label class="block text-xs font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="camera" class="w-3.5 h-3.5 text-red-500"></i> 현장 사진 <span class="font-normal text-slate-400">(최대 10장)</span></label>
-                            <div class="flex gap-1.5 shrink-0">
-                                <button type="button" onclick="pickBDEditPhoto('camera')" class="px-2 py-1 rounded-md text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 flex items-center gap-1 transition"><i data-lucide="camera" class="w-3 h-3"></i> 촬영</button>
-                                <button type="button" onclick="pickBDEditPhoto('file')" class="px-2 py-1 rounded-md text-[11px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 flex items-center gap-1 transition"><i data-lucide="image-plus" class="w-3 h-3"></i> 추가</button>
+                    <!-- 일시·첨부·사진을 한 줄에 나란히 두어 세로 공간을 아낀다 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">발생 일시</label>
+                                <div id="edit-bd-start-box"></div>
                             </div>
-                            <input type="file" id="edit-bd-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="onBDEditPhotoPicked(this)">
-                            <input type="file" id="edit-bd-photo-file" accept="image/*" multiple class="hidden" onchange="onBDEditPhotoPicked(this)">
-                        </div>
-                        <div id="edit-bd-photo-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2"></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">발생 일시</label>
-                            <div id="edit-bd-start-box"></div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">완료 일시</label>
+                                <div id="edit-bd-end-box"></div>
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">완료 일시</label>
-                            <div id="edit-bd-end-box"></div>
+                            <p class="text-xs font-bold text-slate-700 mb-1">첨부 메뉴얼</p>
+                            <div id="edit-bd-manual-list" class="space-y-1"></div>
+                        </div>
+                        <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                                <label class="block text-xs font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="camera" class="w-3.5 h-3.5 text-red-500"></i> 현장 사진 <span class="font-normal text-slate-400">(최대 10장)</span></label>
+                                <div class="flex gap-1.5 shrink-0">
+                                    <button type="button" onclick="pickBDEditPhoto('camera')" class="px-2 py-1 rounded-md text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 flex items-center gap-1 transition"><i data-lucide="camera" class="w-3 h-3"></i> 촬영</button>
+                                    <button type="button" onclick="pickBDEditPhoto('file')" class="px-2 py-1 rounded-md text-[11px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 flex items-center gap-1 transition"><i data-lucide="image-plus" class="w-3 h-3"></i> 추가</button>
+                                </div>
+                                <input type="file" id="edit-bd-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="onBDEditPhotoPicked(this)">
+                                <input type="file" id="edit-bd-photo-file" accept="image/*" multiple class="hidden" onchange="onBDEditPhotoPicked(this)">
+                            </div>
+                            <div id="edit-bd-photo-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2"></div>
                         </div>
                     </div>
                 </form>
