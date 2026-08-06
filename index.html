@@ -975,7 +975,8 @@
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-24">예정일</th>
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-14">상태</th>
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-14">특이사항</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24">조치시간</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24" title="이 점검에 원래 얼마나 걸리는지 (기준값)">표준시간<br><span class="font-normal text-[10px] text-slate-400">(분)</span></th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24" title="이번에 실제로 걸린 시간">조치시간<br><span class="font-normal text-[10px] text-slate-400">(분)</span></th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">실적등록</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
                                 </tr>
@@ -1277,6 +1278,11 @@
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-1.5">점검기준</label>
                                 <textarea id="pm-criteria" rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="예: 소음 및 진동 기준치 이하"></textarea>
+                            </div>
+                            <div id="pm-standard-wrap">
+                                <label class="block text-sm font-bold text-slate-700 mb-1.5">표준시간 <span class="text-[11px] font-normal text-slate-400 ml-1">(분 · 선택)</span></label>
+                                <input type="number" min="0" step="1" id="pm-standard" placeholder="예: 30" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">이 점검에 <b>원래 얼마나 걸리는지</b>를 분 단위로 적습니다. 실제로 걸린 시간(조치시간)은 <b>예방점검 리스트</b>에서 점검할 때 기록합니다.</p>
                             </div>
                             <p id="pm-reg-note" class="text-xs text-blue-600 bg-blue-50 p-2 rounded flex items-start sm:items-center mt-auto mb-4">
                                 <i data-lucide="info" class="w-4 h-4 mr-1 shrink-0 mt-0.5 sm:mt-0"></i>
@@ -1994,9 +2000,15 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1">점검기준</label>
                         <input type="text" id="edit-pm-criteria" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">예정일</label>
-                        <input type="date" id="edit-pm-nextdate" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">예정일</label>
+                            <input type="date" id="edit-pm-nextdate" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">표준시간 <span class="font-normal text-slate-400">(분)</span></label>
+                            <input type="number" min="0" step="1" id="edit-pm-standard" placeholder="예: 30" title="이 점검에 원래 걸리는 시간. 실제 조치시간은 예방점검 리스트에서 적습니다." class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                        </div>
                     </div>
                 </form>
                 <div class="flex justify-between items-center gap-2 mt-6">
@@ -2641,6 +2653,49 @@
             const t = normalizeWorkType(v);
             return `<span class="px-1.5 py-0.5 rounded text-[10px] md:text-[11px] font-bold border ${WORK_TYPE_STYLE[t]}">${t}</span>`;
         };
+
+        // ==========================================
+        // 점검 소요시간 (표준시간 · 조치시간)
+        // ==========================================
+        // 저장은 항상 '분 단위 숫자'로 한다.
+        //   standardMinutes : 이 점검에 원래 얼마나 걸리는가 (기준값)
+        //   actionMinutes   : 이번에 실제로 얼마나 걸렸는가 (현장 기록)
+        //
+        // 예전에는 actionTime 에 '30분', '1시간 30분', '45' 같은 자유 문구를 그대로 담았다.
+        // 그러면 같은 1시간이 '60', '60분', '1시간', '1:00' 네 가지로 쌓여 합계·평균·정렬이
+        // 제각각이 되고, 오타 하나에 조용히 0으로 취급된다. 숫자로 통일하고 화면에 보여줄 때만
+        // '1시간 30분'처럼 읽기 좋게 바꾼다.
+        // 기존 문자열 데이터는 그대로 두고 읽을 때 파싱해서 쓴다(마이그레이션 불필요).
+        function parseActionMinutes(raw) {
+            if (raw === null || raw === undefined) return 0;
+            if (typeof raw === 'number') return isFinite(raw) && raw > 0 ? Math.round(raw) : 0;
+            const s = String(raw).trim();
+            if (!s) return 0;
+            const colon = s.match(/^(\d+)\s*:\s*(\d{1,2})$/);       // 1:30
+            if (colon) return parseInt(colon[1], 10) * 60 + parseInt(colon[2], 10);
+            let total = 0, matched = false;
+            const h = s.match(/([\d.]+)\s*시간/);
+            if (h) { total += parseFloat(h[1]) * 60; matched = true; }
+            const m = s.match(/([\d.]+)\s*분/);
+            if (m) { total += parseFloat(m[1]); matched = true; }
+            if (!matched) { const num = s.replace(/[^\d.]/g, ''); if (num) total = parseFloat(num); } // 단위 없으면 분
+            return isNaN(total) || total < 0 ? 0 : Math.round(total);
+        }
+
+        // 숫자(분) → '1시간 30분'. 60분 미만이면 '45분'.
+        function fmtMinutes(mins) {
+            mins = Math.round(mins || 0);
+            if (mins <= 0) return '';
+            const h = Math.floor(mins / 60), m = mins % 60;
+            const parts = [];
+            if (h) parts.push(`${h}시간`);
+            if (m) parts.push(`${m}분`);
+            return parts.join(' ');
+        }
+
+        // 항목에서 값을 꺼낸다. 숫자 필드가 없으면 예전 문자열(actionTime)을 파싱한다.
+        const stdMinutesOf = (t) => parseActionMinutes((t && (t.standardMinutes ?? t.standardTime)) || 0);
+        const actMinutesOf = (t) => parseActionMinutes((t && (t.actionMinutes ?? t.actionTime)) || 0);
 
         function getDynamicEquipments(line) {
             let equips = new Set();
@@ -4660,7 +4715,8 @@
             document.getElementById('edit-pm-details').value = item.taskDetails;
             document.getElementById('edit-pm-criteria').value = item.criteria;
             document.getElementById('edit-pm-nextdate').value = item.nextCheckDate;
-            
+            document.getElementById('edit-pm-standard').value = stdMinutesOf(item) || '';
+
             const modal = document.getElementById('pm-edit-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => document.getElementById('pm-edit-modal-content').classList.remove('scale-95'), 10);
@@ -4701,10 +4757,12 @@
                 cycleType: document.getElementById('edit-pm-cycle').value,
                 taskDetails: document.getElementById('edit-pm-details').value.trim(),
                 criteria: document.getElementById('edit-pm-criteria').value.trim(),
-                nextCheckDate: document.getElementById('edit-pm-nextdate').value
+                nextCheckDate: document.getElementById('edit-pm-nextdate').value,
+                standardMinutes: toMinutes(document.getElementById('edit-pm-standard').value)
             };
 
             let diffs = [];
+            if(stdMinutesOf(old) !== newData.standardMinutes) diffs.push(`표준시간 변경(${stdMinutesOf(old)}분->${newData.standardMinutes}분)`);
             if(old.taskDetails !== newData.taskDetails) diffs.push("작업내용 변경");
             if(old.cycleType !== newData.cycleType) diffs.push(`주기 변경(${old.cycleType}->${newData.cycleType})`);
             if(old.nextCheckDate !== newData.nextCheckDate) diffs.push(`예정일 변경(${old.nextCheckDate}->${newData.nextCheckDate})`);
@@ -5432,6 +5490,7 @@
 
             // 정기(주기 있음) ↔ 수시 입력 전환
             el('pm-cycle-wrap').classList.toggle('hidden', adhoc);
+            el('pm-standard-wrap').classList.toggle('hidden', adhoc);
             el('pm-adhoc-time-wrap').classList.toggle('hidden', !adhoc);
             el('pm-adhoc-fields').classList.toggle('hidden', !adhoc);
             el('pm-cycle').required = !adhoc;
@@ -5521,6 +5580,8 @@
                 line, equipmentName, category, workType,
                 cycleType: cycleCode,
                 taskDetails, criteria,
+                standardMinutes: toMinutes(document.getElementById('pm-standard').value),
+                actionMinutes: 0,
                 status: '미점검',
                 remarks: '',
                 nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), cycleCode, 0),
@@ -5585,7 +5646,7 @@
 
             document.getElementById('pm-list-count').innerText = `총 ${currentList.length}건`;
             if(currentList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검항목이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="14" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">조건에 맞는 점검항목이 없습니다.</td></tr>`;
                 document.getElementById('pm-list-cards').innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">조건에 맞는 점검항목이 없습니다.</div>`;
                 document.getElementById('pm-list-pagination').innerHTML = '';
                 return;
@@ -5622,6 +5683,17 @@
                 const highlight = selectedHistoryTaskId === item.id ? 'bg-blue-50 ring-1 ring-blue-200' : '';
                 const rowColor = isDone ? 'bg-slate-50 opacity-60' : (isOverdue ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50');
 
+                // 소요시간은 여기(예방점검 리스트)에서만 입력한다. 현황판은 읽기 전용으로 보여준다.
+                // 표준시간은 관리 기준값이라 담당자·관리자만 고칠 수 있다 (firestore.rules 와 동일 조건).
+                const stdMin = stdMinutesOf(item);
+                const actMin = actMinutesOf(item);
+                const numInput = (val, fn, ph, tip) =>
+                    `<input type="number" min="0" step="1" value="${val || ''}" onchange="${fn}('${item.id}', this.value)" placeholder="${ph}" title="${tip}" class="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50">`;
+                const stdCell = canEditLine(item.line)
+                    ? numInput(stdMin, 'updatePMStandardTime', '기준', '이 점검에 원래 걸리는 시간 (분)')
+                    : `<span class="text-[11px] text-slate-500" title="담당자·관리자만 수정할 수 있습니다">${stdMin ? fmtMinutes(stdMin) : '-'}</span>`;
+                const actCell = numInput(actMin, 'updatePMActionTime', '실제', '이번에 실제로 걸린 시간 (분)');
+
                 html += `
                     <tr class="${rowColor} ${highlight} transition-colors border-b border-slate-100">
                         <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
@@ -5634,7 +5706,8 @@
                         <td class="py-2.5 px-1.5 text-center font-medium ${isOverdue && !isDone ? 'text-red-600 font-bold' : (isDone ? 'text-slate-400' : 'text-slate-800')}">${item.nextCheckDate}</td>
                         <td class="py-2.5 px-1.5 text-center">${statusBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${remarksBtn}</td>
-                        <td class="py-2.5 px-2 text-center"><input type="text" value="${(item.actionTime || '').replace(/"/g,'&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="예:30분" class="w-20 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50"></td>
+                        <td class="py-2.5 px-2 text-center">${stdCell}</td>
+                        <td class="py-2.5 px-2 text-center">${actCell}</td>
                         <td class="py-2.5 px-2 text-center">${actionBtns}</td>
                         <td class="py-2.5 px-2 text-center">
                             ${canEditLine(item.line) ? `<button onclick="openPMEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition p-1 bg-slate-100 hover:bg-blue-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : '<span class="text-slate-300 text-xs">-</span>'}
@@ -5661,11 +5734,15 @@
                             <span class="text-[11px] ${isOverdue && !isDone ? 'text-red-600 font-bold' : 'text-slate-500'}">예정일 ${item.nextCheckDate}</span>
                             ${remarksBtn}
                         </div>
+                        <div class="flex items-center gap-2 mt-2 text-[11px]">
+                            <span class="text-slate-400 shrink-0">표준</span>${stdCell}
+                            <span class="text-slate-400 shrink-0 ml-1">조치</span>${actCell}
+                            <span class="text-slate-400 shrink-0">분</span>
+                        </div>
                         ${isDone ? '' : `
                         <div class="flex items-center gap-2 mt-2">
-                            <input type="text" value="${(item.actionTime || '').replace(/"/g,'&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="조치시간 예:30분" class="flex-1 min-w-0 text-center border border-slate-200 rounded px-2 py-1.5 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50">
-                            <button onclick="handlePMResult('${item.id}', '양호')" class="bg-blue-500 text-white text-[11px] font-bold px-3 py-1.5 rounded shrink-0">양호</button>
-                            <button onclick="handlePMResult('${item.id}', '불량')" class="bg-red-500 text-white text-[11px] font-bold px-3 py-1.5 rounded shrink-0">불량</button>
+                            <button onclick="handlePMResult('${item.id}', '양호')" class="flex-1 bg-blue-500 text-white text-[11px] font-bold px-3 py-1.5 rounded">양호</button>
+                            <button onclick="handlePMResult('${item.id}', '불량')" class="flex-1 bg-red-500 text-white text-[11px] font-bold px-3 py-1.5 rounded">불량</button>
                         </div>`}
                     </div>
                 `;
@@ -5677,11 +5754,27 @@
             lucide.createIcons({root: document.getElementById('pm-list-cards')});
         };
 
+        // 분 단위 숫자로 저장한다. 빈 값은 0(미입력)으로 둔다.
+        const toMinutes = (v) => {
+            const n = parseInt(String(v ?? '').replace(/[^\d]/g, ''), 10);
+            return isNaN(n) || n < 0 ? 0 : Math.min(n, 100000); // 오타로 말도 안 되는 값이 들어가는 것만 막는다
+        };
+
         window.updatePMActionTime = async (id, value) => {
             if(!currentUser) return;
             try {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', id), { actionTime: (value || '').trim() });
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', id), { actionMinutes: toMinutes(value) });
             } catch(e) { console.error(e); showToast('조치시간 저장 실패', 'error'); }
+        };
+
+        // 표준시간은 관리 기준값이라 담당자·관리자만 바꾼다 (firestore.rules 와 같은 조건)
+        window.updatePMStandardTime = async (id, value) => {
+            if(!currentUser) return;
+            const rec = rawPMData.find(d => d.id === id);
+            if (!requireLineEdit(rec && rec.line, '표준시간 수정')) { window.debouncedRenderPMList(); return; }
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', id), { standardMinutes: toMinutes(value) });
+            } catch(e) { console.error(e); showToast('표준시간 저장 실패', 'error'); }
         };
 
         window.openRemarksModal = (id, currentRemarks) => {
@@ -5757,12 +5850,15 @@
                     taskDetails: task.taskDetails, result: resultType, remarks: task.remarks || '',
                     checkedByName: currentEditorFields().editorName,
                     dueDate: task.nextCheckDate || '', wasOverdue: od.overdue, overdueDays: od.days, overdueExcused: false,
+                    // 이 회차에 실제로 걸린 시간과 그때의 기준값을 함께 남긴다 (나중에 기준을 바꿔도 이력은 그대로)
+                    standardMinutes: stdMinutesOf(task), actionMinutes: actMinutesOf(task),
                     checkTime: checkTime, checkedAt: serverTimestamp()
                 });
                 batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_tasks')), {
                     line: task.line, equipmentName: task.equipmentName, category: task.category, workType: wt,
                     cycleType: normalizeCycle(task.cycleType), taskDetails: task.taskDetails, criteria: task.criteria,
-                    actionTime: task.actionTime || '',
+                    // 표준시간은 기준값이라 다음 회차로 잇고, 조치시간은 회차마다 새로 적는 값이라 비운다
+                    standardMinutes: stdMinutesOf(task), actionMinutes: 0,
                     status: '미점검', remarks: '', nextCheckDate: calculatePeriodEndDate(getLocalTodayString(), task.cycleType, 1), createdAt: serverTimestamp()
                 });
             }
@@ -5829,32 +5925,18 @@
             const pendingScope = scope.filter(d => d.status !== '점검');
             const boardItems = pendingScope.filter(d => statusOf(d) !== '등록예정');
 
-            // 조치시간(자유 텍스트) → 분 단위 파싱. 예) "1시간 30분"→90, "30분"→30, "45"→45, "1:30"→90
-            const parseActionMinutes = (raw) => {
-                if (!raw) return 0;
-                const s = String(raw).trim();
-                if (!s) return 0;
-                const colon = s.match(/^(\d+)\s*:\s*(\d{1,2})$/);
-                if (colon) return parseInt(colon[1], 10) * 60 + parseInt(colon[2], 10);
-                let total = 0, matched = false;
-                const h = s.match(/([\d.]+)\s*시간/);
-                if (h) { total += parseFloat(h[1]) * 60; matched = true; }
-                const m = s.match(/([\d.]+)\s*분/);
-                if (m) { total += parseFloat(m[1]); matched = true; }
-                if (!matched) { const num = s.replace(/[^\d.]/g, ''); if (num) total = parseFloat(num); } // 단위 없으면 분으로 간주
-                return isNaN(total) ? 0 : Math.round(total);
+            // 현황판은 '실적을 찍고 확인하는' 화면이다. 시간 입력은 예방점검 리스트에서만 하고
+            // 여기서는 그 값을 읽기 전용으로 보여 준다 (같은 값을 두 곳에서 고치면 어느 쪽이 맞는지 알 수 없다).
+            const timeCell = (item) => {
+                const std = stdMinutesOf(item), act = actMinutesOf(item);
+                if (!std && !act) return '<span class="text-slate-300 text-[11px]">-</span>';
+                const over = std && act && act > std;   // 표준보다 오래 걸린 건 눈에 띄게
+                return `<span class="inline-flex items-center gap-1 text-[11px] whitespace-nowrap" title="표준시간 대비 실제 조치시간 (예방점검 리스트에서 입력)">
+                    <span class="text-slate-500">${std ? fmtMinutes(std) : '-'}</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="font-bold ${act ? (over ? 'text-red-600' : 'text-slate-800') : 'text-slate-300'}">${act ? fmtMinutes(act) : '미기록'}</span>
+                </span>`;
             };
-            const fmtMinutes = (mins) => {
-                mins = Math.round(mins || 0);
-                if (mins <= 0) return '0분';
-                const h = Math.floor(mins / 60), m = mins % 60;
-                const parts = [];
-                if (h) parts.push(`${h}시간`);
-                if (m) parts.push(`${m}분`);
-                return parts.join(' ');
-            };
-
-            const actionCell = (item) => `<input type="text" value="${(item.actionTime || '').replace(/"/g, '&quot;')}" onchange="updatePMActionTime('${item.id}', this.value)" placeholder="예:30분" class="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50">`;
             const remarksCell = (item) => `<button onclick="openRemarksModal('${item.id}')" class="text-[10px] font-bold px-2 py-1 rounded border ${item.remarks ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"><i data-lucide="edit-3" class="w-3 h-3 inline mr-0.5"></i>${item.remarks ? '있음' : '작성'}</button>`;
             const resultBtns = (item) => `<div class="flex items-center justify-center gap-1">
                 <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
@@ -5870,7 +5952,7 @@
                     </div>
                     <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
                     <div class="text-xs text-slate-500 leading-snug mt-0.5"><span class="text-slate-400 mr-1">기준</span>${item.criteria || '-'}</div>
-                    <div class="flex items-center gap-1.5 mt-1.5 text-[11px]"><span class="${isOverdue ? 'text-red-600 font-bold' : 'text-slate-500'}">예정 ${item.nextCheckDate || '-'}</span><span class="text-slate-300">|</span><span class="text-slate-400">조치</span>${actionCell(item)}</div>
+                    <div class="flex items-center gap-1.5 mt-1.5 text-[11px]"><span class="${isOverdue ? 'text-red-600 font-bold' : 'text-slate-500'}">예정 ${item.nextCheckDate || '-'}</span><span class="text-slate-300">|</span><span class="text-slate-400">시간</span>${timeCell(item)}</div>
                     <div class="flex items-center gap-2 mt-2">${remarksCell(item)}<div class="ml-auto">${resultBtns(item)}</div></div>
                 </div>`;
             };
@@ -5883,7 +5965,7 @@
                 boardHasAny = true;
                 const overdue = items.filter(d => statusOf(d) === '점검지연').length;
                 const due = items.filter(d => statusOf(d) === '점검예정').length;
-                const cycleMin = items.reduce((s, d) => s + parseActionMinutes(d.actionTime), 0);
+                const cycleMin = items.reduce((s, d) => s + (stdMinutesOf(d) || actMinutesOf(d)), 0);
 
                 html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
@@ -5904,7 +5986,7 @@
                             <th class="py-2 px-3 font-bold border-b border-slate-100">점검 내용</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">점검기준</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">예정일</th>
-                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">조치시간</th>
+                            <th class="py-2 px-3 font-bold border-b border-slate-100 text-center" title="표준시간 → 실제 조치시간">소요시간</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">상태</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">특이사항</th>
                             <th class="py-2 px-3 font-bold border-b border-slate-100 text-center">실적 등록</th>
@@ -5919,7 +6001,7 @@
                         <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[150px] leading-snug">${item.taskDetails || '-'}</td>
                         <td class="py-2 px-3 text-slate-600 whitespace-normal min-w-[130px] leading-snug text-center">${item.criteria || '-'}</td>
                         <td class="py-2 px-3 text-center ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}">${item.nextCheckDate || '-'}</td>
-                        <td class="py-2 px-3 text-center">${actionCell(item)}</td>
+                        <td class="py-2 px-3 text-center">${timeCell(item)}</td>
                         <td class="py-2 px-3 text-center">${badgeOf(st)}</td>
                         <td class="py-2 px-3 text-center">${remarksCell(item)}</td>
                         <td class="py-2 px-3 text-center">${resultBtns(item)}</td>
