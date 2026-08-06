@@ -283,6 +283,83 @@
         </div>
     </div>
 
+    <!-- 요청사항 등록 / 수정 모달 -->
+    <div id="req-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 id="rreg-title-head" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="message-square-plus" class="w-5 h-5 text-indigo-600"></i> 요청사항 등록</h3>
+                <button type="button" onclick="closeReqRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4 overflow-y-auto custom-scroll flex-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">제목 <span class="text-red-500">*</span></label>
+                    <input type="text" id="rreg-title" maxlength="80" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder="예: 고장실적 리스트에 정비시간 합계가 안 보입니다">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">요청 구분 <span class="text-red-500">*</span></label>
+                        <select id="rreg-type" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">중요도</label>
+                        <select id="rreg-priority" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">대상 화면 <span class="font-normal text-slate-400">(선택)</span></label>
+                        <select id="rreg-menu" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">관련 라인 <span class="font-normal text-slate-400">(선택)</span></label>
+                        <select id="rreg-line" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">요청 내용 <span class="text-red-500">*</span></label>
+                    <textarea id="rreg-content" rows="6" maxlength="2000" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-y" placeholder="지금 어떻게 되어 있고, 어떻게 바뀌었으면 하는지 적어주세요.&#10;예) 고장실적 리스트에서 라인을 고르면 아래 합계도 그 라인만 계산되면 좋겠습니다."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">첨부 <span class="font-normal text-slate-400">(선택 · 화면 캡처 권장)</span></label>
+                    <div id="rreg-file-box" class="border border-slate-300 rounded-md p-3 bg-slate-50 space-y-2"></div>
+                    <input type="file" id="rreg-file" accept="image/*,application/pdf,.pdf" multiple class="hidden" onchange="onReqRegFilesPicked(this)">
+                    <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">이미지(PNG·JPG 등)와 PDF, 각 20MB까지. 화면 캡처는 <b>Windows 키 + Shift + S</b> 로 찍어 저장한 뒤 올리면 됩니다.</p>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <button type="button" id="rreg-delete-btn" onclick="deleteRequest()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" onclick="closeReqRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
+                    <button type="button" id="rreg-save-btn" onclick="saveRequest()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-60">등록</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 요청사항 상세 · 처리 모달 -->
+    <div id="req-detail-modal" class="hidden fixed inset-0 z-[136] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-600"></i> 요청사항 상세</h3>
+                <button type="button" onclick="closeReqDetailModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="req-detail-body" class="p-5 space-y-4 overflow-y-auto custom-scroll flex-1"></div>
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <button type="button" id="rdet-edit-btn" onclick="editRequestFromDetail()" class="hidden px-3 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg items-center gap-1"><i data-lucide="edit" class="w-4 h-4"></i> 요청 수정</button>
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" onclick="closeReqDetailModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
+                    <button type="button" id="rdet-save-btn" onclick="saveRequestReply()" class="hidden px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-60">처리 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 접속 시 예방점검 알림 팝업 -->
     <div id="pm-alert-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] flex flex-col overflow-hidden">
@@ -437,6 +514,12 @@
             </button>
             <button onclick="openAIModal()" id="nav-ai" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="등록된 데이터에 자연어로 질문">
                 <i data-lucide="sparkles" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">AI에게 질문하기</span>
+            </button>
+
+            <button onclick="switchTab('req-board')" id="nav-req-board" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="시스템 수정·개선 요청 등록 (관리자 접수)">
+                <i data-lucide="inbox" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i>
+                <span class="sidebar-text whitespace-nowrap transition-opacity duration-300 flex-1 text-left">요청사항 등록</span>
+                <span id="nav-req-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-amber-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center">0</span>
             </button>
 
             <button type="button" onclick="toggleNavLines()" id="nav-lines-toggle" class="nav-btn w-full flex items-center px-6 py-3 mt-4 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 현황 펼치기/접기">
@@ -1272,6 +1355,65 @@
                 </div>
             </div>
 
+            <!-- VIEW: 요청사항 등록 (시스템 수정·개선 요청 게시판) -->
+            <div id="view-req-board" class="view-section hidden h-full flex-col min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
+                    <div class="mb-2.5 shrink-0">
+                        <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <button onclick="openReqRegModal()" class="flex items-center px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                                <i data-lucide="message-square-plus" class="w-3.5 h-3.5 mr-1.5"></i> 요청 등록
+                            </button>
+                            <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded" id="req-count">총 0건</span>
+                            <span class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded" id="req-open-count">미처리 0건</span>
+                            <span class="text-[11px] md:text-xs font-bold text-slate-400 mr-1"><i data-lucide="filter" class="w-3.5 h-3.5 inline"></i></span>
+                            <select id="req-filter-status" onchange="renderRequestBoard()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-medium">
+                                <option value="ALL">상태 전체</option>
+                                <option value="OPEN">미처리 (접수·검토중)</option>
+                                <option value="접수">접수</option>
+                                <option value="검토중">검토중</option>
+                                <option value="완료">완료</option>
+                                <option value="보류">보류</option>
+                            </select>
+                            <select id="req-filter-type" onchange="renderRequestBoard()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-medium">
+                                <option value="ALL">요청 구분 전체</option>
+                            </select>
+                            <select id="req-filter-line" onchange="renderRequestBoard()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-medium min-w-[70px]">
+                                <option value="ALL">전체 라인</option>
+                            </select>
+                            <select id="req-filter-mine" onchange="renderRequestBoard()" class="border border-slate-300 rounded px-2 py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-medium">
+                                <option value="ALL">요청자 전체</option>
+                                <option value="MINE">내 요청만</option>
+                            </select>
+                            <div class="flex-1 w-full sm:w-auto mt-2 sm:mt-0"></div>
+                            <input type="text" id="req-search" onkeyup="renderRequestBoard()" placeholder="제목, 내용, 요청자 검색..." class="w-full sm:w-52 border border-slate-300 rounded px-3 py-1.5 sm:py-1 text-[11px] md:text-xs focus:ring-1 focus:ring-indigo-500 outline-none">
+                            <button type="button" id="reset-req" onclick="resetViewFilters('req')" title="선택한 필터와 검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 sm:py-1 text-[11px] md:text-xs font-bold transition shrink-0"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
+                        </div>
+                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">시스템에서 <b>고쳤으면 하는 항목</b>을 등록하는 곳입니다. 화면 캡처(이미지)나 PDF를 첨부하면 훨씬 빨리 반영됩니다. 처리 상태와 답변은 관리자가 등록하며, 요청자는 <b>접수</b> 상태일 때만 자기 글을 수정·삭제할 수 있습니다.</p>
+                    </div>
+
+                    <!-- 데스크톱 표 -->
+                    <div class="flex-1 overflow-x-auto border border-slate-200 rounded-lg w-full custom-scroll relative hidden md:block">
+                        <table class="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-max">
+                            <thead class="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-24 text-center">상태</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-24">구분</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200">제목</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-36">대상 화면</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-20 text-center">라인</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-32">요청자</th>
+                                    <th class="py-2.5 px-3 font-bold border-b border-slate-200 w-32">요청일</th>
+                                    <th class="py-2.5 px-2 font-bold border-b border-slate-200 w-20 text-center">답변</th>
+                                </tr>
+                            </thead>
+                            <tbody id="req-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                    <!-- 모바일 카드 -->
+                    <div id="req-cards" class="md:hidden flex-1 overflow-y-auto custom-scroll space-y-2 pb-2"></div>
+                </div>
+            </div>
+
             <!-- VIEW: EDIT HISTORY (Audit Log) -->
             <div id="view-edit-history" class="view-section hidden h-full flex-col min-w-0 pb-4">
                 <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
@@ -1898,6 +2040,8 @@
         let rawManualDocs = []; // 자료실에서 직접 등록한 메뉴얼 (고장 연결은 선택)
         let bdRegManuals = [];  // 등록 폼에서 첨부 대기 중인 파일 [File]
         let bdEditManuals = []; // 수정 모달의 첨부 목록 [{name, url, storagePath, size} | {file}] (저장 시 확정)
+        let rawRequests = [];   // 요청사항 게시판 (시스템 수정·개선 요청)
+        let activeReqDetailId = null; // 상세 모달에 열려 있는 요청 id
         let overdueAlertDismissed = false; // 지연 알림 팝업 닫음 여부
         
         let chartInstances = {};
@@ -2254,6 +2398,8 @@
             if (currentTabId === 'bd-list') window.debouncedRenderBDList();
             if (currentTabId === 'pm-list') window.debouncedRenderPMList();
             if (!isAdmin && currentTabId === 'edit-history') switchTab('dashboard'); // 권한이 회수되면 즉시 이탈
+            if (typeof updateReqBadge === 'function') updateReqBadge();
+            if (currentTabId === 'req-board' && typeof renderRequestBoard === 'function') renderRequestBoard();
             if (!document.getElementById('admin-modal').classList.contains('hidden')) renderAdminList();
         }
 
@@ -3163,6 +3309,9 @@
                         window.setBDWorkKind('고장');
                     } else if (tabId === 'manual-lib') {
                         renderManualLibrary();
+                    } else if (tabId === 'req-board') {
+                        initReqBoardFilters();
+                        renderRequestBoard();
                     }
                 }, 10);
             });
@@ -3205,7 +3354,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '점검 실적', 'pm-reg': '점검항목 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '점검 실적', 'pm-reg': '점검항목 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'req-board': '요청사항 등록', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -3357,6 +3506,15 @@
                 if (currentTabId === 'manual-lib') renderManualLibrary();
                 if (activeBDDetailId && !document.getElementById('bd-detail-modal').classList.contains('hidden')) renderBDDetail(activeBDDetailId);
             });
+            const reqRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
+            onSnapshot(reqRef, (snapshot) => {
+                // 최신 요청이 위로. createdAt 이 아직 서버에서 확정되지 않은 문서(방금 등록)는 맨 위에 둔다.
+                rawRequests = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => (b.createdAt?.seconds || Infinity) - (a.createdAt?.seconds || Infinity));
+                updateReqBadge();
+                if (currentTabId === 'req-board') renderRequestBoard();
+                if (activeReqDetailId && !document.getElementById('req-detail-modal').classList.contains('hidden')) renderReqDetail(activeReqDetailId);
+            }, (err) => console.error('요청사항 구독 실패', err));
             const lineOwnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'lineOwners');
             onSnapshot(lineOwnerRef, (snap) => {
                 lineOwners = (snap.exists() && snap.data().lines) ? snap.data().lines : {};
@@ -5213,6 +5371,11 @@
                 btn: 'reset-mlib',
                 ids: ['mlib-filter-link', 'mlib-filter-year', 'mlib-filter-line', 'mlib-filter-category', 'mlib-filter-main', 'mlib-search'],
                 apply: () => window.renderManualLibrary()
+            },
+            'req': {
+                btn: 'reset-req',
+                ids: ['req-filter-status', 'req-filter-type', 'req-filter-line', 'req-filter-mine', 'req-search'],
+                apply: () => window.renderRequestBoard()
             }
         };
 
@@ -8346,6 +8509,486 @@
                 if (mn.storagePath && !kept.has(mn.storagePath)) await deleteManualObject(mn.storagePath);
             }
         }
+
+        // ==========================================
+        // 요청사항 등록 (시스템 수정·개선 요청 게시판)
+        // ==========================================
+        // 컬렉션: artifacts/{appId}/public/data/requests
+        //   등록 : 전 직원. 문서의 requesterEmail 은 반드시 본인, status 는 '접수'로 시작한다(규칙에서 강제).
+        //   수정 : 관리자는 항상. 요청자 본인은 '접수' 상태일 때만 본문 필드만.
+        //   처리 : 상태 변경·답변은 관리자만.
+        // 첨부 파일은 Storage `requests/` 에 올린다(이미지 + PDF).
+        const REQ_TYPES = ['기능 추가', '화면 수정', '데이터 수정', '오류 신고', '기타'];
+        const REQ_PRIORITIES = ['보통', '높음', '긴급'];
+        const REQ_STATUSES = ['접수', '검토중', '완료', '보류'];
+        const REQ_OPEN_STATUSES = ['접수', '검토중']; // 아직 관리자가 끝내지 않은 상태
+        const REQ_MENUS = ['종합현황 대시보드', '일일점검 현황판', '고장 예측 · 위험도', 'AI에게 질문하기', '라인별 현황 (대시보드)',
+            '예방점검 리스트', '점검 실적', '점검항목 등록', '고장실적 리스트', '고장실적 등록', '메뉴얼 자료실',
+            '라인별 담당자', '데이터 수정 이력', '요청사항 등록', '기타 · 전체'];
+        const REQ_MAX_BYTES = 20 * 1024 * 1024;
+
+        const REQ_STATUS_STYLE = {
+            '접수':   'bg-amber-50 text-amber-700 border-amber-200',
+            '검토중': 'bg-blue-50 text-blue-700 border-blue-200',
+            '완료':   'bg-emerald-50 text-emerald-700 border-emerald-200',
+            '보류':   'bg-slate-100 text-slate-500 border-slate-300'
+        };
+        const reqStatusOf = (r) => REQ_STATUSES.includes(r && r.status) ? r.status : '접수';
+        const reqStatusBadge = (r) => {
+            const s = reqStatusOf(r);
+            return `<span class="px-2 py-0.5 rounded border font-bold text-[10px] md:text-[11px] ${REQ_STATUS_STYLE[s]}">${s}</span>`;
+        };
+        const reqPriorityBadge = (r) => {
+            const p = r && r.priority;
+            if (p === '긴급') return `<span class="ml-1 px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 font-bold text-[10px]">긴급</span>`;
+            if (p === '높음') return `<span class="ml-1 px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 border border-orange-200 font-bold text-[10px]">높음</span>`;
+            return '';
+        };
+        const reqDateStr = (ts) => {
+            if (!ts || !ts.seconds) return '-';
+            const d = new Date(ts.seconds * 1000);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        };
+        const reqSizeStr = (n) => !n ? '' : (n >= 1048576 ? `${(n / 1048576).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`);
+        const reqMultiline = (s) => manualEsc(s).replace(/\n/g, '<br>');
+        const isMyRequest = (r) => !!currentUser && normEmail(r && r.requesterEmail) === normEmail(currentUser.email);
+        // 요청자는 아직 손대지 않은 '접수' 상태에서만 자기 글을 고칠 수 있다 (firestore.rules 와 동일 조건)
+        const canEditRequest = (r) => !!r && (isAdmin || (isMyRequest(r) && reqStatusOf(r) === '접수'));
+
+        // ----- 첨부 파일 -----
+        function validateReqFile(file) {
+            const okType = file.type === 'application/pdf' || /^image\//.test(file.type) || /\.(pdf|png|jpe?g|gif|webp|bmp)$/i.test(file.name);
+            if (!okType) { showToast(`'${file.name}' 은(는) 이미지나 PDF가 아닙니다.`, 'error'); return false; }
+            if (file.size > REQ_MAX_BYTES) { showToast(`'${file.name}' 파일이 너무 큽니다. (최대 20MB)`, 'error'); return false; }
+            return true;
+        }
+        async function uploadReqFile(file, onProgress) {
+            const ext = (file.name.match(/\.[a-z0-9]+$/i) || ['.dat'])[0].toLowerCase();
+            const path = `requests/${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+            const type = file.type || (ext === '.pdf' ? 'application/pdf' : 'application/octet-stream');
+            const task = uploadBytesResumable(storageRef(storage, path), file, {
+                contentType: type,
+                contentDisposition: 'inline',
+                customMetadata: { originalName: file.name }
+            });
+            const url = await new Promise((resolve, reject) => {
+                task.on('state_changed',
+                    (snap) => { if (onProgress && snap.totalBytes) onProgress(Math.round(snap.bytesTransferred / snap.totalBytes * 100)); },
+                    reject,
+                    () => getDownloadURL(task.snapshot.ref).then(resolve, reject));
+            });
+            return { name: file.name, url, storagePath: path, size: file.size, contentType: type };
+        }
+        async function deleteReqObject(path) {
+            if (!path) return;
+            try { await deleteObject(storageRef(storage, path)); }
+            catch (e) { console.warn('요청 첨부 삭제 실패', path, e); }
+        }
+        const toReqFileRecord = (f) => ({ name: f.name, url: f.url, storagePath: f.storagePath, size: f.size || 0, contentType: f.contentType || '' });
+
+        // ----- 목록 -----
+        function initReqBoardFilters() {
+            const typeSel = document.getElementById('req-filter-type');
+            if (typeSel && typeSel.options.length <= 1) {
+                typeSel.innerHTML = '<option value="ALL">요청 구분 전체</option>' + REQ_TYPES.map(t => `<option value="${t}">${t}</option>`).join('');
+            }
+            const lineSel = document.getElementById('req-filter-line');
+            if (lineSel && lineSel.options.length <= 1) {
+                lineSel.innerHTML = '<option value="ALL">전체 라인</option>' + NAV_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            }
+        }
+
+        function getFilteredRequests() {
+            const st = document.getElementById('req-filter-status')?.value || 'ALL';
+            const tp = document.getElementById('req-filter-type')?.value || 'ALL';
+            const ln = document.getElementById('req-filter-line')?.value || 'ALL';
+            const mine = document.getElementById('req-filter-mine')?.value || 'ALL';
+            const kw = (document.getElementById('req-search')?.value || '').trim().toLowerCase();
+
+            return rawRequests.filter(r => {
+                const s = reqStatusOf(r);
+                if (st === 'OPEN' ? !REQ_OPEN_STATUSES.includes(s) : (st !== 'ALL' && s !== st)) return false;
+                if (tp !== 'ALL' && (r.reqType || '') !== tp) return false;
+                if (ln !== 'ALL' && (r.line || '') !== ln) return false;
+                if (mine === 'MINE' && !isMyRequest(r)) return false;
+                if (kw) {
+                    const hay = [r.title, r.content, r.reqType, r.targetMenu, r.line, r.requesterName, r.requesterEmail, r.adminReply, r.status]
+                        .join(' ').toLowerCase();
+                    if (!hay.includes(kw)) return false;
+                }
+                return true;
+            });
+        }
+
+        // 사이드바 배지: 아직 처리되지 않은 요청 수 (관리자는 전체, 그 외에는 내가 올린 것)
+        function updateReqBadge() {
+            const el = document.getElementById('nav-req-badge');
+            if (!el) return;
+            const open = rawRequests.filter(r => REQ_OPEN_STATUSES.includes(reqStatusOf(r)) && (isAdmin || isMyRequest(r)));
+            el.textContent = open.length > 99 ? '99+' : String(open.length);
+            el.classList.toggle('hidden', open.length === 0);
+        }
+
+        window.renderRequestBoard = () => {
+            const tbody = document.getElementById('req-body');
+            const cards = document.getElementById('req-cards');
+            if (!tbody || !cards) return;
+            initReqBoardFilters();
+
+            const list = getFilteredRequests();
+            const openAll = rawRequests.filter(r => REQ_OPEN_STATUSES.includes(reqStatusOf(r))).length;
+            document.getElementById('req-count').innerText = `총 ${list.length.toLocaleString()}건`;
+            document.getElementById('req-open-count').innerText = `미처리 ${openAll.toLocaleString()}건`;
+
+            if (!list.length) {
+                const empty = rawRequests.length
+                    ? '조건에 맞는 요청이 없습니다.'
+                    : '아직 등록된 요청이 없습니다. <b>요청 등록</b> 버튼으로 첫 요청을 남겨보세요.';
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-400 text-sm">${empty}</td></tr>`;
+                cards.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">${empty}</div>`;
+                if (window.refreshFilterResetBtns) window.refreshFilterResetBtns();
+                return;
+            }
+
+            tbody.innerHTML = list.map(r => {
+                const name = r.requesterName || (r.requesterEmail || '').split('@')[0] || '알 수 없음';
+                const files = Array.isArray(r.attachments) ? r.attachments.length : 0;
+                return `<tr class="hover:bg-indigo-50/40 cursor-pointer transition" onclick="openReqDetail('${r.id}')">
+                    <td class="py-2 px-3 text-center">${reqStatusBadge(r)}</td>
+                    <td class="py-2 px-3 text-slate-600">${manualEsc(r.reqType || '-')}</td>
+                    <td class="py-2 px-3 font-bold text-slate-800 max-w-[380px] truncate" title="${manualEsc(r.title || '')}">
+                        ${manualEsc(r.title || '(제목 없음)')}${reqPriorityBadge(r)}
+                        ${files ? `<span class="ml-1 text-slate-400 text-[11px]"><i data-lucide="paperclip" class="w-3 h-3 inline"></i>${files}</span>` : ''}
+                        ${isMyRequest(r) ? '<span class="ml-1 text-[10px] font-bold text-indigo-500">내 요청</span>' : ''}
+                    </td>
+                    <td class="py-2 px-3 text-slate-500 text-[11px] md:text-xs">${manualEsc(r.targetMenu || '-')}</td>
+                    <td class="py-2 px-3 text-center font-bold text-brand-600 text-[11px] md:text-xs">${manualEsc(r.line || '-')}</td>
+                    <td class="py-2 px-3 text-slate-600 text-[11px] md:text-xs">${manualEsc(name)}</td>
+                    <td class="py-2 px-3 text-slate-500 text-[11px] md:text-xs">${reqDateStr(r.createdAt)}</td>
+                    <td class="py-2 px-2 text-center">${(r.adminReply || '').trim()
+                        ? '<span class="text-emerald-600 font-bold text-[11px]">답변 있음</span>'
+                        : '<span class="text-slate-300 text-[11px]">-</span>'}</td>
+                </tr>`;
+            }).join('');
+
+            cards.innerHTML = list.map(r => {
+                const name = r.requesterName || (r.requesterEmail || '').split('@')[0] || '알 수 없음';
+                const files = Array.isArray(r.attachments) ? r.attachments.length : 0;
+                return `<div class="border border-slate-200 rounded-lg p-3 bg-white active:bg-slate-50" onclick="openReqDetail('${r.id}')">
+                    <div class="flex items-center gap-1.5 mb-1">
+                        ${reqStatusBadge(r)}
+                        <span class="text-[11px] text-slate-500">${manualEsc(r.reqType || '-')}</span>
+                        ${reqPriorityBadge(r)}
+                        <span class="ml-auto text-[10px] text-slate-400">${reqDateStr(r.createdAt)}</span>
+                    </div>
+                    <p class="text-sm font-bold text-slate-800 leading-snug">${manualEsc(r.title || '(제목 없음)')}</p>
+                    <p class="text-[11px] text-slate-500 mt-1">
+                        ${manualEsc(name)}${r.line ? ` · <span class="font-bold text-brand-600">${manualEsc(r.line)}</span>` : ''}${r.targetMenu ? ` · ${manualEsc(r.targetMenu)}` : ''}
+                        ${files ? ` · 첨부 ${files}` : ''}${(r.adminReply || '').trim() ? ' · <span class="text-emerald-600 font-bold">답변 있음</span>' : ''}
+                    </p>
+                </div>`;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+            if (window.refreshFilterResetBtns) window.refreshFilterResetBtns();
+        };
+
+        // ----- 등록 / 수정 -----
+        let reqRegState = { mode: 'create', id: null, files: [], busy: false };
+
+        function fillReqSelect(id, values, selected, placeholder) {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            sel.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : '')
+                + values.map(v => `<option value="${v}">${v}</option>`).join('');
+            sel.value = values.includes(selected) ? selected : (placeholder ? '' : values[0]);
+        }
+
+        window.openReqRegModal = (reqId) => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            const r = reqId ? rawRequests.find(x => x.id === reqId) : null;
+            if (reqId && !r) return showToast('요청을 찾을 수 없습니다.', 'error');
+            if (r && !canEditRequest(r)) {
+                return showToast(isMyRequest(r) ? '이미 관리자가 처리에 들어간 요청은 수정할 수 없습니다.' : '본인이 등록한 요청만 수정할 수 있습니다.', 'error');
+            }
+
+            reqRegState = r
+                ? { mode: 'edit', id: reqId, files: (Array.isArray(r.attachments) ? r.attachments.map(f => ({ ...f })) : []), busy: false, origFiles: (Array.isArray(r.attachments) ? r.attachments.map(f => ({ ...f })) : []) }
+                : { mode: 'create', id: null, files: [], busy: false, origFiles: [] };
+
+            document.getElementById('rreg-title-head').innerHTML = reqRegState.mode === 'edit'
+                ? '<i data-lucide="edit" class="w-5 h-5 text-indigo-600"></i> 요청사항 수정'
+                : '<i data-lucide="message-square-plus" class="w-5 h-5 text-indigo-600"></i> 요청사항 등록';
+            document.getElementById('rreg-title').value = r ? (r.title || '') : '';
+            document.getElementById('rreg-content').value = r ? (r.content || '') : '';
+            fillReqSelect('rreg-type', REQ_TYPES, r ? r.reqType : '기능 추가');
+            fillReqSelect('rreg-priority', REQ_PRIORITIES, r ? r.priority : '보통');
+            fillReqSelect('rreg-menu', REQ_MENUS, r ? r.targetMenu : '', '선택 안 함');
+            fillReqSelect('rreg-line', NAV_LINES, r ? r.line : '', '해당 없음');
+            document.getElementById('rreg-save-btn').innerText = reqRegState.mode === 'edit' ? '저장' : '등록';
+            const delBtn = document.getElementById('rreg-delete-btn');
+            delBtn.classList.toggle('hidden', reqRegState.mode !== 'edit');
+            delBtn.classList.toggle('flex', reqRegState.mode === 'edit');
+
+            renderReqRegFiles();
+            document.getElementById('req-reg-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeReqRegModal = () => {
+            // 등록을 취소하면 방금 올린 파일은 어디에도 연결되지 않으므로 지운다
+            const orig = new Set((reqRegState.origFiles || []).map(f => f.storagePath).filter(Boolean));
+            (reqRegState.files || []).forEach(f => { if (f.storagePath && !orig.has(f.storagePath)) deleteReqObject(f.storagePath); });
+            reqRegState = { mode: 'create', id: null, files: [], busy: false, origFiles: [] };
+            document.getElementById('req-reg-modal').classList.add('hidden');
+        };
+
+        window.pickReqRegFiles = () => document.getElementById('rreg-file').click();
+
+        window.onReqRegFilesPicked = async (input) => {
+            const files = Array.from(input.files || []).filter(validateReqFile);
+            input.value = '';
+            for (const file of files) {
+                const entry = { name: file.name, size: file.size, uploading: true, pct: 0 };
+                reqRegState.files.push(entry);
+                reqRegState.busy = true;
+                renderReqRegFiles();
+                try {
+                    const meta = await uploadReqFile(file, (pct) => { entry.pct = pct; renderReqRegFiles(); });
+                    Object.assign(entry, meta, { uploading: false, pct: 100 });
+                } catch (e) {
+                    console.error(e);
+                    const i = reqRegState.files.indexOf(entry);
+                    if (i >= 0) reqRegState.files.splice(i, 1);
+                    showToast(manualStorageErrorMessage(e), 'error');
+                }
+                renderReqRegFiles();
+            }
+            reqRegState.busy = reqRegState.files.some(f => f.uploading);
+            renderReqRegFiles();
+        };
+
+        window.removeReqRegFile = async (idx) => {
+            const f = reqRegState.files[idx];
+            if (!f || f.uploading) return;
+            reqRegState.files.splice(idx, 1);
+            renderReqRegFiles();
+            // 이번에 새로 올린 파일만 즉시 정리한다 (기존 첨부는 저장 시점에 정리)
+            const orig = new Set((reqRegState.origFiles || []).map(x => x.storagePath).filter(Boolean));
+            if (f.storagePath && !orig.has(f.storagePath)) await deleteReqObject(f.storagePath);
+        };
+
+        function renderReqRegFiles() {
+            const box = document.getElementById('rreg-file-box');
+            if (!box) return;
+            const rows = reqRegState.files.map((f, i) => {
+                if (f.uploading) {
+                    return `<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200">
+                        <i data-lucide="loader" class="w-4 h-4 text-indigo-500 animate-spin shrink-0"></i>
+                        <span class="text-sm text-slate-600 truncate flex-1">${manualEsc(f.name)}</span>
+                        <span class="text-xs font-bold text-indigo-600 shrink-0">${f.pct || 0}%</span>
+                    </div>`;
+                }
+                const isImg = /^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(f.name || '');
+                return `<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200">
+                    <i data-lucide="${isImg ? 'image' : 'file-text'}" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+                    <button type="button" onclick="openManualUrl('${manualEsc(f.url)}','${manualEsc(f.name)}')" class="text-sm text-slate-700 truncate flex-1 text-left hover:underline">${manualEsc(f.name)} <span class="text-slate-400 text-xs">${reqSizeStr(f.size)}</span></button>
+                    <button type="button" onclick="removeReqRegFile(${i})" title="첨부 제거" class="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                </div>`;
+            }).join('');
+            box.innerHTML = rows + `<button type="button" onclick="pickReqRegFiles()" class="w-full py-2 text-sm font-bold text-indigo-700 bg-white border border-indigo-300 border-dashed rounded-md hover:bg-indigo-50 flex items-center justify-center gap-1.5"><i data-lucide="upload" class="w-4 h-4"></i> 이미지 · PDF 첨부</button>`;
+            if (window.lucide) lucide.createIcons({ root: box });
+        }
+
+        window.saveRequest = async () => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            if (reqRegState.busy || reqRegState.files.some(f => f.uploading)) return showToast('첨부 업로드가 끝난 뒤 저장해 주세요.', 'error');
+            const title = document.getElementById('rreg-title').value.trim();
+            const content = document.getElementById('rreg-content').value.trim();
+            if (!title) return showToast('제목을 입력하세요.', 'error');
+            if (!content) return showToast('요청 내용을 입력하세요.', 'error');
+
+            const payload = {
+                title,
+                content,
+                reqType: document.getElementById('rreg-type').value || '기타',
+                priority: document.getElementById('rreg-priority').value || '보통',
+                targetMenu: document.getElementById('rreg-menu').value || '',
+                line: document.getElementById('rreg-line').value || '',
+                attachments: reqRegState.files.map(toReqFileRecord)
+            };
+
+            const btn = document.getElementById('rreg-save-btn');
+            btn.disabled = true;
+            try {
+                if (reqRegState.mode === 'edit') {
+                    // 규칙상 요청자는 아래 필드만 바꿀 수 있다 (상태·답변은 건드리지 않는다)
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqRegState.id), {
+                        ...payload, updatedAt: serverTimestamp()
+                    });
+                    // 목록에서 빠진 기존 첨부의 실제 파일 정리
+                    const kept = new Set(payload.attachments.map(f => f.storagePath).filter(Boolean));
+                    for (const f of (reqRegState.origFiles || [])) {
+                        if (f.storagePath && !kept.has(f.storagePath)) await deleteReqObject(f.storagePath);
+                    }
+                    showToast('요청사항을 수정했습니다.');
+                } else {
+                    // requesterEmail 은 본인, status 는 '접수' — firestore.rules 가 강제하는 값
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'requests'), {
+                        ...payload,
+                        status: '접수',
+                        adminReply: '',
+                        requesterEmail: normEmail(currentUser.email),
+                        requesterName: currentUser.displayName || (currentUser.email || '').split('@')[0] || '',
+                        createdAt: serverTimestamp()
+                    });
+                    showToast('요청사항을 등록했습니다. 관리자가 확인 후 처리합니다.');
+                }
+                reqRegState.files = []; // 정리 로직이 방금 저장한 파일을 지우지 않도록
+                reqRegState.origFiles = [];
+                closeReqRegModal();
+                if (currentTabId !== 'req-board') switchTab('req-board');
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패 — 권한이 없거나 통신에 문제가 있습니다.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        window.deleteRequest = async () => {
+            const r = rawRequests.find(x => x.id === reqRegState.id);
+            if (!r) return;
+            if (!canEditRequest(r)) return showToast('삭제할 권한이 없습니다.', 'error');
+            if (!confirm(`'${r.title || '제목 없음'}' 요청을 삭제할까요?\n\n첨부 파일도 함께 삭제되며 되돌릴 수 없습니다.`)) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', r.id));
+                for (const f of (Array.isArray(r.attachments) ? r.attachments : [])) await deleteReqObject(f.storagePath);
+                reqRegState.files = [];
+                reqRegState.origFiles = [];
+                closeReqRegModal();
+                closeReqDetailModal();
+                showToast('요청사항을 삭제했습니다.');
+            } catch (e) { console.error(e); showToast('삭제 실패', 'error'); }
+        };
+
+        // ----- 상세 · 처리 -----
+        window.openReqDetail = (reqId) => {
+            activeReqDetailId = reqId;
+            renderReqDetail(reqId);
+            document.getElementById('req-detail-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeReqDetailModal = () => {
+            activeReqDetailId = null;
+            document.getElementById('req-detail-modal').classList.add('hidden');
+        };
+
+        window.editRequestFromDetail = () => {
+            const id = activeReqDetailId;
+            closeReqDetailModal();
+            window.openReqRegModal(id);
+        };
+
+        function renderReqDetail(reqId) {
+            const box = document.getElementById('req-detail-body');
+            const r = rawRequests.find(x => x.id === reqId);
+            if (!box) return;
+            if (!r) {
+                box.innerHTML = '<p class="text-sm text-slate-400 text-center py-10">요청을 찾을 수 없습니다. (삭제되었을 수 있습니다)</p>';
+                document.getElementById('rdet-edit-btn').classList.add('hidden');
+                document.getElementById('rdet-save-btn').classList.add('hidden');
+                return;
+            }
+            const name = r.requesterName || (r.requesterEmail || '').split('@')[0] || '알 수 없음';
+            const files = Array.isArray(r.attachments) ? r.attachments : [];
+            const meta = [
+                ['요청 구분', r.reqType || '-'],
+                ['중요도', r.priority || '보통'],
+                ['대상 화면', r.targetMenu || '-'],
+                ['관련 라인', r.line || '-'],
+                ['요청자', `${name} (${r.requesterEmail || '-'})`],
+                ['요청일', reqDateStr(r.createdAt)]
+            ];
+
+            box.innerHTML = `
+                <div class="flex items-start gap-2">
+                    ${reqStatusBadge(r)}${reqPriorityBadge(r)}
+                    <h4 class="text-base font-bold text-slate-800 leading-snug flex-1">${manualEsc(r.title || '(제목 없음)')}</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    ${meta.map(([k, v]) => `<div class="flex gap-2 min-w-0"><span class="text-slate-500 font-bold shrink-0 w-16">${k}</span><span class="text-slate-800 truncate" title="${manualEsc(v)}">${manualEsc(v)}</span></div>`).join('')}
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-600 mb-1.5">요청 내용</p>
+                    <div class="text-sm text-slate-700 leading-relaxed bg-white border border-slate-200 rounded-lg p-3 whitespace-pre-wrap break-words">${reqMultiline(r.content || '')}</div>
+                </div>
+                ${files.length ? `<div>
+                    <p class="text-xs font-bold text-slate-600 mb-1.5">첨부 (${files.length})</p>
+                    <div class="space-y-1.5">${files.map(f => {
+                        const isImg = /^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(f.name || '');
+                        return `<div class="border border-slate-200 rounded-lg overflow-hidden">
+                            <button type="button" onclick="openManualUrl('${manualEsc(f.url)}','${manualEsc(f.name)}')" class="w-full flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 text-left">
+                                <i data-lucide="${isImg ? 'image' : 'file-text'}" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+                                <span class="text-sm text-slate-700 truncate flex-1">${manualEsc(f.name)}</span>
+                                <span class="text-xs text-slate-400 shrink-0">${reqSizeStr(f.size)}</span>
+                            </button>
+                            ${isImg ? `<img src="${manualEsc(f.url)}" alt="${manualEsc(f.name)}" loading="lazy" class="w-full max-h-72 object-contain bg-slate-50 border-t border-slate-200">` : ''}
+                        </div>`;
+                    }).join('')}</div>
+                </div>` : ''}
+                <div class="border-t border-slate-100 pt-4">
+                    <p class="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5"><i data-lucide="reply" class="w-4 h-4 text-indigo-500"></i> 관리자 처리 ${isAdmin ? '' : '<span class="font-normal text-slate-400">(관리자만 작성)</span>'}</p>
+                    ${isAdmin ? `
+                        <div class="flex items-center gap-2 mb-2">
+                            <label class="text-xs font-bold text-slate-600">처리 상태</label>
+                            <select id="rdet-status" class="border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                                ${REQ_STATUSES.map(s => `<option value="${s}" ${reqStatusOf(r) === s ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                        <textarea id="rdet-reply" rows="4" maxlength="2000" placeholder="처리 내용이나 회신을 적어주세요. 요청자가 이 화면에서 확인합니다." class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-y">${manualEsc(r.adminReply || '')}</textarea>
+                    ` : ((r.adminReply || '').trim()
+                        ? `<div class="text-sm text-slate-700 leading-relaxed bg-indigo-50 border border-indigo-200 rounded-lg p-3 whitespace-pre-wrap break-words">${reqMultiline(r.adminReply)}</div>
+                           <p class="text-[11px] text-slate-400 mt-1.5">${manualEsc(r.repliedBy || '')}${r.repliedAt ? ' · ' + reqDateStr(r.repliedAt) : ''}</p>`
+                        : '<p class="text-sm text-slate-400 bg-slate-50 border border-slate-200 rounded-lg p-3">아직 관리자 답변이 없습니다.</p>')}
+                </div>`;
+
+            const editBtn = document.getElementById('rdet-edit-btn');
+            editBtn.classList.toggle('hidden', !canEditRequest(r));
+            editBtn.classList.toggle('flex', canEditRequest(r));
+            const saveBtn = document.getElementById('rdet-save-btn');
+            saveBtn.classList.toggle('hidden', !isAdmin);
+            saveBtn.disabled = false;
+            if (window.lucide) lucide.createIcons({ root: box });
+        }
+
+        window.saveRequestReply = async () => {
+            if (!requireAdmin('요청 처리')) return;
+            const r = rawRequests.find(x => x.id === activeReqDetailId);
+            if (!r) return showToast('요청을 찾을 수 없습니다.', 'error');
+            const status = document.getElementById('rdet-status').value;
+            const reply = document.getElementById('rdet-reply').value.trim();
+            const btn = document.getElementById('rdet-save-btn');
+            btn.disabled = true;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', r.id), {
+                    status,
+                    adminReply: reply,
+                    repliedBy: (currentUser && currentUser.email) || '',
+                    repliedAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+                await logEditHistory('요청사항 (처리)', r.line || '-', r.targetMenu || '-', `${r.title || ''} → ${status}`);
+                showToast('처리 내용을 저장했습니다.');
+                closeReqDetailModal();
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패 — 관리자 권한을 확인하세요.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
 
         window.setTargetMetric = (metric) => {
             targetMetric = metric;
