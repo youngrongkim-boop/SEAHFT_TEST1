@@ -1146,6 +1146,7 @@
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">작업 세부사항</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 min-w-[90px] text-center">점검기준</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">결과</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">첨부</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-20">점검자</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[150px]">특이사항</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-red-500 w-14">삭제</th>
@@ -1237,8 +1238,28 @@
                                     <select id="pm-adhoc-reason" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"></select>
                                 </div>
                                 <div class="sm:col-span-2">
-                                    <label class="block text-sm font-bold text-slate-700 mb-1.5">특이사항 <span class="text-[11px] font-normal text-slate-400 ml-1">(선택)</span></label>
+                                    <div class="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                                        <label class="block text-sm font-bold text-slate-700">특이사항 <span class="text-[11px] font-normal text-slate-400 ml-1">(선택)</span></label>
+                                        <button type="button" onclick="pickPMAdhocManual()" title="PDF 메뉴얼을 첨부합니다 (최대 20MB)" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 shrink-0"><i data-lucide="paperclip" class="w-3.5 h-3.5"></i> 메뉴얼 첨부</button>
+                                        <input type="file" id="pm-adhoc-manual-file" accept="application/pdf,.pdf" multiple class="hidden" onchange="onPMAdhocManualPicked(this)">
+                                    </div>
                                     <textarea id="pm-adhoc-remarks" rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="예: 베어링부 이상음, 임시 조치 후 경과 관찰 필요"></textarea>
+                                    <div id="pm-adhoc-manual-chips" class="flex flex-wrap gap-1 mt-1.5"></div>
+                                </div>
+
+                                <!-- 현장 사진 (올리기 전에 자동으로 용량을 줄인다) -->
+                                <div class="sm:col-span-2 bg-white/70 rounded-lg border border-amber-200 p-3">
+                                    <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                                        <label class="block text-sm font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="camera" class="w-4 h-4 text-amber-600"></i> 현장 사진 <span class="font-normal text-slate-400 text-xs">(선택 · 최대 10장)</span></label>
+                                        <div class="flex gap-1.5 shrink-0">
+                                            <button type="button" onclick="pickPMAdhocPhoto('camera')" class="px-2.5 py-1.5 rounded-md text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 flex items-center gap-1 transition shadow-sm"><i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 촬영</button>
+                                            <button type="button" onclick="pickPMAdhocPhoto('file')" class="px-2.5 py-1.5 rounded-md text-[11px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 flex items-center gap-1 transition"><i data-lucide="image-plus" class="w-3.5 h-3.5"></i> 사진 선택</button>
+                                        </div>
+                                        <input type="file" id="pm-adhoc-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="onPMAdhocPhotoPicked(this)">
+                                        <input type="file" id="pm-adhoc-photo-file" accept="image/*" multiple class="hidden" onchange="onPMAdhocPhotoPicked(this)">
+                                    </div>
+                                    <div id="pm-adhoc-photo-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2"></div>
+                                    <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">휴대폰 사진도 <b>올리기 전에 자동으로 화질을 낮춰 용량을 줄입니다</b> (긴 변 1920px · 보통 200~500KB).</p>
                                 </div>
                             </div>
 
@@ -2236,6 +2257,8 @@
         let rawManualDocs = []; // 자료실에서 직접 등록한 메뉴얼 (고장 연결은 선택)
         let bdRegManuals = [];  // 등록 폼에서 첨부 대기 중인 파일 [File]
         let bdEditManuals = []; // 수정 모달의 첨부 목록 [{name, url, storagePath, size} | {file}] (저장 시 확정)
+        let pmAdhocManuals = []; // 일반·긴급 점검 등록 폼의 첨부 메뉴얼
+        let pmAdhocPhotos = [];  // 일반·긴급 점검 등록 폼의 현장 사진
         let bdRegPhotos = [];   // 등록 폼의 현장 사진 [{name, url, storagePath, size, origSize, width, height}]
         let bdEditPhotos = [];  // 수정 모달의 현장 사진 (저장 시 확정)
         let rawRequests = [];   // 요청사항 게시판 (시스템 수정·개선 요청)
@@ -2562,8 +2585,8 @@
         //                     pm_tasks 기반 화면(리스트·현황판·알림)에 자연히 나타나지 않는다.
         // ==========================================
         const PLANNED_WORK_TYPES = ['예방점검'];              // 주기가 있는 유형
-        const ADHOC_WORK_TYPES = ['긴급점검', '일반점검'];    // 주기 없이 수시로 수행
-        const WORK_TYPES = ['예방점검', '긴급점검', '일반점검'];
+        const ADHOC_WORK_TYPES = ['일반점검', '긴급점검'];    // 주기 없이 수시로 수행
+        const WORK_TYPES = ['예방점검', '일반점검', '긴급점검'];
         const ADHOC_REASONS = ['이상음·진동 감지', '고장 직후 확인', '온도·누유 이상', '안전 지적', '상부 지시', '외부 요청', '기타'];
 
         // 이전 유형명으로 저장된 데이터를 현재 3종에 맞춰 읽는다 (데이터 수정 없이 표시만 매핑)
@@ -4823,6 +4846,11 @@
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', id);
                 await deleteDoc(docRef);
+                // 실적에 딸린 첨부 파일도 함께 정리한다 (남겨 두면 저장소에 고아 파일로 쌓인다)
+                if (rec) {
+                    await deleteRemovedManualFiles(rec.manuals, []);
+                    await deleteRemovedPhotoFiles(rec.photos, []);
+                }
                 showToast("해당 실적 이력이 정상적으로 삭제되었습니다.", "success");
             } catch(e) {
                 console.error("Delete Error", e);
@@ -5402,6 +5430,7 @@
 
             const reason = el('pm-adhoc-reason');
             if (reason && !reason.options.length) reason.innerHTML = ADHOC_REASONS.map(r => `<option value="${r}">${r}</option>`).join('');
+            if (adhoc) { window.renderPMAdhocManuals(); window.renderPMAdhocPhotos(); }
             const timeEl = el('pm-adhoc-time');
             if (adhoc && timeEl && !timeEl.value) timeEl.value = getLocalDateTimeString();
 
@@ -5449,19 +5478,27 @@
                 const result = document.getElementById('pm-adhoc-result').value;
                 const reason = document.getElementById('pm-adhoc-reason').value;
                 const remarks = document.getElementById('pm-adhoc-remarks').value.trim();
+                if (hasPendingManualUpload(pmAdhocManuals)) { btn.disabled = false; btn.innerText = origLabel; return; }
+                if (hasPendingPhotoUpload(pmAdhocPhotos)) { btn.disabled = false; btn.innerText = origLabel; return; }
+                const adhocManuals = pmAdhocManuals.map(toManualRecord);
+                const adhocPhotos = pmAdhocPhotos.map(toPhotoRecord);
                 try {
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'pm_results'), {
                         taskId: null, workType, triggerReason: reason,
                         line, equipmentName, category, cycleType: '수시', criteria,
                         taskDetails, result, remarks,
+                        manuals: adhocManuals, photos: adhocPhotos,
                         checkedByName: currentEditorFields().editorName,
                         checkTime, checkedAt: serverTimestamp()
                     });
                     await logEditHistory(`${workType} (실적 등록)`, line, equipmentName, `${result} · ${reason}${remarks ? ' · ' + remarks : ''}`);
-                    showToast(`${workType} 실적이 등록되었습니다.`);
+                    const note = [adhocManuals.length ? `메뉴얼 ${adhocManuals.length}건` : '', adhocPhotos.length ? `사진 ${adhocPhotos.length}장` : ''].filter(Boolean).join(' · ');
+                    showToast(note ? `${workType} 실적이 등록되었습니다. (${note} 첨부)` : `${workType} 실적이 등록되었습니다.`);
                     document.getElementById('pm-adhoc-remarks').value = '';
                     document.getElementById('pm-details').value = '';
                     document.getElementById('pm-criteria').value = '';
+                    pmAdhocManuals = []; window.renderPMAdhocManuals();
+                    pmAdhocPhotos = []; window.renderPMAdhocPhotos();
                 } catch (err) {
                     console.error(err);
                     showToast('실적 등록에 실패했습니다.', 'error');
@@ -6711,7 +6748,7 @@
                 const msg = rawPMResultsData.some(r => isAdhocType(r.workType))
                     ? '조건에 맞는 일반·긴급 점검 실적이 없습니다.'
                     : '아직 등록된 일반·긴급 점검 실적이 없습니다.<br><span class="text-[11px]">좌측 <b>점검항목 등록</b>에서 유형을 <b>일반점검</b> 또는 <b>긴급점검</b>으로 골라 등록하세요.</span>';
-                tbody.innerHTML = `<tr><td colspan="13" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">${msg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="14" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">${msg}</td></tr>`;
                 if (cardsEl) cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">${msg}</div>`;
                 if (pagEl) pagEl.innerHTML = '';
                 if (window.refreshFilterResetBtns) window.refreshFilterResetBtns();
@@ -6737,6 +6774,16 @@
                     ? `<button onclick="deletePMResultRow('${item.id}')" class="text-slate-400 hover:text-red-600 transition p-1 bg-slate-100 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
                     : '<span class="text-slate-300 text-xs">-</span>';
 
+                // 첨부: 사진은 뷰어로, 메뉴얼은 PDF 뷰어로 연다
+                const photos = (Array.isArray(item.photos) ? item.photos : []).filter(p => p && p.url);
+                const manuals = (Array.isArray(item.manuals) ? item.manuals : []).filter(m => m && m.url);
+                const attachBtns = (photos.length || manuals.length)
+                    ? [
+                        photos.length ? `<button onclick="openResultPhotos('${item.id}',0)" title="현장 사진 ${photos.length}장 보기" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-bold"><i data-lucide="camera" class="w-3 h-3"></i>${photos.length}</button>` : '',
+                        manuals.length ? `<button onclick="openManualUrl('${manualEsc(manuals[0].url)}','${manualEsc(manuals[0].name)}')" title="${manualEsc(manuals[0].name)}${manuals.length > 1 ? ` 외 ${manuals.length - 1}건` : ''}" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold ml-1"><i data-lucide="file-text" class="w-3 h-3"></i>${manuals.length}</button>` : ''
+                    ].join('')
+                    : '<span class="text-slate-300 text-[10px]">-</span>';
+
                 html += `
                     <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100">
                         <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
@@ -6749,6 +6796,7 @@
                         <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${item.taskDetails || '-'}</td>
                         <td class="py-2.5 px-2 text-center text-slate-600 whitespace-normal min-w-[80px] leading-snug break-words">${item._criteria || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${resBadgeOf(item.result)}</td>
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">${attachBtns}</td>
                         <td class="py-2.5 px-2 text-center ${item.checkedByName ? 'text-slate-700 font-medium' : 'text-slate-300'}">${item.checkedByName || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-500 whitespace-normal min-w-[150px] break-words leading-snug">${item.remarks || '-'}</td>
                         <td class="py-2.5 px-2 text-center">${delBtn}</td>
@@ -6771,6 +6819,7 @@
                             <span class="text-slate-400 ml-auto">${item._when || '-'}</span>
                         </div>
                         <div class="text-xs text-slate-600 leading-snug"><span class="text-slate-400 mr-1">내용</span>${item.taskDetails || '-'}</div>
+                        ${(photos.length || manuals.length) ? `<div class="flex items-center gap-1 mt-1.5">${attachBtns}</div>` : ''}
                         <div class="flex items-end justify-between gap-2 mt-1.5">
                             <div class="text-xs text-slate-500 leading-snug min-w-0"><span class="text-slate-400 mr-1">특이</span>${item.remarks || '-'}</div>
                             <div class="shrink-0">${delBtn}</div>
@@ -9377,6 +9426,48 @@
             if (window.lucide) lucide.createIcons({ root: box });
         };
 
+        // ----- 일반·긴급 점검 등록 폼의 메뉴얼 첨부 -----
+        // 이 유형은 점검 항목을 만들지 않고 실적(pm_results)만 남기므로,
+        // 첨부도 고장실적과 같은 방식으로 실적 문서 안에 배열로 담는다.
+        window.pickPMAdhocManual = () => document.getElementById('pm-adhoc-manual-file').click();
+        window.onPMAdhocManualPicked = (input) => attachManualFiles(input, pmAdhocManuals, window.renderPMAdhocManuals);
+        window.removePMAdhocManual = async (idx) => {
+            const mn = pmAdhocManuals[idx];
+            if (!mn || mn.uploading) return;
+            pmAdhocManuals.splice(idx, 1);
+            window.renderPMAdhocManuals();
+            await deleteManualObject(mn.storagePath); // 등록 전이라 어느 문서도 참조하지 않는다
+        };
+        window.renderPMAdhocManuals = () => {
+            const box = document.getElementById('pm-adhoc-manual-chips');
+            if (!box) return;
+            box.innerHTML = pmAdhocManuals.map((mn, i) => mn.uploading
+                ? `<span class="inline-flex items-center gap-1 max-w-full px-2 py-1 rounded-md bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-500">
+                    <i data-lucide="loader" class="w-3 h-3 shrink-0 animate-spin"></i><span class="truncate">${manualEsc(mn.name)}</span><span class="shrink-0">${mn.pct}%</span></span>`
+                : `<span class="inline-flex items-center gap-1 max-w-full px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
+                    <i data-lucide="check" class="w-3 h-3 shrink-0"></i>
+                    <button type="button" onclick="openManualUrl('${manualEsc(mn.url)}','${manualEsc(mn.name)}')" title="미리보기" class="truncate hover:underline">${manualEsc(mn.name)}</button>
+                    <button type="button" onclick="removePMAdhocManual(${i})" title="첨부 취소" class="text-emerald-500 hover:text-red-600 shrink-0 leading-none">&times;</button></span>`).join('');
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
+        // ----- 일반·긴급 점검 등록 폼의 현장 사진 -----
+        window.pickPMAdhocPhoto = (mode) => document.getElementById(mode === 'camera' ? 'pm-adhoc-photo-camera' : 'pm-adhoc-photo-file').click();
+        window.onPMAdhocPhotoPicked = (input) => attachBDPhotos(input, pmAdhocPhotos, window.renderPMAdhocPhotos, false);
+        window.removePMAdhocPhoto = async (idx) => {
+            const p = pmAdhocPhotos[idx];
+            if (!p || p.uploading) return;
+            pmAdhocPhotos.splice(idx, 1);
+            window.renderPMAdhocPhotos();
+            await deletePhotoObject(p.storagePath);
+        };
+        window.renderPMAdhocPhotos = () => {
+            const box = document.getElementById('pm-adhoc-photo-grid');
+            if (!box) return;
+            box.innerHTML = photoGridHtml(pmAdhocPhotos, 'adhoc-reg', 'removePMAdhocPhoto');
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
         // ----- 수정 모달 첨부 (기존 첨부 + 새로 올린 파일) -----
         window.pickBDEditManual = () => document.getElementById('edit-bd-manual-file').click();
         window.onBDEditManualPicked = (input) => attachManualFiles(input, bdEditManuals, renderBDEditManuals);
@@ -9624,12 +9715,24 @@
         let photoViewerList = [];
         let photoViewerIdx = 0;
 
+        let activeResultPhotos = [];   // 점검 실적 1건의 사진 (목록에서 열 때 담아 둔다)
+
         function photoSourceList(src) {
             if (src === 'reg') return bdRegPhotos;
             if (src === 'edit') return bdEditPhotos;
+            if (src === 'adhoc-reg') return pmAdhocPhotos;
+            if (src === 'result') return activeResultPhotos;
             const it = rawBDData.find(d => d.id === activeBDDetailId);
             return Array.isArray(it && it.photos) ? it.photos : [];
         }
+
+        // 점검 실적 목록에서 사진 보기 (onclick 으로 배열을 넘길 수 없어 id 로 찾아 담는다)
+        window.openResultPhotos = (resultId, idx) => {
+            const r = rawPMResultsData.find(x => x.id === resultId);
+            activeResultPhotos = (Array.isArray(r && r.photos) ? r.photos : []).filter(p => p && p.url);
+            if (!activeResultPhotos.length) return;
+            window.openPhotoAt('result', Math.min(idx || 0, activeResultPhotos.length - 1));
+        };
 
         window.openPhotoAt = (src, idx) => {
             const all = photoSourceList(src);
