@@ -1213,7 +1213,7 @@
                                 </div>
                                 <div id="pm-adhoc-time-wrap" class="hidden">
                                     <label class="block text-sm font-bold text-slate-700 mb-1.5">점검 일시</label>
-                                    <input type="datetime-local" id="pm-adhoc-time" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                    <div id="pm-adhoc-time-box"></div>
                                 </div>
                             </div>
 
@@ -1447,11 +1447,11 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
                                 <div>
                                     <label class="block text-sm font-bold text-blue-900 mb-1.5">고장 발생 일시</label>
-                                    <input type="datetime-local" id="bd-start" required class="w-full border border-blue-200 rounded-md px-3 py-2 text-sm outline-none bg-white">
+                                    <div id="bd-start-box"></div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold text-blue-900 mb-1.5">조치 완료 일시</label>
-                                    <input type="datetime-local" id="bd-end" required class="w-full border border-blue-200 rounded-md px-3 py-2 text-sm outline-none bg-white">
+                                    <div id="bd-end-box"></div>
                                 </div>
                             </div>
                             <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-md transition mt-2 text-sm shadow-sm">고장 실적 등록</button>
@@ -1914,7 +1914,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">점검 일시</label>
-                    <input type="datetime-local" id="pm-result-time" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                    <div id="pm-result-time-box"></div>
                     <p class="text-[10px] text-slate-400 mt-1">실제 점검한 시각을 입력하세요. (기본값: 현재 시각)</p>
                 </div>
             </div>
@@ -2107,11 +2107,11 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">발생 일시</label>
-                            <input type="datetime-local" id="edit-bd-start" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                            <div id="edit-bd-start-box"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">완료 일시</label>
-                            <input type="datetime-local" id="edit-bd-end" class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none">
+                            <div id="edit-bd-end-box"></div>
                         </div>
                     </div>
                 </form>
@@ -2306,6 +2306,119 @@
             const offset = d.getTimezoneOffset() * 60000;
             return (new Date(d - offset)).toISOString().slice(0, 16);
         }
+
+        // ==========================================
+        // 24시간제 날짜·시각 입력
+        // ==========================================
+        // 브라우저 기본 <input type="datetime-local"> 은 표시 형식을 OS·브라우저 로캘에서 가져온다.
+        // 한국어 환경에서는 '오전/오후'로 나오는데, 이를 24시간제로 강제하는 표준 방법이 없다
+        // (W3C 에 요청만 올라가 있고 lang 속성으로도 브라우저마다 제각각이다).
+        // 그래서 [날짜] + [시 00~23] + [분 00~59] 로 직접 만든다.
+        //
+        // 값은 기존과 똑같이 'YYYY-MM-DDTHH:mm' 문자열을 숨은 input 에 담는다. 게다가 그 input 의
+        // value 접근자를 가로채 두어서, 기존 코드의 el.value 읽기·쓰기가 그대로 동작한다.
+        // (읽으면 합쳐진 문자열, 쓰면 화면의 날짜·시·분에 반영)
+        const dt24Callbacks = {};
+
+        function dt24Markup(id, opts) {
+            const o = opts || {};
+            const cls = o.cls || 'border border-slate-300 rounded-md px-2 py-2 text-sm outline-none bg-white';
+            const opt = (n) => Array.from({ length: n }, (_, i) => {
+                const v = String(i).padStart(2, '0');
+                return `<option value="${v}">${v}</option>`;
+            }).join('');
+            return `<div class="flex items-center gap-1 min-w-0" data-dt24="${id}">
+                <input type="date" id="${id}__d" ${o.required ? 'required' : ''} class="${cls} flex-1 min-w-0" oninput="dt24Sync('${id}')" onchange="dt24Sync('${id}')">
+                <select id="${id}__h" title="시 (24시간제)" onchange="dt24Sync('${id}')" class="${cls} shrink-0 px-1">${opt(24)}</select>
+                <span class="text-slate-400 font-bold shrink-0">:</span>
+                <select id="${id}__m" title="분" onchange="dt24Sync('${id}')" class="${cls} shrink-0 px-1">${opt(60)}</select>
+                <input type="hidden" id="${id}">
+            </div>`;
+        }
+
+        // 화면의 세 칸 → 숨은 input (사용자가 고를 때)
+        window.dt24Sync = (id) => {
+            const d = document.getElementById(id + '__d');
+            const h = document.getElementById(id + '__h');
+            const m = document.getElementById(id + '__m');
+            const hid = document.getElementById(id);
+            if (!d || !h || !m || !hid) return;
+            const v = d.value ? `${d.value}T${h.value}:${m.value}` : '';
+            (hid.__dt24Native || ((x) => { hid.setAttribute('value', x); })).call(hid, v);
+            if (dt24Callbacks[id]) dt24Callbacks[id](v);
+        };
+
+        // 숨은 input 값 → 화면의 세 칸 (코드가 값을 넣을 때). 비어 있으면 시·분은 지금 시각으로.
+        function dt24Apply(id, v) {
+            const d = document.getElementById(id + '__d');
+            const h = document.getElementById(id + '__h');
+            const m = document.getElementById(id + '__m');
+            if (!d || !h || !m) return;
+            const s = String(v || '');
+            const mt = s.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+            if (mt) {
+                d.value = mt[1];
+                if (mt[2]) { h.value = mt[2]; m.value = mt[3]; }
+            } else {
+                d.value = '';
+                const now = new Date();
+                h.value = String(now.getHours()).padStart(2, '0');
+                m.value = String(now.getMinutes()).padStart(2, '0');
+            }
+        }
+
+        // value 접근자를 가로채 기존 코드(el.value = ... / el.value)를 그대로 살린다
+        function initDT24(id, onChange, initialValue) {
+            const hid = document.getElementById(id);
+            if (!hid) return;
+            // 초기화 중에 콜백이 돌면 '빈 값으로 바뀌었다'고 잘못 알리게 되므로 먼저 떼어 둔다
+            delete dt24Callbacks[id];
+            if (!hid.__dt24) {
+                hid.__dt24 = true;
+                const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+                hid.__dt24Native = desc.set;
+                Object.defineProperty(hid, 'value', {
+                    configurable: true,
+                    get() { return desc.get.call(hid); },
+                    set(v) { desc.set.call(hid, v || ''); dt24Apply(id, v || ''); }
+                });
+            }
+            dt24Apply(id, initialValue !== undefined ? initialValue : hid.value);
+            window.dt24Sync(id);
+            if (onChange) dt24Callbacks[id] = onChange;
+        }
+        window.initDT24 = initDT24;
+
+        // 화면에 고정으로 있는 날짜·시각 칸들을 24시간제 컨트롤로 만든다
+        function buildStaticDT24() {
+            const blue = 'border border-blue-200 rounded-md px-2 py-2 text-sm outline-none bg-white';
+            const gray = 'border border-slate-300 rounded-md px-2 py-2 text-sm outline-none bg-white';
+            const small = 'border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none bg-white';
+            [
+                ['pm-adhoc-time', { cls: gray }],
+                ['bd-start', { cls: blue, required: true }],
+                ['bd-end', { cls: blue, required: true }],
+                ['pm-result-time', { cls: gray }],
+                ['edit-bd-start', { cls: small }],
+                ['edit-bd-end', { cls: small }]
+            ].forEach(([id, opt]) => {
+                const box = document.getElementById(id + '-box');
+                if (!box || box.dataset.built) return;
+                box.innerHTML = dt24Markup(id, opt);
+                box.dataset.built = '1';
+                initDT24(id);
+            });
+        }
+
+        // 폼 reset 은 화면의 세 칸만 되돌리므로 숨은 값도 같이 맞춰 준다
+        document.addEventListener('reset', (e) => {
+            const boxes = e.target && e.target.querySelectorAll ? e.target.querySelectorAll('[data-dt24]') : [];
+            setTimeout(() => boxes.forEach(b => {
+                const id = b.getAttribute('data-dt24');
+                dt24Apply(id, '');      // 날짜는 비우고 시·분은 지금 시각으로
+                window.dt24Sync(id);
+            }), 0);
+        });
 
         // 1. 캘린더 기반 '점검 예정일' 계산 로직
         function calculatePeriodEndDate(baseDateStr, cycleType, offset = 0) {
@@ -3760,6 +3873,7 @@
                 if (btn) window.removeEquipment(ft, btn.getAttribute('data-remove-eq'));
             });
         });
+        buildStaticDT24(); // 날짜·시각 칸을 24시간제 컨트롤로 교체 (오전/오후 표기 제거)
         initAuth();
 
         function loadFirestoreData() {
@@ -4392,13 +4506,19 @@
                         <td class="py-1.5 px-2">${txt(item,'cause')}</td>
                         <td class="py-1.5 px-2">${txt(item,'content')}</td>
                         <td class="py-1.5 px-2">${txt(item,'prevention')}</td>
-                        <td class="py-1.5 px-2"><input type="datetime-local" value="${item.startTime||''}" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-600" onchange="updateTempBDData('${item.id}','startTime',this.value)"></td>
-                        <td class="py-1.5 px-2"><input type="datetime-local" value="${item.endTime||''}" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-600" onchange="updateTempBDData('${item.id}','endTime',this.value)"></td>
+                        <td class="py-1.5 px-2">${dt24Markup(`bdm-startTime-${item.id}`, { cls: 'bg-slate-50 border border-slate-200 rounded px-1.5 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-600 text-[11px]' })}</td>
+                        <td class="py-1.5 px-2">${dt24Markup(`bdm-endTime-${item.id}`, { cls: 'bg-slate-50 border border-slate-200 rounded px-1.5 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-600 text-[11px]' })}</td>
                         <td class="py-1.5 px-3 text-center"><button onclick="deleteBDMasterRow('${item.id}')" class="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded text-[10px] font-bold transition w-full">삭제</button></td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
+            // 24시간제 날짜·시각 칸은 그려진 뒤에 값을 넣고 변경 처리를 연결한다
+            paginated.forEach(item => {
+                [['startTime', item.startTime], ['endTime', item.endTime]].forEach(([field, val]) => {
+                    initDT24(`bdm-${field}-${item.id}`, (v) => window.updateTempBDData(item.id, field, v), val || '');
+                });
+            });
             document.getElementById('bd-master-pagination').innerHTML = getPaginationHTML(bdMasterPage, totalPages, 'window.changeBDMasterPage');
         };
         window.saveBDMaster = async () => {
