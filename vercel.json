@@ -3,6 +3,10 @@
     {
       "path": "/api/report-mail",
       "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/pm-rollover",
+      "schedule": "0 15 * * *"
     }
   ]
 }
