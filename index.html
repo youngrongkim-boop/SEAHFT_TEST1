@@ -1048,8 +1048,7 @@
                             <!-- 오른쪽 묶음: 지연 일괄 처리(관리자) + 엑셀 출력 -->
                             <div class="ml-auto flex items-center gap-1.5 flex-wrap justify-end">
                                 <span id="pm-bulk-group" class="hidden items-center gap-1.5">
-                                    <span class="text-[11px] md:text-xs font-bold px-2 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-200 whitespace-nowrap" id="pm-bulk-info">미확인 지연 0건</span>
-                                    <button type="button" onclick="togglePMSelectMode()" id="pm-sel-btn" title="지연 건의 순번 자리에 선택칸을 띄웁니다" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">선택</button>
+                                    <button type="button" onclick="togglePMSelectMode()" id="pm-sel-btn" title="지연 건의 순번 자리에 선택칸을 띄웁니다 (미확인 지연 건수는 왼쪽 요약에 표시됩니다)" class="px-2.5 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">선택</button>
                                     <span id="pm-sel-tools" class="hidden items-center gap-1.5">
                                         <button type="button" onclick="selectAllOverdue()" id="pm-bulk-all" title="지금 조회 조건에 맞는 미확인 지연을 모두 선택합니다" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-40">전체 선택</button>
                                         <button type="button" onclick="clearOverdueSel()" id="pm-bulk-clear" class="px-2 py-1.5 rounded text-[11px] md:text-xs font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40">선택 해제</button>
@@ -5123,16 +5122,9 @@
             grp.classList.toggle('hidden', !isAdmin);
             grp.classList.toggle('flex', isAdmin);
             if (!isAdmin) return;
+            // 미확인 지연 건수는 왼쪽 요약 칩에 이미 나오므로 여기서 따로 적지 않는다
             const openCount = getFilteredPMHistory().filter(d => d._overdue === 'OVERDUE').length;
             const n = selectedOverdueIds.size;
-
-            const info = document.getElementById('pm-bulk-info');
-            info.innerText = openCount
-                ? `미확인 지연 ${openCount.toLocaleString()}건${pmSelectMode && n ? ` · 선택 ${n.toLocaleString()}` : ''}`
-                : '미확인 지연 0건';
-            info.className = `text-[11px] md:text-xs font-bold px-2 py-1.5 rounded border ${openCount
-                ? 'bg-amber-100 text-amber-900 border-amber-200'
-                : 'bg-slate-100 text-slate-400 border-slate-200'}`;
 
             const selBtn = document.getElementById('pm-sel-btn');
             selBtn.innerText = pmSelectMode ? '선택 종료' : '선택';
