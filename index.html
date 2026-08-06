@@ -1010,10 +1010,11 @@
                     <div id="pm-bulk-bar" class="hidden mb-2 shrink-0 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
                         <i data-lucide="list-checks" class="w-4 h-4 text-amber-600 shrink-0"></i>
                         <span class="text-xs font-bold text-amber-900" id="pm-bulk-info">사유 미확인 지연 0건</span>
-                        <button type="button" onclick="selectAllOverdue()" class="px-2 py-1 rounded text-[11px] font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-100">현재 조건 전체 선택</button>
-                        <button type="button" onclick="clearOverdueSel()" class="px-2 py-1 rounded text-[11px] font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100">선택 해제</button>
+                        <button type="button" onclick="selectAllOverdue()" id="pm-bulk-all" class="px-2 py-1 rounded text-[11px] font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 disabled:opacity-40">현재 조건 전체 선택</button>
+                        <button type="button" onclick="clearOverdueSel()" id="pm-bulk-clear" class="px-2 py-1 rounded text-[11px] font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40">선택 해제</button>
                         <button type="button" onclick="bulkConfirmOverdue()" id="pm-bulk-btn" class="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50">선택 일괄 사유 확인</button>
-                        <span class="text-[10px] text-amber-700/80 hidden md:inline">정기수리·휴동처럼 며칠씩 못 한 경우 라인·기간으로 걸러서 한 번에 처리하세요.</span>
+                        <button type="button" onclick="runPMRolloverNow()" id="pm-roll-btn" title="예정일이 지난 회차를 지금 바로 미실시 실적으로 만듭니다 (평소에는 접속할 때 자동으로 처리됩니다)" class="px-2.5 py-1 rounded text-[11px] font-bold bg-white border border-slate-400 text-slate-700 hover:bg-slate-100 ml-auto">지금 지연 정리</button>
+                        <span id="pm-bulk-hint" class="w-full text-[10px] text-amber-700/80">정기수리·휴동처럼 며칠씩 못 한 경우, 위쪽에서 <b>라인·기간</b>으로 거른 뒤 [현재 조건 전체 선택] → [선택 일괄 사유 확인] 하면 한 번에 정리됩니다.</span>
                     </div>
                     <div class="mb-2 shrink-0">
                         <div class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
@@ -3915,6 +3916,7 @@
                     return { id: doc.id, ...data, cycleType: normalizeCycle(data.cycleType) };
                 });
                 updateTaskDetailsCombo();
+                maybeRunPMRollover();
                 if (currentTabId === 'pm-result') window.renderOverduePanel();
                 window.debouncedApplyFilterAndRender();
                 maybeShowPMAlert();
@@ -3933,6 +3935,8 @@
             });
             onSnapshot(pmResRef, (snapshot) => {
                 rawPMResultsData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => (b.checkedAt?.seconds || 0) - (a.checkedAt?.seconds || 0));
+                pmResultsLoaded = true;
+                maybeRunPMRollover();
                 if (currentTabId === 'adhoc-result') window.renderAdhocResults();
                 window.debouncedApplyFilterAndRender();
             });
@@ -3975,6 +3979,12 @@
                 if (currentTabId === 'manual-lib') renderManualLibrary();
                 if (activeBDDetailId && !document.getElementById('bd-detail-modal').classList.contains('hidden')) renderBDDetail(activeBDDetailId);
             });
+            const pmRollRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'pmRollover');
+            onSnapshot(pmRollRef, (snap) => {
+                pmRolloverCfg = snap.exists() ? snap.data() : {};
+                maybeRunPMRollover();
+                if (currentTabId === 'pm-result') window.debouncedRenderPMHistory();
+            }, (err) => { console.error('지연 자동 기록 설정 구독 실패', err); pmRolloverCfg = {}; });
             const reportMailRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'reportMail');
             onSnapshot(reportMailRef, (snap) => {
                 reportMailCfg = snap.exists() ? snap.data() : {};
@@ -4923,6 +4933,165 @@
         let pendingOverdue = null;
         let selectedOverdueIds = new Set();
 
+        // ==========================================
+        // 예방점검 지연 자동 기록 (화면 쪽)
+        // ==========================================
+        // 예정일이 지난 회차마다 '미실시' 실적을 남기고 항목을 다음 회차로 옮긴다.
+        // api/pm-rollover.js 와 완전히 같은 규칙·같은 문서 ID(miss_{항목id}_{예정일})를 쓴다.
+        //   → 화면과 서버 중 어느 쪽이 먼저 돌아도 결과가 같고, 같은 회차가 두 번 생기지 않는다.
+        //   → 서버(자정 크론)는 '아무도 며칠간 접속하지 않는 경우'를 위한 보조 장치일 뿐이고,
+        //     평소에는 관리자가 접속하는 순간 여기서 처리된다.
+        // 항목의 예정일을 옮기려면 수정 권한이 필요하므로 관리자일 때만 실행한다.
+        const PM_ROLL_MAX_PER_TASK = 40;   // 항목 1건이 한 번에 만들 수 있는 회차 수
+        const PM_ROLL_MAX_TOTAL = 2000;    // 한 번 실행의 전체 상한
+        const PM_ROLL_KEY = 'seahcm.pmRollover.lastRun';
+        let pmRolloverCfg = null;          // settings/pmRollover (도착 전에는 null → 실행하지 않음)
+        let pmResultsLoaded = false;
+        let pmRollBusy = false;
+
+        // 항목 1건이 만들어야 할 미실시 회차 목록 (쓰기 없음)
+        function planPMRollover(task, today, startDate) {
+            const cycle = normalizeCycle(task.cycleType);
+            const todayEnd = calculatePeriodEndDate(today, cycle, 0);
+            let due = String(task.nextCheckDate || '').slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return null;
+            if (due >= today) return null;                 // 아직 밀리지 않았다
+
+            // 기준선 이전부터 밀려 있던 것은 회차별로 쪼개지 않고 한 건으로 묶어 닫는다
+            // (기능을 켜는 순간 과거 수백 건이 쏟아지는 것을 막으면서 사실은 남긴다)
+            if (due < startDate) {
+                return {
+                    cycle, backlog: true, capped: false, newDue: todayEnd,
+                    missed: [{ dueDate: due, overdueDays: overdueInfoOf(due, today).days }]
+                };
+            }
+
+            const missed = [];
+            let capped = false;
+            while (due < today) {
+                missed.push({ dueDate: due, overdueDays: overdueInfoOf(due, today).days });
+                const nxt = calculatePeriodEndDate(due, cycle, 1);
+                if (!nxt || nxt <= due) break;                                   // 무한루프 방지
+                if (missed.length >= PM_ROLL_MAX_PER_TASK) { capped = true; due = nxt; break; }
+                due = nxt;
+                if (due >= todayEnd) break;                                      // 오늘 회차는 아직 할 수 있다
+            }
+            const newDue = capped ? due : (due < todayEnd ? todayEnd : due);
+            if (!missed.length) return null;
+            return { cycle, missed, newDue, capped };
+        }
+
+        function collectPMRolloverPlans(today, startDate) {
+            const plans = [];
+            let total = 0;
+            for (const t of rawPMData) {
+                if (t.status === '점검') continue;
+                if (normalizeWorkType(t.workType) !== '예방점검') continue;
+                const p = planPMRollover(t, today, startDate);
+                if (!p) continue;
+                if (total + p.missed.length > PM_ROLL_MAX_TOTAL) p.missed = p.missed.slice(0, Math.max(0, PM_ROLL_MAX_TOTAL - total));
+                if (!p.missed.length) continue;
+                total += p.missed.length;
+                plans.push({ task: t, ...p });
+                if (total >= PM_ROLL_MAX_TOTAL) break;
+            }
+            return { plans, total };
+        }
+
+        window.runPMRollover = async (opts) => {
+            const o = opts || {};
+            if (pmRollBusy) return null;
+            if (!currentUser || !isAdmin) return null;          // 예정일 이월에 수정 권한이 필요하다
+            if (!pmRolloverCfg || !pmResultsLoaded) return null; // 설정·실적이 도착하기 전에는 돌지 않는다
+            if (pmRolloverCfg.enabled === false) return null;
+
+            const today = getLocalTodayString();
+            if (!o.force && localStorage.getItem(PM_ROLL_KEY) === today) return null; // 하루 한 번이면 충분
+            const startDate = /^\d{4}-\d{2}-\d{2}$/.test(pmRolloverCfg.startDate || '') ? pmRolloverCfg.startDate : today;
+
+            const { plans, total } = collectPMRolloverPlans(today, startDate);
+            if (!plans.length) {
+                localStorage.setItem(PM_ROLL_KEY, today);
+                // 기준선이 아직 없으면 오늘로 심어 둔다 (다음부터 회차별 기록 시작)
+                if (!pmRolloverCfg.startDate) {
+                    try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'pmRollover'),
+                        { enabled: true, startDate: today, lastRunDate: today, lastRunAt: serverTimestamp() }, { merge: true }); } catch (e) { console.warn(e); }
+                }
+                return { created: 0, tasks: 0 };
+            }
+
+            pmRollBusy = true;
+            const existing = new Set(rawPMResultsData.map(r => r.id));
+            let created = 0;
+            try {
+                // 실적 생성 + 예정일 이월을 400건씩 나눠 커밋 (Firestore 배치 상한 500)
+                let batch = writeBatch(db), ops = 0;
+                const flush = async () => { if (ops) { await batch.commit(); batch = writeBatch(db); ops = 0; } };
+                for (const p of plans) {
+                    for (const m of p.missed) {
+                        const docId = `miss_${p.task.id}_${m.dueDate}`;
+                        if (existing.has(docId)) continue;   // 이미 있으면 손대지 않는다 (사유 확인 보존)
+                        batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'pm_results', docId), {
+                            taskId: p.task.id, workType: '예방점검',
+                            line: p.task.line || '', equipmentName: p.task.equipmentName || '',
+                            category: p.task.category || '', cycleType: p.cycle, criteria: p.task.criteria || '',
+                            taskDetails: p.task.taskDetails || '', result: '미실시', remarks: '',
+                            checkedByName: '자동 기록',
+                            dueDate: m.dueDate, wasOverdue: true, overdueDays: m.overdueDays,
+                            overdueExcused: false, excuseReason: '', excuseNote: '',
+                            notPerformed: true, autoGenerated: true,
+                            checkTime: `${m.dueDate}T23:59`,   // 그 회차 마감 시점으로 기록
+                            checkedAt: serverTimestamp()
+                        });
+                        created++; ops++;
+                        if (ops >= 400) await flush();
+                    }
+                    batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', p.task.id), { nextCheckDate: p.newDue });
+                    ops++;
+                    if (ops >= 400) await flush();
+                }
+                await flush();
+
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'pmRollover'), {
+                    enabled: true, startDate, lastRunDate: today,
+                    lastRunResult: `항목 ${plans.length}건 · 미실시 ${created}건 기록 (화면)`,
+                    lastRunBy: (currentUser && currentUser.email) || '', lastRunAt: serverTimestamp()
+                }, { merge: true });
+
+                if (created) await logEditHistory('예방점검 (지연 자동 기록)', '-', `${plans.length}개 항목`, `미실시 ${created}건 생성`);
+                localStorage.setItem(PM_ROLL_KEY, today);
+                return { created, tasks: plans.length, total };
+            } catch (e) {
+                console.error('지연 자동 기록 실패', e);
+                return { error: e.message };
+            } finally { pmRollBusy = false; }
+        };
+
+        // 데이터가 다 도착한 뒤 한 번만 돌도록 살짝 미룬다
+        let pmRollTimer = null;
+        function maybeRunPMRollover() {
+            clearTimeout(pmRollTimer);
+            pmRollTimer = setTimeout(() => {
+                window.runPMRollover().then(r => {
+                    if (r && r.created) showToast(`점검지연 ${r.created}건을 미실시 실적으로 기록했습니다.`, 'info');
+                });
+            }, 1500);
+        }
+
+        // 관리자가 자정을 기다리지 않고 지금 바로 정리하고 싶을 때
+        window.runPMRolloverNow = async () => {
+            if (!requireAdmin('지연 자동 기록')) return;
+            const today = getLocalTodayString();
+            const startDate = /^\d{4}-\d{2}-\d{2}$/.test((pmRolloverCfg || {}).startDate || '') ? pmRolloverCfg.startDate : today;
+            const { plans, total } = collectPMRolloverPlans(today, startDate);
+            if (!plans.length) return showToast('지금 기록할 지연 회차가 없습니다.');
+            if (!confirm(`밀린 점검 ${plans.length}개 항목에서 미실시 실적 ${total}건을 만듭니다.\n\n각 항목은 이번 주기로 넘어가고, 만들어진 실적은 [사유 확인]으로 정리할 수 있습니다.\n\n진행할까요?`)) return;
+            const r = await window.runPMRollover({ force: true });
+            if (!r) return showToast('실행할 수 없습니다. 잠시 후 다시 시도하세요.', 'error');
+            if (r.error) return showToast(`실패: ${r.error}`, 'error');
+            showToast(`미실시 실적 ${r.created}건을 기록했습니다.`);
+        };
+
         window.toggleOverdueSel = (id, on) => {
             if (on) selectedOverdueIds.add(id); else selectedOverdueIds.delete(id);
             updateBulkBar();
@@ -4942,12 +5111,19 @@
         function updateBulkBar() {
             const bar = document.getElementById('pm-bulk-bar');
             if (!bar) return;
-            const openCount = isAdmin ? getFilteredPMHistory().filter(d => d._overdue === 'OVERDUE').length : 0;
-            bar.classList.toggle('hidden', !isAdmin || openCount === 0);
-            if (!isAdmin || !openCount) return;
+            // 관리자에게는 항상 보여 준다. 0건일 때 숨기면 기능이 있는 줄도 모른다.
+            bar.classList.toggle('hidden', !isAdmin);
+            if (!isAdmin) return;
+            const openCount = getFilteredPMHistory().filter(d => d._overdue === 'OVERDUE').length;
             const n = selectedOverdueIds.size;
-            document.getElementById('pm-bulk-info').innerText = `사유 미확인 지연 ${openCount.toLocaleString()}건${n ? ` · 선택 ${n.toLocaleString()}건` : ''}`;
+            document.getElementById('pm-bulk-info').innerText = openCount
+                ? `사유 미확인 지연 ${openCount.toLocaleString()}건${n ? ` · 선택 ${n.toLocaleString()}건` : ''}`
+                : '사유 미확인 지연 0건 — 처리할 지연이 없습니다';
+            document.getElementById('pm-bulk-all').disabled = openCount === 0;
+            document.getElementById('pm-bulk-clear').disabled = n === 0;
             document.getElementById('pm-bulk-btn').disabled = n === 0;
+            const hint = document.getElementById('pm-bulk-hint');
+            if (hint) hint.classList.toggle('hidden', openCount === 0);
             if (window.lucide) lucide.createIcons({ root: bar });
         }
 
