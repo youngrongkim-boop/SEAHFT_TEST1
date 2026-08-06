@@ -7244,9 +7244,9 @@
                 const repeatBadge = isRepeat
                     ? `<span class="inline-flex items-center justify-center w-10 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">${repeatCount}회</span>`
                     : '<span class="inline-flex items-center justify-center w-10 text-slate-300">-</span>';
-                // 고장명 줄: [작업구분][중대][사진] 배지를 앞에 모으고 이름은 남는 폭을 쓴다
-                const nameBadges = [
-                    normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) : '',
+                // 고장명 줄: 작업구분은 이름 앞(수식어), 중대·사진은 이름 뒤에 붙인다
+                const namePrefix = normalizeWorkKind(item.workKind) !== '고장' ? workKindBadge(item.workKind) : '';
+                const nameSuffix = [
                     isCritical ? '<span class="inline-flex items-center justify-center px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold shrink-0">중대</span>' : '',
                     photoBadge
                 ].filter(Boolean).join('');
@@ -7256,7 +7256,7 @@
                         <td class="py-2.5 px-3 font-bold text-brand-600 text-center">${item.line || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-700">${startStr}</td>
                         <td class="py-2.5 px-3 font-semibold text-slate-800">
-                            <div class="flex items-center gap-1 min-w-0">${nameBadges}<span class="truncate">${item.faultName || '-'}</span></div>
+                            <div class="flex items-center gap-1 min-w-0">${namePrefix}<span class="truncate">${item.faultName || '-'}</span>${nameSuffix}</div>
                         </td>
                         <td class="py-2.5 px-2 text-center text-red-500 font-bold text-xs">${durStr}</td>
                         <td class="py-2.5 px-1.5 text-center">${shiftBadge}</td>
