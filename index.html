@@ -5104,19 +5104,11 @@
         };
         window.toggleOverdueSel = (id, on) => {
             if (on) selectedOverdueIds.add(id); else selectedOverdueIds.delete(id);
-            markOverdueRow(id, on);
             updateBulkBar();
         };
 
-        // 선택된 행에 테두리를 둘러 한눈에 보이게 한다.
-        // 배경색은 불량(빨강)과 부딪히므로 ring 으로 표시한다.
-        function markOverdueRow(id, on) {
-            const box = document.querySelector(`[data-ovsel="${id}"]`);
-            const row = box && box.closest('tr, .ovsel-card');
-            if (!row) return;
-            ['ring-2', 'ring-emerald-400', 'ring-inset'].forEach(c => row.classList.toggle(c, on));
-        }
-
+        // 선택 표시는 체크박스 하나로 충분하다. 행에 테두리까지 두르면
+        // [선택 해제]·[전체 선택] 처럼 체크박스만 건드리는 경로에서 테두리가 남는다.
         // 행의 아무 데나 눌러도 선택되게 한다 (체크박스만 노려 누르는 건 번거롭다).
         // 버튼·링크·입력칸을 누른 경우는 그 동작을 그대로 두고 선택은 건드리지 않는다.
         window.rowToggleOverdueSel = (e, id) => {
@@ -6529,9 +6521,7 @@
                 const rowSel = selBox
                     ? ` onclick="rowToggleOverdueSel(event, '${item.id}')" title="눌러서 선택/해제"`
                     : '';
-                const rowSelCls = selBox
-                    ? ` cursor-pointer select-none${selectedOverdueIds.has(item.id) ? ' ring-2 ring-emerald-400 ring-inset' : ''}`
-                    : '';
+                const rowSelCls = selBox ? ' cursor-pointer select-none' : '';
 
                 html += `
                     <tr class="${isBad ? 'bg-red-50/30' : 'bg-white hover:bg-slate-50'} transition-colors border-b border-slate-100${rowSelCls}"${rowSel}>
