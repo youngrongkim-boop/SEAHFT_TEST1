@@ -404,11 +404,11 @@
         </div>
     </div>
 
-    <!-- 원상복구 확인 -->
+    <!-- 복구완료 확인 -->
     <div id="plc-restore-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
-                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="undo-2" class="w-5 h-5 text-emerald-600"></i> 원상복구 확인</h3>
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="undo-2" class="w-5 h-5 text-emerald-600"></i> 복구완료 확인</h3>
                 <button type="button" onclick="closePlcRestoreModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="p-5 space-y-3">
@@ -425,7 +425,7 @@
             </div>
             <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2">
                 <button type="button" onclick="closePlcRestoreModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
-                <button type="button" id="plc-restore-save-btn" onclick="savePlcRestore()" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-60">원상복구 완료</button>
+                <button type="button" id="plc-restore-save-btn" onclick="savePlcRestore()" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-60">복구완료</button>
             </div>
         </div>
     </div>
@@ -788,9 +788,9 @@
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">프로그램 수정일지</div>
-            <button onclick="switchTab('plc-log')" id="nav-plc-log" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="PLC 프로그램 수정 이력과 원상복구 확인">
+            <button onclick="switchTab('plc-log')" id="nav-plc-log" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="PLC 프로그램 수정 이력과 복구완료 확인">
                 <i data-lucide="file-code-2" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">PLC 수정일지</span>
-                <span id="nav-plc-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center" title="원상복구가 아직 안 된 건수">0</span>
+                <span id="nav-plc-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center" title="복구완료 처리가 아직 안 된 건수">0</span>
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
@@ -1779,7 +1779,7 @@
                                 <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
                             </button>
                         </div>
-                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">라인별 <b>PLC 프로그램 수정 이력</b>입니다. 왜 고쳤는지·무엇을 어떻게 바꿨는지 남기고 사진을 첨부하세요. 조치가 끝나 <b>원본 프로그램으로 되돌렸으면 [원상복구] 버튼</b>을 눌러 완료로 표시합니다.</p>
+                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">라인별 <b>PLC 프로그램 수정 이력</b>입니다. 왜 고쳤는지·무엇을 어떻게 바꿨는지 남기고 사진을 첨부하세요. 조치가 끝나 <b>원본 프로그램으로 되돌렸으면 [복구완료] 버튼</b>을 눌러 완료로 표시합니다.</p>
                     </div>
 
                     <!-- 데스크톱 표 -->
@@ -1795,7 +1795,7 @@
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[200px]">수정 내용</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">사진</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24">작성자</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-28">원상복구</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-28">복구완료</th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 text-center w-36">복구 완료일시</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24">확인자</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-14 text-blue-600">수정</th>
@@ -10786,7 +10786,7 @@
         // ==========================================
         // 컬렉션: artifacts/{appId}/public/data/plc_logs
         // PLC 프로그램을 임시로 고친 뒤 되돌리지 않고 잊는 것이 가장 위험하다.
-        // 그래서 '수정 기록'과 '원상복구 확인'을 한 건으로 묶어 미복구가 눈에 띄게 남긴다.
+        // 그래서 '수정 기록'과 '복구완료 확인'을 한 건으로 묶어 미복구가 눈에 띄게 남긴다.
         //   등록 : 전 직원 (현장에서 고친 사람이 바로 남긴다)
         //   수정·삭제·복구확인 : 작성자 본인 · 라인 담당자 · 관리자
         // 사진은 고장 현장 사진과 같은 저장 경로(bd_photos/)를 쓴다 → 보안 규칙 추가 불필요.
@@ -10847,7 +10847,7 @@
             return list;
         }
 
-        // 사이드바 배지 = 아직 원상복구 안 된 건수 (되돌리지 않고 잊는 것을 막는 장치)
+        // 사이드바 배지 = 아직 복구완료 처리 안 된 건수 (되돌리지 않고 잊는 것을 막는 장치)
         function updatePlcBadge() {
             const el = document.getElementById('nav-plc-badge');
             if (!el) return;
@@ -10894,11 +10894,11 @@
             const restoreCell = (r) => {
                 if (plcIsRestored(r)) {
                     return canEditPlcLog(r)
-                        ? `<button onclick="revertPlcRestore('${r.id}')" title="복구 확인을 취소하고 다시 미복구로 되돌립니다" class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold"><i data-lucide="check" class="w-3 h-3"></i>복구완료</button>`
-                        : `<span class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold"><i data-lucide="check" class="w-3 h-3"></i>복구완료</span>`;
+                        ? `<button onclick="revertPlcRestore('${r.id}')" title="복구 확인을 취소하고 다시 미복구로 되돌립니다" class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold"><i data-lucide="check" class="w-3 h-3"></i>완료</button>`
+                        : `<span class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold"><i data-lucide="check" class="w-3 h-3"></i>완료</span>`;
                 }
                 return canEditPlcLog(r)
-                    ? `<button onclick="openPlcRestoreModal('${r.id}')" title="원본 프로그램으로 되돌렸으면 눌러 완료 처리합니다" class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold"><i data-lucide="undo-2" class="w-3 h-3"></i>원상복구</button>`
+                    ? `<button onclick="openPlcRestoreModal('${r.id}')" title="원본 프로그램으로 되돌렸으면 눌러 완료 처리합니다" class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold"><i data-lucide="undo-2" class="w-3 h-3"></i>복구완료</button>`
                     : `<span class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-red-100 border border-red-200 text-red-700 text-[10px] font-bold">미복구</span>`;
             };
             const photoCell = (r) => {
@@ -11062,7 +11062,7 @@
                         createdAt: serverTimestamp()
                     });
                     await logEditHistory('PLC 수정일지 (등록)', line, equipmentName, reason);
-                    showToast('수정일지를 등록했습니다. 되돌린 뒤 [원상복구]를 꼭 눌러주세요.');
+                    showToast('수정일지를 등록했습니다. 되돌린 뒤 [복구완료]를 꼭 눌러주세요.');
                 }
                 plcRegState.photos = []; plcRegState.origPhotos = [];
                 closePlcRegModal();
@@ -11088,7 +11088,7 @@
             } catch (e) { console.error(e); showToast('삭제 실패', 'error'); }
         };
 
-        // ----- 원상복구 확인 -----
+        // ----- 복구완료 확인 -----
         window.openPlcRestoreModal = (id) => {
             const r = rawPlcLogs.find(x => x.id === id);
             if (!r) return showToast('수정일지를 찾을 수 없습니다.', 'error');
@@ -11135,8 +11135,8 @@
                     restoredByName: currentEditorFields().editorName,
                     restoreNote: document.getElementById('plc-restore-note').value.trim()
                 });
-                await logEditHistory('PLC 수정일지 (원상복구)', r.line || '-', r.equipmentName || '-', `${when.replace('T', ' ')} 복구 확인`);
-                showToast('원상복구를 확인했습니다.');
+                await logEditHistory('PLC 수정일지 (복구완료)', r.line || '-', r.equipmentName || '-', `${when.replace('T', ' ')} 복구 확인`);
+                showToast('복구완료로 처리했습니다.');
                 closePlcRestoreModal();
             } catch (e) {
                 console.error(e);
@@ -11160,7 +11160,7 @@
         window.exportPlcLogsToExcel = () => {
             const list = getFilteredPlcLogs();
             if (!list.length) return showToast('출력할 데이터가 없습니다.', 'error');
-            const ws_data = [["라인", "수정일자", "설비·프로그램", "수정 사유", "수정 내용", "사진", "작성자", "원상복구", "복구 완료일시", "확인자", "복구 내용"]];
+            const ws_data = [["라인", "수정일자", "설비·프로그램", "수정 사유", "수정 내용", "사진", "작성자", "복구완료", "복구 완료일시", "확인자", "복구 내용"]];
             list.forEach(r => {
                 ws_data.push([r.line || '', String(r.modifiedAt || '').replace('T', ' '), r.equipmentName || '', r.reason || '', r.content || '',
                     (Array.isArray(r.photos) ? r.photos.length : 0), r.createdByName || r.createdBy || '',
