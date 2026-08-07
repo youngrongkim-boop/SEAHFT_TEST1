@@ -1142,7 +1142,7 @@
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-24">예정일</th>
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-14">상태</th>
                                     <th class="py-2 px-1.5 font-bold border-b border-slate-200 text-center w-14">특이사항</th>
-                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24" title="이 점검에 원래 얼마나 걸리는지 (기준값)">표준시간<br><span class="font-normal text-[10px] text-slate-400">(분)</span></th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24" title="이 점검에 원래 얼마나 걸리는지 (기준값). 칸 아래 주황 숫자는 지난 실적 평균이며, 누르면 그 값으로 표준시간을 맞춥니다.">표준시간<br><span class="font-normal text-[10px] text-slate-400">(분 · 실적평균)</span></th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24" title="이번에 실제로 걸린 시간">조치시간<br><span class="font-normal text-[10px] text-slate-400">(분)</span></th>
                                     <th class="py-2 px-3 font-bold border-b border-slate-200 text-center">실적등록</th>
                                     <th class="py-2 px-2 font-bold border-b border-slate-200 text-center text-blue-600">수정</th>
@@ -2941,6 +2941,29 @@
         const stdMinutesOf = (t) => parseActionMinutes((t && (t.standardMinutes ?? t.standardTime)) || 0);
         const actMinutesOf = (t) => parseActionMinutes((t && (t.actionMinutes ?? t.actionTime)) || 0);
 
+        // 지난 실적에서 '실제로 얼마나 걸렸는지' 평균을 구한다 → 표준시간을 고칠 근거가 된다.
+        // 회차가 끝나면 항목 문서가 새로 만들어져 taskId 가 바뀌므로 라인·설비·작업내용으로 묶는다.
+        // 미실시(점검을 안 한 회차)는 소요시간이 없으므로 평균에서 뺀다.
+        let pmActualStatsCache = null;
+        function pmActualStats() {
+            if (pmActualStatsCache) return pmActualStatsCache;
+            const map = new Map();
+            rawPMResultsData.forEach(r => {
+                if (r.result === '미실시' || r.notPerformed) return;
+                const mins = actMinutesOf(r);
+                if (!mins) return;
+                const k = `${r.line}|${r.equipmentName}|${r.taskDetails}`;
+                if (!map.has(k)) map.set(k, { count: 0, total: 0, last: 0 });
+                const s = map.get(k);
+                s.count++; s.total += mins;
+                if (!s.last) s.last = mins;   // 실적은 최신순으로 정렬돼 있어 처음 만나는 값이 가장 최근이다
+            });
+            map.forEach(s => { s.avg = Math.round(s.total / s.count); });
+            pmActualStatsCache = map;
+            return map;
+        }
+        const pmStatsOf = (t) => pmActualStats().get(`${t.line}|${t.equipmentName}|${t.taskDetails}`) || null;
+
         function getDynamicEquipments(line) {
             let equips = new Set();
             if (EQUIPMENT_MAP[line]) {
@@ -4274,6 +4297,7 @@
             });
             onSnapshot(pmResRef, (snapshot) => {
                 rawPMResultsData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => (b.checkedAt?.seconds || 0) - (a.checkedAt?.seconds || 0));
+                pmActualStatsCache = null;   // 실적이 바뀌면 평균을 다시 구한다
                 pmResultsLoaded = true;
                 maybeRunPMRollover();
                 if (currentTabId === 'adhoc-result') window.renderAdhocResults();
@@ -5963,6 +5987,22 @@
                     : `<span class="min-box border border-transparent text-slate-500" title="담당자·관리자만 수정할 수 있습니다">${stdMin || '-'}</span>`;
                 const actCell = numInput(actMin, 'updatePMActionTime', '실제', '이번에 실제로 걸린 시간 (분)');
 
+                // 지난 실적의 평균과 견줘 표준시간이 현실과 맞는지 알려 준다.
+                // 20% 넘게 벌어지면 눈에 띄게 하고, 한 번 눌러 평균값으로 고칠 수 있게 한다.
+                const st = pmStatsOf(item);
+                let stdHint = '';
+                if (st && st.count) {
+                    const gap = stdMin ? Math.round((st.avg - stdMin) / stdMin * 100) : null;
+                    const off = stdMin ? Math.abs(gap) >= 20 : true;   // 표준이 아직 없으면 항상 제안한다
+                    const label = `실적 ${st.count}회 평균 ${fmtMinutes(st.avg)}`;
+                    const tip = stdMin
+                        ? `${label} · 표준 ${fmtMinutes(stdMin)} 대비 ${gap > 0 ? '+' : ''}${gap}%`
+                        : `${label} · 표준시간이 아직 없습니다`;
+                    stdHint = (off && canEditLine(item.line))
+                        ? `<button onclick="applyPMStandardFromAvg('${item.id}', ${st.avg})" title="${tip} — 눌러서 표준시간을 ${st.avg}분으로 맞춥니다" class="block w-full mt-0.5 text-[10px] font-bold text-amber-700 hover:text-amber-900 hover:underline leading-tight">${fmtMinutes(st.avg)}${gap === null ? '' : ` (${gap > 0 ? '+' : ''}${gap}%)`}</button>`
+                        : `<span title="${tip}" class="block mt-0.5 text-[10px] text-slate-400 leading-tight">${fmtMinutes(st.avg)}</span>`;
+                }
+
                 html += `
                     <tr class="${rowColor} ${highlight} transition-colors border-b border-slate-100">
                         <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${absIndex}</td>
@@ -5975,7 +6015,7 @@
                         <td class="py-2.5 px-1.5 text-center font-medium ${isOverdue && !isDone ? 'text-red-600 font-bold' : (isDone ? 'text-slate-400' : 'text-slate-800')}">${item.nextCheckDate}</td>
                         <td class="py-2.5 px-1.5 text-center">${statusBadge}</td>
                         <td class="py-2.5 px-1.5 text-center">${remarksBtn}</td>
-                        <td class="py-2.5 px-2 text-center">${stdCell}</td>
+                        <td class="py-2.5 px-2 text-center">${stdCell}${stdHint}</td>
                         <td class="py-2.5 px-2 text-center">${actCell}</td>
                         <td class="py-2.5 px-2 text-center">${actionBtns}</td>
                         <td class="py-2.5 px-2 text-center">
@@ -6004,7 +6044,7 @@
                             ${remarksBtn}
                         </div>
                         <div class="flex items-center gap-2 mt-2 text-[11px]">
-                            <span class="text-slate-400 shrink-0">표준시간</span>${stdCell}
+                            <span class="text-slate-400 shrink-0">표준시간</span>${stdCell}${stdHint}
                             <span class="text-slate-400 shrink-0 ml-1">조치시간</span>${actCell}
                             <span class="text-slate-400 shrink-0">분</span>
                         </div>
@@ -6034,6 +6074,15 @@
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pm_tasks', id), { actionMinutes: toMinutes(value) });
             } catch(e) { console.error(e); showToast('조치시간 저장 실패', 'error'); }
+        };
+
+        // 지난 실적 평균을 그대로 표준시간으로 삼는다 (표준을 현실에 맞추는 가장 빠른 길)
+        window.applyPMStandardFromAvg = async (id, avg) => {
+            const rec = rawPMData.find(d => d.id === id);
+            if (!requireLineEdit(rec && rec.line, '표준시간 수정')) return;
+            if (!confirm(`표준시간을 실적 평균인 ${fmtMinutes(avg)}(${avg}분)으로 맞출까요?`)) return;
+            await window.updatePMStandardTime(id, avg);
+            showToast(`표준시간을 ${fmtMinutes(avg)}으로 맞췄습니다.`);
         };
 
         // 표준시간은 관리 기준값이라 담당자·관리자만 바꾼다 (firestore.rules 와 같은 조건)
@@ -6196,29 +6245,27 @@
 
             // 현황판은 '실적을 찍고 확인하는' 화면이다. 시간 입력은 예방점검 리스트에서만 하고
             // 여기서는 그 값을 읽기 전용으로 보여 준다 (같은 값을 두 곳에서 고치면 어느 쪽이 맞는지 알 수 없다).
-            // 표(데스크톱)는 표준시간·소요시간을 각각 다른 칸에 담는다
+            // 표준시간은 기준값이라 여기서 고치지 않는다(예방점검 리스트·항목 수정에서 정한다).
+            // 소요시간은 현장에서 작업을 마친 그 자리에서 적는 값이므로 여기서 입력한다.
             const stdCell = (item) => {
                 const std = stdMinutesOf(item);
-                return `<span class="text-[11px] ${std ? 'text-slate-600' : 'text-slate-300'}">${std ? fmtMinutes(std) : '-'}</span>`;
+                return `<span class="min-box border border-transparent ${std ? 'text-slate-600' : 'text-slate-300'}" title="예방점검 리스트에서 정합니다">${std ? fmtMinutes(std) : '-'}</span>`;
             };
             const actCell = (item) => {
                 const std = stdMinutesOf(item), act = actMinutesOf(item);
                 const over = std && act && act > std;   // 표준보다 오래 걸린 건 눈에 띄게
-                return `<span class="text-[11px] font-bold ${act ? (over ? 'text-red-600' : 'text-slate-800') : 'text-slate-300'}"
-                    title="${over ? `표준시간(${fmtMinutes(std)})보다 오래 걸렸습니다` : '예방점검 리스트에서 입력합니다'}">${act ? fmtMinutes(act) : '미기록'}</span>`;
+                const diff = over ? ` (표준 ${fmtMinutes(std)} 대비 +${fmtMinutes(act - std)})` : '';
+                return `<input type="number" min="0" step="1" value="${act || ''}" placeholder="분"
+                    onchange="updatePMActionTime('${item.id}', this.value)"
+                    title="실제로 걸린 시간을 분 단위로 적습니다${diff}"
+                    class="min-input border ${over ? 'border-red-300 text-red-600 bg-red-50' : 'border-slate-200 text-slate-700 bg-slate-50'} outline-none focus:ring-1 focus:ring-blue-500 font-bold">`;
             };
             // 카드(모바일)는 칸이 없으니 이름을 붙여 나란히 보여 준다
-            const timeCell = (item) => {
-                const std = stdMinutesOf(item), act = actMinutesOf(item);
-                const over = std && act && act > std;
-                return `<span class="inline-flex items-center gap-1 text-[11px] whitespace-nowrap">
-                    <span class="text-slate-400">표준시간</span>
-                    <span class="text-slate-600">${std ? fmtMinutes(std) : '-'}</span>
-                    <span class="text-slate-300">·</span>
-                    <span class="text-slate-400">소요시간</span>
-                    <span class="font-bold ${act ? (over ? 'text-red-600' : 'text-slate-800') : 'text-slate-300'}">${act ? fmtMinutes(act) : '미기록'}</span>
+            const timeCell = (item) => `<span class="inline-flex items-center gap-1 text-[11px] whitespace-nowrap">
+                    <span class="text-slate-400">표준시간</span>${stdCell(item)}
+                    <span class="text-slate-400 ml-1">소요시간</span>${actCell(item)}
+                    <span class="text-slate-400">분</span>
                 </span>`;
-            };
             const remarksCell = (item) => `<button onclick="openRemarksModal('${item.id}')" class="text-[10px] font-bold px-2 py-1 rounded border ${item.remarks ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"><i data-lucide="edit-3" class="w-3 h-3 inline mr-0.5"></i>${item.remarks ? '있음' : '작성'}</button>`;
             const resultBtns = (item) => `<div class="flex items-center justify-center gap-1">
                 <button onclick="handlePMResult('${item.id}','양호')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">양호</button>
@@ -6247,14 +6294,25 @@
                 boardHasAny = true;
                 const overdue = items.filter(d => statusOf(d) === '점검지연').length;
                 const due = items.filter(d => statusOf(d) === '점검예정').length;
-                const cycleMin = items.reduce((s, d) => s + (stdMinutesOf(d) || actMinutesOf(d)), 0);
+                // 현황판은 '오늘 남은 일'을 보는 곳이다.
+                //   예상 = 표준시간의 합 → 오늘 이 주기 작업에 얼마나 걸릴지 미리 가늠한다.
+                //   실제 = 이미 적어 넣은 소요시간의 합 → 예상과 얼마나 벌어지는지 바로 보인다.
+                // (예전에는 표준이 없으면 실제로 대신 채워 더했는데, 예상과 실적이 한 숫자에 섞여
+                //  '예상 소요시간'이라는 이름과 맞지 않았다)
+                const cycleStd = items.reduce((s, d) => s + stdMinutesOf(d), 0);
+                const actItems = items.filter(d => actMinutesOf(d) > 0);
+                const cycleAct = actItems.reduce((s, d) => s + actMinutesOf(d), 0);
+                // 비교는 소요시간을 적은 항목끼리만 해야 뜻이 통한다 (안 적은 항목까지 더하면 늘 실제가 적게 나온다)
+                const cycleStdOfActed = actItems.reduce((s, d) => s + stdMinutesOf(d), 0);
+                const cycleDiff = cycleAct - cycleStdOfActed;
 
                 html += `<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-bold">${cycle}</span>
                             <span class="text-xs text-slate-500">총 ${items.length}건</span>
-                            ${cycleMin > 0 ? `<span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 rounded-md px-2 py-0.5 flex items-center gap-1"><i data-lucide="timer" class="w-3.5 h-3.5"></i>예상 소요시간 ${fmtMinutes(cycleMin)}</span>` : ''}
+                            ${cycleStd > 0 ? `<span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 rounded-md px-2 py-0.5 flex items-center gap-1" title="표준시간의 합 — 이 주기 작업에 걸릴 예상 시간"><i data-lucide="timer" class="w-3.5 h-3.5"></i>예상 ${fmtMinutes(cycleStd)}</span>` : ''}
+                            ${cycleAct > 0 ? `<span class="text-xs font-bold rounded-md px-2 py-0.5 flex items-center gap-1 border ${cycleDiff > 0 ? 'text-red-700 bg-red-50 border-red-300' : 'text-emerald-700 bg-emerald-50 border-emerald-300'}" title="소요시간을 적은 ${actItems.length}건의 합 (같은 항목의 표준 ${fmtMinutes(cycleStdOfActed) || '0분'} 대비)"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>실제 ${fmtMinutes(cycleAct)}${cycleStdOfActed ? ` (${cycleDiff > 0 ? '+' : ''}${fmtMinutes(Math.abs(cycleDiff)) || '0분'}${cycleDiff > 0 ? ' 초과' : cycleDiff < 0 ? ' 단축' : ''})` : ''}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2 text-[11px] font-bold">
                             ${overdue ? `<span class="text-red-600">● 점검지연 ${overdue}</span>` : ''}
