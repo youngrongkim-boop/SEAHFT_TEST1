@@ -191,6 +191,17 @@
                 width: 1.75rem;
                 height: 1.75rem;
             }
+            /* 접힌 상태에서는 폭이 5rem 뿐이라 로고와 버튼을 나란히 두면 둘 다 잘린다.
+               로고를 감추고 펼치기 버튼만 남겨, 좁은 띠의 맨 위가 곧 '펼치기'가 되게 한다. */
+            #main-sidebar.is-collapsed .logo-img,
+            #main-sidebar.is-collapsed #fallback-text-logo {
+                display: none !important;
+            }
+            #main-sidebar.is-collapsed #desktop-sidebar-toggle {
+                margin-left: 0 !important;
+                width: 2.25rem;
+                height: 2.25rem;
+            }
         }
 
         /* 분 단위 입력칸 (표준시간·조치시간)
@@ -714,13 +725,18 @@
     <aside id="main-sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 z-50 w-64 min-w-[16rem] bg-brand-800 text-brand-100 flex flex-col shrink-0 h-full transition-all duration-300">
         <div class="h-12 flex items-center px-6 border-b border-brand-700 shrink-0 sidebar-header-container transition-all duration-300">
             <img src="./SEAHCM.PNG" alt="세아씨엠 로고" class="h-8 w-auto object-contain logo-img transition-all duration-300" onerror="this.style.display='none'; document.getElementById('fallback-text-logo').classList.remove('hidden'); document.getElementById('fallback-text-logo').classList.add('flex');">
-            
+
             <div id="fallback-text-logo" class="hidden items-center w-full">
                 <i data-lucide="shield-check" class="w-6 h-6 mr-3 text-blue-400 logo-icon transition-all duration-300"></i>
                 <h1 class="text-lg font-bold text-white tracking-wide logo-text whitespace-nowrap overflow-hidden">Se-ah CM<br><span class="text-xs font-normal text-brand-100">예방보전 시스템</span></h1>
             </div>
+
+            <!-- 사이드바 접기/펼치기. 접는 대상 안에 두어야 어디를 여닫는지 바로 보인다. -->
+            <button id="desktop-sidebar-toggle" onclick="toggleDesktopSidebar()" title="사이드바 접기" class="hidden md:flex items-center justify-center ml-auto shrink-0 w-7 h-7 rounded-md text-brand-100/70 hover:text-white hover:bg-brand-700 transition-colors">
+                <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+            </button>
         </div>
-        
+
         <nav class="flex-1 py-4 overflow-y-auto hide-scroll overflow-x-hidden">
             <button onclick="setGlobalLine('ALL'); switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent" title="종합현황 대시보드">
                 <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">종합현황 대시보드</span>
@@ -820,11 +836,7 @@
                     <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
                 
-                <!-- Desktop Toggle -->
-                <button id="desktop-sidebar-toggle" onclick="toggleDesktopSidebar()" class="hidden md:block mr-4 p-1.5 text-slate-500 hover:bg-slate-100 hover:text-brand-600 focus:outline-none rounded-md transition-colors">
-                    <i data-lucide="panel-left-close" class="w-5 h-5"></i>
-                </button>
-
+                <!-- 사이드바 접기 버튼은 사이드바 안(로고 오른쪽)으로 옮겼다 -->
                 <h2 id="page-title" class="text-base md:text-lg font-bold text-slate-800 truncate">종합현황 대시보드</h2>
             </div>
             <div class="flex items-center text-xs md:text-sm text-slate-500 ml-2">
@@ -3781,17 +3793,31 @@
 
         window.toggleDesktopSidebar = () => {
             const sidebar = document.getElementById('main-sidebar');
-            sidebar.classList.toggle('is-collapsed');
-            
-            const btnIcon = document.querySelector('#desktop-sidebar-toggle i');
-            if(sidebar.classList.contains('is-collapsed')) {
-                btnIcon.setAttribute('data-lucide', 'panel-left-open');
-            } else {
-                btnIcon.setAttribute('data-lucide', 'panel-left-close');
-            }
-            lucide.createIcons({root: document.getElementById('desktop-sidebar-toggle')});
+            const collapsed = sidebar.classList.toggle('is-collapsed');
+
+            // 버튼이 사이드바 안에 있으므로 아이콘·설명도 상태에 맞춰 바꾼다
+            const btn = document.getElementById('desktop-sidebar-toggle');
+            const btnIcon = btn.querySelector('i');
+            btnIcon.setAttribute('data-lucide', collapsed ? 'panel-left-open' : 'panel-left-close');
+            btn.title = collapsed ? '사이드바 펼치기' : '사이드바 접기';
+            lucide.createIcons({ root: btn });
+
+            try { localStorage.setItem('seahcm.sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
             setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
         };
+
+        // 접어 둔 상태는 다음에 열 때도 유지한다 (매번 다시 접게 하면 번거롭다)
+        (function restoreSidebarState() {
+            let saved = null;
+            try { saved = localStorage.getItem('seahcm.sidebarCollapsed'); } catch (e) {}
+            if (saved !== '1') return;
+            const sidebar = document.getElementById('main-sidebar');
+            const btn = document.getElementById('desktop-sidebar-toggle');
+            if (!sidebar || !btn) return;
+            sidebar.classList.add('is-collapsed');
+            btn.querySelector('i').setAttribute('data-lucide', 'panel-left-open');
+            btn.title = '사이드바 펼치기';
+        })();
 
         // 사이드바 '라인별 현황' 접기/펼치기 (CPL, ARP … 라인 목록)
         window.toggleNavLines = () => {
