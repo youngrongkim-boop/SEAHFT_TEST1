@@ -302,6 +302,134 @@
         </div>
     </div>
 
+    <!-- 공지사항 등록 / 수정 (관리자 전용) -->
+    <div id="notice-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-3 md:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 id="notice-reg-title" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="megaphone" class="w-5 h-5 text-rose-600"></i> 공지사항 등록</h3>
+                <button type="button" onclick="closeNoticeRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-4 overflow-y-auto custom-scroll flex-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">제목 <span class="text-red-500">*</span></label>
+                    <input type="text" id="notice-title" maxlength="100" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" placeholder="예: 8월 정기수리 일정 안내">
+                </div>
+                <div class="flex flex-wrap items-center gap-4">
+                    <label class="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="notice-pinned" class="w-4 h-4 accent-rose-600 cursor-pointer">
+                        상단 고정 <span class="font-normal text-slate-400 text-xs">(목록 맨 위에 둡니다)</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">내용 <span class="text-red-500">*</span></label>
+                    <textarea id="notice-content" rows="10" maxlength="4000" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500 resize-y min-h-[180px]" placeholder="공지 내용을 입력하세요."></textarea>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                        <label class="block text-xs font-bold text-slate-600 flex items-center gap-1.5"><i data-lucide="paperclip" class="w-4 h-4 text-rose-600"></i> 첨부 <span class="font-normal text-slate-400">(선택 · 이미지·PDF)</span></label>
+                        <button type="button" onclick="pickNoticeFiles()" class="px-2.5 py-1.5 rounded-md text-[11px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 flex items-center gap-1 transition"><i data-lucide="upload" class="w-3.5 h-3.5"></i> 파일 선택</button>
+                        <input type="file" id="notice-file" accept="image/*,application/pdf,.pdf" multiple class="hidden" onchange="onNoticeFilesPicked(this)">
+                    </div>
+                    <div id="notice-file-box" class="border border-slate-300 rounded-md p-3 bg-slate-50 space-y-2"></div>
+                </div>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <button type="button" id="notice-delete-btn" onclick="deleteNotice()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" onclick="closeNoticeRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
+                    <button type="button" id="notice-save-btn" onclick="saveNotice()" class="px-4 py-2 text-sm font-bold text-white bg-rose-600 rounded-md hover:bg-rose-700 disabled:opacity-60">등록</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLC 프로그램 수정일지 등록 / 수정 -->
+    <div id="plc-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-3 md:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 id="plc-reg-title" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-plus-2" class="w-5 h-5 text-violet-600"></i> PLC 프로그램 수정일지 등록</h3>
+                <button type="button" onclick="closePlcRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4 overflow-y-auto custom-scroll flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">라인 <span class="text-red-500">*</span></label>
+                        <select id="plc-line" onchange="updatePlcEquipList()" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500 bg-white"></select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">설비 · 프로그램명 <span class="text-red-500">*</span></label>
+                        <input type="text" id="plc-equip" list="plc-equip-list" maxlength="80" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500" placeholder="예: CPL 권취기 PLC / 메인 PLC CPU-01">
+                        <datalist id="plc-equip-list"></datalist>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">수정 일시 <span class="text-red-500">*</span></label>
+                    <div id="plc-time-box"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">수정 사유 <span class="text-red-500">*</span></label>
+                    <textarea id="plc-reason" rows="3" maxlength="1000" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500 resize-y" placeholder="왜 프로그램을 고쳐야 했는지 적어주세요.&#10;예: 권취기 장력 이상으로 라인 정지, 임시로 인터록 우회 필요"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">수정 내용 <span class="text-red-500">*</span></label>
+                    <textarea id="plc-content" rows="4" maxlength="2000" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500 resize-y" placeholder="무엇을 어떻게 바꿨는지 적어주세요. 되돌릴 사람이 알아볼 수 있게 구체적으로.&#10;예: DB120.DBX10.3 인터록 조건 강제 ON, 원본 값 OFF"></textarea>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                        <label class="block text-xs font-bold text-slate-600 flex items-center gap-1.5"><i data-lucide="camera" class="w-4 h-4 text-violet-600"></i> 사진 <span class="font-normal text-slate-400">(선택 · 최대 10장)</span></label>
+                        <div class="flex gap-1.5 shrink-0">
+                            <button type="button" onclick="pickPlcPhoto('camera')" class="px-2.5 py-1.5 rounded-md text-[11px] font-bold text-white bg-violet-600 hover:bg-violet-700 flex items-center gap-1 transition shadow-sm"><i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 촬영</button>
+                            <button type="button" onclick="pickPlcPhoto('file')" class="px-2.5 py-1.5 rounded-md text-[11px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 flex items-center gap-1 transition"><i data-lucide="image-plus" class="w-3.5 h-3.5"></i> 사진 선택</button>
+                        </div>
+                        <input type="file" id="plc-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="onPlcPhotoPicked(this)">
+                        <input type="file" id="plc-photo-file" accept="image/*" multiple class="hidden" onchange="onPlcPhotoPicked(this)">
+                    </div>
+                    <div id="plc-photo-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2"></div>
+                    <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">수정 전·후 화면을 찍어 두면 되돌릴 때 확실합니다. 올리기 전에 자동으로 용량을 줄입니다.</p>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+                <button type="button" id="plc-delete-btn" onclick="deletePlcLog()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" onclick="closePlcRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
+                    <button type="button" id="plc-save-btn" onclick="savePlcLog()" class="px-4 py-2 text-sm font-bold text-white bg-violet-600 rounded-md hover:bg-violet-700 disabled:opacity-60">등록</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 원상복구 확인 -->
+    <div id="plc-restore-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="undo-2" class="w-5 h-5 text-emerald-600"></i> 원상복구 확인</h3>
+                <button type="button" onclick="closePlcRestoreModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <div id="plc-restore-target" class="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 leading-relaxed"></div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">복구 완료 일시 <span class="text-red-500">*</span></label>
+                    <div id="plc-restore-time-box"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">복구 내용 <span class="font-normal text-slate-400">(선택)</span></label>
+                    <textarea id="plc-restore-note" rows="3" maxlength="500" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="예: 인터록 조건 원복 확인, 시운전 정상"></textarea>
+                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">확인하면 <b>복구완료</b>로 바뀌고 누가 언제 되돌렸는지 기록됩니다.</p>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2">
+                <button type="button" onclick="closePlcRestoreModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
+                <button type="button" id="plc-restore-save-btn" onclick="savePlcRestore()" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-60">원상복구 완료</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 점검지연 사유 확인 (관리자 전용) -->
     <div id="pm-overdue-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
@@ -607,11 +735,25 @@
                 <i data-lucide="sparkles" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">AI에게 질문하기</span>
             </button>
 
-            <button onclick="switchTab('req-board')" id="nav-req-board" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="시스템 수정·개선 요청 등록 (관리자 접수)">
-                <i data-lucide="inbox" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i>
-                <span class="sidebar-text whitespace-nowrap transition-opacity duration-300 flex-1 text-left">요청사항 등록</span>
-                <span id="nav-req-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-amber-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center">0</span>
+            <!-- 게시판: 공지사항 + 요청사항 등록 (라인별 현황과 같은 접기/펼치기 방식) -->
+            <button type="button" onclick="toggleNavBoard()" id="nav-board-toggle" class="nav-btn w-full flex items-center px-6 py-3 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="공지사항·요청사항 펼치기/접기">
+                <i data-lucide="clipboard-list" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i>
+                <span class="sidebar-text whitespace-nowrap transition-opacity duration-300 flex-1 text-left">게시판</span>
+                <span id="nav-board-badge" class="sidebar-text hidden shrink-0 ml-1 text-[10px] font-bold bg-amber-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center" title="읽지 않은 공지 · 미처리 요청">0</span>
+                <span id="nav-board-chevron" class="sidebar-text shrink-0 ml-1 transition-transform duration-200 inline-flex" style="transform: rotate(-90deg)"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
             </button>
+            <div class="space-y-0.5 hidden" id="nav-board-container">
+                <button onclick="switchTab('notice-board')" id="nav-notice-board" class="nav-btn w-full flex items-center pl-11 pr-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="관리자 공지사항">
+                    <i data-lucide="megaphone" class="w-4 h-4 mr-2 shrink-0 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300 flex-1 text-left">공지사항</span>
+                    <span id="nav-notice-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center" title="읽지 않은 공지">0</span>
+                </button>
+                <button onclick="switchTab('req-board')" id="nav-req-board" class="nav-btn w-full flex items-center pl-11 pr-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="시스템 수정·개선 요청 등록 (관리자 접수)">
+                    <i data-lucide="inbox" class="w-4 h-4 mr-2 shrink-0 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300 flex-1 text-left">요청사항 등록</span>
+                    <span id="nav-req-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-amber-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center">0</span>
+                </button>
+            </div>
 
             <button type="button" onclick="toggleNavLines()" id="nav-lines-toggle" class="nav-btn w-full flex items-center px-6 py-3 mt-4 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 현황 펼치기/접기">
                 <i data-lucide="layers" class="w-5 h-5 mr-3 shrink-0 transition-all duration-300"></i>
@@ -643,6 +785,12 @@
             </button>
             <button onclick="switchTab('manual-lib')" id="nav-manual-lib" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="등록된 메뉴얼 모아보기">
                 <i data-lucide="library" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">메뉴얼 자료실</span>
+            </button>
+
+            <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">프로그램 수정일지</div>
+            <button onclick="switchTab('plc-log')" id="nav-plc-log" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="PLC 프로그램 수정 이력과 원상복구 확인">
+                <i data-lucide="file-code-2" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">PLC 수정일지</span>
+                <span id="nav-plc-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center" title="원상복구가 아직 안 된 건수">0</span>
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
@@ -1582,6 +1730,83 @@
                     </div>
                     <!-- 모바일 카드 -->
                     <div id="mlib-cards" class="md:hidden flex-1 overflow-y-auto custom-scroll space-y-2 pb-2"></div>
+                </div>
+            </div>
+
+            <!-- VIEW: 공지사항 -->
+            <div id="view-notice-board" class="view-section hidden h-full flex-col min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
+                    <div class="mb-2.5 shrink-0 flex flex-wrap items-center gap-2">
+                        <button data-admin-only onclick="openNoticeRegModal()" class="hidden items-center px-3 py-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                            <i data-lucide="megaphone" class="w-3.5 h-3.5 mr-1.5"></i> 공지 등록
+                        </button>
+                        <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200 whitespace-nowrap" id="notice-summary"></span>
+                        <input type="text" id="notice-search" onkeyup="renderNoticeBoard()" placeholder="제목, 내용, 작성자 검색..." class="w-full sm:w-56 border border-slate-300 rounded px-3 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-rose-500 outline-none">
+                        <span class="text-[10px] md:text-xs text-slate-500 ml-auto">공지 등록·수정은 <b>관리자</b>만 할 수 있습니다.</span>
+                    </div>
+                    <div id="notice-list" class="flex-1 overflow-y-auto custom-scroll space-y-2 pb-2"></div>
+                </div>
+            </div>
+
+            <!-- VIEW: PLC 프로그램 수정일지 -->
+            <div id="view-plc-log" class="view-section hidden h-full flex-col min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-w-0">
+                    <div class="mb-2.5 shrink-0">
+                        <div class="flex flex-wrap gap-1.5 md:gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <button onclick="openPlcRegModal()" class="flex items-center px-3 py-1.5 bg-violet-600 text-white hover:bg-violet-700 rounded-lg text-[11px] md:text-xs font-bold transition shadow-sm">
+                                <i data-lucide="file-plus-2" class="w-3.5 h-3.5 mr-1.5"></i> 수정일지 등록
+                            </button>
+                            <span class="text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded bg-white border border-slate-200 whitespace-nowrap" id="plc-summary"></span>
+                            <span class="text-[11px] md:text-xs font-bold text-slate-400 mr-1"><i data-lucide="filter" class="w-3.5 h-3.5 inline"></i></span>
+                            <select id="plc-filter-line" onchange="renderPlcLogs()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-violet-500 outline-none bg-white font-bold text-violet-700 min-w-[70px]">
+                                <option value="ALL">전체 라인</option>
+                            </select>
+                            <select id="plc-filter-status" onchange="renderPlcLogs()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-violet-500 outline-none bg-white font-medium">
+                                <option value="ALL">복구: 전체</option>
+                                <option value="OPEN">미복구</option>
+                                <option value="DONE">복구완료</option>
+                            </select>
+                            <select id="plc-filter-period" onchange="renderPlcLogs()" class="border border-slate-300 rounded px-2 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-violet-500 outline-none bg-white font-medium">
+                                <option value="ALL">전체 기간</option>
+                                <option value="TODAY">오늘</option>
+                                <option value="WEEK">이번 주</option>
+                                <option value="MONTH">이번 달</option>
+                                <option value="YEAR">올해</option>
+                            </select>
+                            <input type="text" id="plc-search" onkeyup="renderPlcLogs()" placeholder="설비, 사유, 내용, 작성자 검색..." class="w-full sm:w-48 border border-slate-300 rounded px-3 py-1.5 text-[11px] md:text-xs focus:ring-1 focus:ring-violet-500 outline-none">
+                            <button type="button" id="reset-plc" onclick="resetViewFilters('plc')" title="선택한 필터와 검색어를 한 번에 모두 해제합니다" class="filter-reset-btn flex items-center gap-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 rounded px-2 py-1.5 text-[11px] md:text-xs font-bold transition shrink-0"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>필터 초기화<span data-reset-count class="hidden"></span></button>
+                            <button onclick="exportPlcLogsToExcel()" class="ml-auto bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1.5 rounded transition shadow-sm flex items-center whitespace-nowrap">
+                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
+                            </button>
+                        </div>
+                        <p class="text-[10px] md:text-xs text-slate-500 mt-1.5 leading-relaxed">라인별 <b>PLC 프로그램 수정 이력</b>입니다. 왜 고쳤는지·무엇을 어떻게 바꿨는지 남기고 사진을 첨부하세요. 조치가 끝나 <b>원본 프로그램으로 되돌렸으면 [원상복구] 버튼</b>을 눌러 완료로 표시합니다.</p>
+                    </div>
+
+                    <!-- 데스크톱 표 -->
+                    <div class="flex-1 overflow-auto border border-slate-200 rounded-lg w-full custom-scroll relative hidden md:block">
+                        <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
+                            <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-10">No</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">라인</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 w-36">수정일자</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[130px]">설비 · 프로그램</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[180px]">수정 사유</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 min-w-[200px]">수정 내용</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-16">사진</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24">작성자</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-28">원상복구</th>
+                                    <th class="py-2 px-3 font-bold border-b border-slate-200 text-center w-36">복구 완료일시</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-24">확인자</th>
+                                    <th class="py-2 px-2 font-bold border-b border-slate-200 text-center w-14 text-blue-600">수정</th>
+                                </tr>
+                            </thead>
+                            <tbody id="plc-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                    <!-- 모바일 카드 -->
+                    <div id="plc-cards" class="md:hidden flex-1 overflow-y-auto custom-scroll space-y-2 pb-2"></div>
+                    <div id="plc-pagination"></div>
                 </div>
             </div>
 
@@ -2816,6 +3041,8 @@
             if (currentTabId === 'pm-list') window.debouncedRenderPMList();
             if (!isAdmin && currentTabId === 'edit-history') switchTab('dashboard'); // 권한이 회수되면 즉시 이탈
             if (currentTabId === 'pm-result' && typeof window.renderOverduePanel === 'function') window.renderOverduePanel();
+            if (typeof updatePlcBadge === 'function') updatePlcBadge();
+            if (currentTabId === 'plc-log' && typeof window.renderPlcLogs === 'function') window.renderPlcLogs();
             if (typeof updateReqBadge === 'function') updateReqBadge();
             if (currentTabId === 'req-board' && typeof renderRequestBoard === 'function') renderRequestBoard();
             if (!document.getElementById('admin-modal').classList.contains('hidden')) renderAdminList();
@@ -3812,9 +4039,10 @@
             const view = document.getElementById(`view-${tabId}`);
             if(view) { view.classList.remove('hidden'); view.classList.add('flex'); }
             
+            if (tabId === 'notice-board' || tabId === 'req-board') openNavBoard(); // 하위 탭이면 부모 메뉴를 펼쳐 둔다
             updatePageTitle();
             closeSidebarIfMobile();
-            
+
             // 2. Data Rendering Defer (렌더링 병목 방지)
             requestAnimationFrame(() => {
                 setTimeout(() => {
@@ -3882,6 +4110,11 @@
                         window.renderBDRegPhotos();
                     } else if (tabId === 'manual-lib') {
                         renderManualLibrary();
+                    } else if (tabId === 'notice-board') {
+                        window.renderNoticeBoard();
+                    } else if (tabId === 'plc-log') {
+                        plcPage = 1;
+                        window.renderPlcLogs();
                     } else if (tabId === 'req-board') {
                         initReqBoardFilters();
                         renderRequestBoard();
@@ -3927,7 +4160,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '예방점검 실적', 'adhoc-result': '일반·긴급 점검 실적', 'pm-reg': '점검항목 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'req-board': '요청사항 등록', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '예방점검 실적', 'adhoc-result': '일반·긴급 점검 실적', 'pm-reg': '점검항목 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'plc-log': 'PLC 프로그램 수정일지', 'notice-board': '공지사항', 'req-board': '요청사항 등록', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -4096,6 +4329,23 @@
                 reportMailCfg = snap.exists() ? snap.data() : {};
                 window.renderReportMailSchedule();
             }, (err) => console.error('메일 설정 구독 실패', err));
+            const noticeRef = collection(db, 'artifacts', appId, 'public', 'data', 'notices');
+            onSnapshot(noticeRef, (snapshot) => {
+                rawNotices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => (!!b.pinned - !!a.pinned) || ((b.createdAt?.seconds || Infinity) - (a.createdAt?.seconds || Infinity)));
+                updateNoticeBadge();
+                if (currentTabId === 'notice-board') window.renderNoticeBoard();
+            }, (err) => console.error('공지사항 구독 실패', err));
+            const plcRef = collection(db, 'artifacts', appId, 'public', 'data', 'plc_logs');
+            onSnapshot(plcRef, (snapshot) => {
+                // 최근 수정이 위로. 미복구가 먼저 보이도록 복구 여부를 우선 정렬한다.
+                rawPlcLogs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => (a.restored === b.restored)
+                        ? String(b.modifiedAt || '').localeCompare(String(a.modifiedAt || ''))
+                        : (a.restored ? 1 : -1));
+                updatePlcBadge();
+                if (currentTabId === 'plc-log') window.renderPlcLogs();
+            }, (err) => console.error('PLC 수정일지 구독 실패', err));
             const reqRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
             onSnapshot(reqRef, (snapshot) => {
                 // 최신 요청이 위로. createdAt 이 아직 서버에서 확정되지 않은 문서(방금 등록)는 맨 위에 둔다.
@@ -6541,6 +6791,11 @@
                 btn: 'reset-req',
                 ids: ['req-filter-status', 'req-filter-type', 'req-filter-line', 'req-filter-mine', 'req-search'],
                 apply: () => window.renderRequestBoard()
+            },
+            'plc': {
+                btn: 'reset-plc',
+                ids: ['plc-filter-line', 'plc-filter-status', 'plc-filter-period', 'plc-search'],
+                apply: () => { plcPage = 1; window.renderPlcLogs(); }
             }
         };
 
@@ -9849,6 +10104,8 @@
             if (src === 'edit') return bdEditPhotos;
             if (src === 'adhoc-reg') return pmAdhocPhotos;
             if (src === 'result') return activeResultPhotos;
+            if (src === 'plc-reg') return plcRegState.photos;
+            if (src === 'plc') return activePlcPhotos;
             const it = rawBDData.find(d => d.id === activeBDDetailId);
             return Array.isArray(it && it.photos) ? it.photos : [];
         }
@@ -10260,6 +10517,663 @@
         }
 
         // ==========================================
+        // 공지사항
+        // ==========================================
+        // 컬렉션: artifacts/{appId}/public/data/notices
+        //   조회 : 전 직원 / 등록·수정·삭제 : 관리자만 (firestore.rules 에서도 같은 조건)
+        // 읽음 표시는 브라우저에 남긴다(사람마다 다르고 서버에 쌓을 값도 아니다).
+        let rawNotices = [];
+        let noticeRegState = { mode: 'create', id: null, files: [], origFiles: [] };
+        const NOTICE_READ_KEY = () => `seahcm.noticeRead.${normEmail(currentUser && currentUser.email)}`;
+
+        function readNoticeIds() {
+            try { return new Set(JSON.parse(localStorage.getItem(NOTICE_READ_KEY()) || '[]')); }
+            catch (e) { return new Set(); }
+        }
+        function markNoticeRead(id) {
+            const s = readNoticeIds();
+            if (s.has(id)) return;
+            s.add(id);
+            try { localStorage.setItem(NOTICE_READ_KEY(), JSON.stringify([...s].slice(-500))); } catch (e) {}
+            updateNoticeBadge();
+        }
+
+        function unreadNoticeCount() {
+            if (!currentUser) return 0;
+            const read = readNoticeIds();
+            return rawNotices.filter(n => !read.has(n.id)).length;
+        }
+
+        function updateNoticeBadge() {
+            const n = unreadNoticeCount();
+            const el = document.getElementById('nav-notice-badge');
+            if (el) { el.textContent = n > 99 ? '99+' : String(n); el.classList.toggle('hidden', n === 0); }
+            updateBoardBadge();
+        }
+
+        // 게시판(부모) 배지 = 읽지 않은 공지 + 미처리 요청. 접혀 있어도 할 일이 보이게 한다.
+        function updateBoardBadge() {
+            const el = document.getElementById('nav-board-badge');
+            if (!el) return;
+            const reqOpen = rawRequests.filter(r => REQ_OPEN_STATUSES.includes(reqStatusOf(r)) && (isAdmin || isMyRequest(r))).length;
+            const total = unreadNoticeCount() + reqOpen;
+            el.textContent = total > 99 ? '99+' : String(total);
+            el.classList.toggle('hidden', total === 0);
+        }
+
+        window.toggleNavBoard = () => {
+            const c = document.getElementById('nav-board-container');
+            const chev = document.getElementById('nav-board-chevron');
+            if (!c) return;
+            const nowHidden = c.classList.toggle('hidden');
+            if (chev) chev.style.transform = nowHidden ? 'rotate(-90deg)' : 'rotate(0deg)';
+        };
+        // 하위 탭으로 바로 들어오면 부모를 펼쳐 둔다 (안 그러면 어디에 있는지 안 보인다)
+        function openNavBoard() {
+            const c = document.getElementById('nav-board-container');
+            const chev = document.getElementById('nav-board-chevron');
+            if (c && c.classList.contains('hidden')) {
+                c.classList.remove('hidden');
+                if (chev) chev.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        window.renderNoticeBoard = () => {
+            const box = document.getElementById('notice-list');
+            if (!box) return;
+            const kw = (document.getElementById('notice-search')?.value || '').trim().toLowerCase();
+            const read = readNoticeIds();
+            let list = rawNotices.slice();
+            if (kw) list = list.filter(n => [n.title, n.content, n.createdByName, n.createdBy].some(v => String(v || '').toLowerCase().includes(kw)));
+
+            const unread = unreadNoticeCount();
+            document.getElementById('notice-summary').innerHTML =
+                `<span class="text-slate-700">총 ${list.length.toLocaleString()}</span>`
+                + (unread ? `<span class="text-slate-300 mx-1">|</span><span class="text-red-600">안 읽음 ${unread}</span>` : '');
+
+            if (!list.length) {
+                box.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">${rawNotices.length ? '검색 결과가 없습니다.' : '등록된 공지사항이 없습니다.'}</div>`;
+                return;
+            }
+
+            box.innerHTML = list.map(n => {
+                const isNew = !read.has(n.id);
+                const when = n.createdAt && n.createdAt.seconds ? reqDateStr(n.createdAt) : '';
+                const files = (Array.isArray(n.files) ? n.files : []).filter(f => f && f.url);
+                return `<div class="border rounded-xl overflow-hidden ${n.pinned ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200 bg-white'}">
+                    <button type="button" onclick="toggleNotice('${n.id}')" class="w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-slate-50 transition">
+                        ${n.pinned ? '<span class="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-bold shrink-0">고정</span>' : ''}
+                        ${isNew ? '<span class="px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold shrink-0">N</span>' : ''}
+                        <span class="font-bold text-slate-800 text-sm truncate">${manualEsc(n.title || '(제목 없음)')}</span>
+                        ${files.length ? `<span class="text-[10px] text-slate-400 shrink-0"><i data-lucide="paperclip" class="w-3 h-3 inline"></i>${files.length}</span>` : ''}
+                        <span class="ml-auto text-[11px] text-slate-400 shrink-0">${manualEsc(n.createdByName || '')} ${when}</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 transition-transform" data-notice-chev="${n.id}"></i>
+                    </button>
+                    <div class="hidden px-4 pb-3" data-notice-body="${n.id}">
+                        <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words border-t border-slate-100 pt-3">${reqMultiline(n.content || '')}</div>
+                        ${files.length ? `<div class="mt-3 space-y-1.5">${files.map(f => {
+                            const isImg = /^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(f.name || '');
+                            return `<div class="border border-slate-200 rounded-lg overflow-hidden">
+                                <button type="button" onclick="openManualUrl('${manualEsc(f.url)}','${manualEsc(f.name)}')" class="w-full flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 text-left">
+                                    <i data-lucide="${isImg ? 'image' : 'file-text'}" class="w-4 h-4 text-rose-600 shrink-0"></i>
+                                    <span class="text-sm text-slate-700 truncate flex-1">${manualEsc(f.name)}</span>
+                                    <span class="text-xs text-slate-400 shrink-0">${reqSizeStr(f.size)}</span>
+                                </button>
+                                ${isImg ? `<img src="${manualEsc(f.url)}" alt="${manualEsc(f.name)}" loading="lazy" class="w-full max-h-72 object-contain bg-slate-50 border-t border-slate-200">` : ''}
+                            </div>`;
+                        }).join('')}</div>` : ''}
+                        ${isAdmin ? `<div class="flex justify-end mt-3">
+                            <button onclick="openNoticeRegModal('${n.id}')" class="px-2.5 py-1 rounded text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300"><i data-lucide="edit" class="w-3 h-3 inline mr-0.5"></i>수정</button>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
+        window.toggleNotice = (id) => {
+            const body = document.querySelector(`[data-notice-body="${id}"]`);
+            const chev = document.querySelector(`[data-notice-chev="${id}"]`);
+            if (!body) return;
+            const open = body.classList.toggle('hidden') === false;
+            if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+            if (open) markNoticeRead(id);   // 펼쳐 본 시점에 읽음 처리
+        };
+
+        // ----- 등록 / 수정 (관리자 전용) -----
+        window.openNoticeRegModal = (id) => {
+            if (!requireAdmin('공지사항 등록')) return;
+            const n = id ? rawNotices.find(x => x.id === id) : null;
+            if (id && !n) return showToast('공지를 찾을 수 없습니다.', 'error');
+            const files = (Array.isArray(n && n.files) ? n.files : []).map(f => ({ ...f }));
+            noticeRegState = { mode: n ? 'edit' : 'create', id: id || null, files, origFiles: files.map(f => ({ ...f })) };
+
+            document.getElementById('notice-reg-title').innerHTML = n
+                ? '<i data-lucide="edit" class="w-5 h-5 text-rose-600"></i> 공지사항 수정'
+                : '<i data-lucide="megaphone" class="w-5 h-5 text-rose-600"></i> 공지사항 등록';
+            document.getElementById('notice-title').value = n ? (n.title || '') : '';
+            document.getElementById('notice-content').value = n ? (n.content || '') : '';
+            document.getElementById('notice-pinned').checked = !!(n && n.pinned);
+            document.getElementById('notice-save-btn').innerText = n ? '저장' : '등록';
+            const del = document.getElementById('notice-delete-btn');
+            del.classList.toggle('hidden', !n);
+            del.classList.toggle('flex', !!n);
+
+            renderNoticeFiles();
+            document.getElementById('notice-reg-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeNoticeRegModal = () => {
+            const orig = new Set((noticeRegState.origFiles || []).map(f => f.storagePath).filter(Boolean));
+            (noticeRegState.files || []).forEach(f => { if (f.storagePath && !orig.has(f.storagePath)) deleteReqObject(f.storagePath); });
+            noticeRegState = { mode: 'create', id: null, files: [], origFiles: [] };
+            document.getElementById('notice-reg-modal').classList.add('hidden');
+        };
+
+        window.pickNoticeFiles = () => document.getElementById('notice-file').click();
+
+        // 첨부는 요청사항과 같은 저장 경로(requests/)를 쓴다 → 보안 규칙 추가 불필요
+        window.onNoticeFilesPicked = async (input) => {
+            const files = Array.from(input.files || []).filter(validateReqFile);
+            input.value = '';
+            for (const file of files) {
+                const entry = { name: file.name, size: file.size, uploading: true, pct: 0 };
+                noticeRegState.files.push(entry);
+                renderNoticeFiles();
+                try {
+                    const meta = await uploadReqFile(file, (pct) => { entry.pct = pct; renderNoticeFiles(); });
+                    Object.assign(entry, meta, { uploading: false, pct: 100 });
+                } catch (e) {
+                    console.error(e);
+                    const i = noticeRegState.files.indexOf(entry);
+                    if (i >= 0) noticeRegState.files.splice(i, 1);
+                    showToast(manualStorageErrorMessage(e), 'error');
+                }
+                renderNoticeFiles();
+            }
+        };
+
+        window.removeNoticeFile = async (idx) => {
+            const f = noticeRegState.files[idx];
+            if (!f || f.uploading) return;
+            noticeRegState.files.splice(idx, 1);
+            renderNoticeFiles();
+            const orig = new Set((noticeRegState.origFiles || []).map(x => x.storagePath).filter(Boolean));
+            if (f.storagePath && !orig.has(f.storagePath)) await deleteReqObject(f.storagePath);
+        };
+
+        function renderNoticeFiles() {
+            const box = document.getElementById('notice-file-box');
+            if (!box) return;
+            const rows = noticeRegState.files.map((f, i) => {
+                if (f.uploading) {
+                    return `<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200">
+                        <i data-lucide="loader" class="w-4 h-4 text-rose-500 animate-spin shrink-0"></i>
+                        <span class="text-sm text-slate-600 truncate flex-1">${manualEsc(f.name)}</span>
+                        <span class="text-xs font-bold text-rose-600 shrink-0">${f.pct || 0}%</span>
+                    </div>`;
+                }
+                const isImg = /^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(f.name || '');
+                return `<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200">
+                    <i data-lucide="${isImg ? 'image' : 'file-text'}" class="w-4 h-4 text-rose-600 shrink-0"></i>
+                    <button type="button" onclick="openManualUrl('${manualEsc(f.url)}','${manualEsc(f.name)}')" class="text-sm text-slate-700 truncate flex-1 text-left hover:underline">${manualEsc(f.name)} <span class="text-slate-400 text-xs">${reqSizeStr(f.size)}</span></button>
+                    <button type="button" onclick="removeNoticeFile(${i})" title="첨부 제거" class="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:bg-red-100 hover:text-red-600 shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                </div>`;
+            }).join('');
+            box.innerHTML = rows || '<p class="text-[11px] text-slate-400">첨부한 파일이 없습니다.</p>';
+            if (window.lucide) lucide.createIcons({ root: box });
+        }
+
+        window.saveNotice = async () => {
+            if (!requireAdmin('공지사항 등록')) return;
+            if (noticeRegState.files.some(f => f.uploading)) return showToast('첨부 업로드가 끝난 뒤 저장해 주세요.', 'error');
+            const title = document.getElementById('notice-title').value.trim();
+            const content = document.getElementById('notice-content').value.trim();
+            if (!title) return showToast('제목을 입력하세요.', 'error');
+            if (!content) return showToast('내용을 입력하세요.', 'error');
+
+            const btn = document.getElementById('notice-save-btn');
+            btn.disabled = true;
+            const payload = { title, content, pinned: document.getElementById('notice-pinned').checked, files: noticeRegState.files.map(toReqFileRecord) };
+            try {
+                if (noticeRegState.mode === 'edit') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', noticeRegState.id), {
+                        ...payload, updatedBy: normEmail(currentUser.email), updatedAt: serverTimestamp()
+                    });
+                    const kept = new Set(payload.files.map(f => f.storagePath).filter(Boolean));
+                    for (const f of (noticeRegState.origFiles || [])) {
+                        if (f.storagePath && !kept.has(f.storagePath)) await deleteReqObject(f.storagePath);
+                    }
+                    await logEditHistory('공지사항 (수정)', '-', '-', title);
+                    showToast('공지를 수정했습니다.');
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), {
+                        ...payload,
+                        createdBy: normEmail(currentUser.email),
+                        createdByName: currentEditorFields().editorName,
+                        createdAt: serverTimestamp()
+                    });
+                    await logEditHistory('공지사항 (등록)', '-', '-', title);
+                    showToast('공지를 등록했습니다.');
+                }
+                noticeRegState.files = []; noticeRegState.origFiles = [];
+                closeNoticeRegModal();
+                if (currentTabId !== 'notice-board') switchTab('notice-board');
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패 — 관리자 권한을 확인하세요.', 'error');
+            } finally { btn.disabled = false; }
+        };
+
+        window.deleteNotice = async () => {
+            if (!requireAdmin('공지사항 삭제')) return;
+            const n = rawNotices.find(x => x.id === noticeRegState.id);
+            if (!n) return;
+            if (!confirm(`'${n.title || ''}' 공지를 삭제할까요?\n\n첨부 파일도 함께 삭제되며 되돌릴 수 없습니다.`)) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', n.id));
+                for (const f of (Array.isArray(n.files) ? n.files : [])) await deleteReqObject(f.storagePath);
+                await logEditHistory('공지사항 (삭제)', '-', '-', n.title || '');
+                noticeRegState.files = []; noticeRegState.origFiles = [];
+                closeNoticeRegModal();
+                showToast('공지를 삭제했습니다.');
+            } catch (e) { console.error(e); showToast('삭제 실패', 'error'); }
+        };
+
+        // ==========================================
+        // PLC 프로그램 수정일지
+        // ==========================================
+        // 컬렉션: artifacts/{appId}/public/data/plc_logs
+        // PLC 프로그램을 임시로 고친 뒤 되돌리지 않고 잊는 것이 가장 위험하다.
+        // 그래서 '수정 기록'과 '원상복구 확인'을 한 건으로 묶어 미복구가 눈에 띄게 남긴다.
+        //   등록 : 전 직원 (현장에서 고친 사람이 바로 남긴다)
+        //   수정·삭제·복구확인 : 작성자 본인 · 라인 담당자 · 관리자
+        // 사진은 고장 현장 사진과 같은 저장 경로(bd_photos/)를 쓴다 → 보안 규칙 추가 불필요.
+        let rawPlcLogs = [];
+        let plcPage = 1;
+        let plcRegState = { mode: 'create', id: null, photos: [], origPhotos: [] };
+        let plcRestoreId = null;
+        let activePlcPhotos = [];   // 목록에서 사진을 열 때 담아 둔다
+
+        const PLC_PER_PAGE = 30;
+        const plcIsRestored = (r) => !!(r && r.restored);
+        // 수정한 본인, 그 라인 담당자, 관리자가 다룰 수 있다 (firestore.rules 와 같은 조건)
+        const canEditPlcLog = (r) => !!r && (isAdmin
+            || normEmail(r.createdBy) === normEmail(currentUser && currentUser.email)
+            || canEditLine(r.line));
+
+        window.changePlcPage = (p) => { plcPage = p; renderPlcLogs(); };
+
+        function initPlcFilters() {
+            const lineSel = document.getElementById('plc-filter-line');
+            if (lineSel && lineSel.options.length <= 1) {
+                lineSel.innerHTML = '<option value="ALL">전체 라인</option>' + NAV_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            }
+        }
+
+        function getFilteredPlcLogs() {
+            const val = (id, d) => (document.getElementById(id)?.value ?? d);
+            const fLine = val('plc-filter-line', 'ALL');
+            const fStatus = val('plc-filter-status', 'ALL');
+            const period = val('plc-filter-period', 'ALL');
+            const kw = String(val('plc-search', '')).toLowerCase().trim();
+
+            let list = rawPlcLogs.slice();
+            if (fLine !== 'ALL') list = list.filter(r => r.line === fLine);
+            if (fStatus !== 'ALL') list = list.filter(r => plcIsRestored(r) === (fStatus === 'DONE'));
+            if (kw) {
+                list = list.filter(r => [r.equipmentName, r.reason, r.content, r.line, r.createdByName, r.createdBy, r.restoredByName, r.restoreNote]
+                    .some(v => String(v || '').toLowerCase().includes(kw)));
+            }
+            if (period !== 'ALL') {
+                const todayStr = getLocalTodayString();
+                const weekStart = (() => {
+                    const d = new Date(todayStr);
+                    d.setDate(d.getDate() - d.getDay());
+                    const off = d.getTimezoneOffset() * 60000;
+                    return new Date(d - off).toISOString().slice(0, 10);
+                })();
+                list = list.filter(r => {
+                    const ds = String(r.modifiedAt || '').slice(0, 10);
+                    if (!ds) return false;
+                    if (period === 'TODAY') return ds === todayStr;
+                    if (period === 'WEEK') return ds >= weekStart && ds <= todayStr;
+                    if (period === 'MONTH') return ds.slice(0, 7) === todayStr.slice(0, 7);
+                    if (period === 'YEAR') return ds.slice(0, 4) === todayStr.slice(0, 4);
+                    return true;
+                });
+            }
+            return list;
+        }
+
+        // 사이드바 배지 = 아직 원상복구 안 된 건수 (되돌리지 않고 잊는 것을 막는 장치)
+        function updatePlcBadge() {
+            const el = document.getElementById('nav-plc-badge');
+            if (!el) return;
+            const open = rawPlcLogs.filter(r => !plcIsRestored(r)).length;
+            el.textContent = open > 99 ? '99+' : String(open);
+            el.classList.toggle('hidden', open === 0);
+        }
+
+        window.openPlcPhotos = (id, idx) => {
+            const r = rawPlcLogs.find(x => x.id === id);
+            activePlcPhotos = (Array.isArray(r && r.photos) ? r.photos : []).filter(p => p && p.url);
+            if (!activePlcPhotos.length) return;
+            window.openPhotoAt('plc', Math.min(idx || 0, activePlcPhotos.length - 1));
+        };
+
+        window.renderPlcLogs = () => {
+            const tbody = document.getElementById('plc-body');
+            const cardsEl = document.getElementById('plc-cards');
+            const pagEl = document.getElementById('plc-pagination');
+            if (!tbody) return;
+            initPlcFilters();
+
+            const list = getFilteredPlcLogs();
+            const openN = rawPlcLogs.filter(r => !plcIsRestored(r)).length;
+            document.getElementById('plc-summary').innerHTML =
+                `<span class="text-slate-700">총 ${list.length.toLocaleString()}</span>`
+                + `<span class="text-slate-300 mx-1">|</span><span class="${openN ? 'text-red-600' : 'text-slate-400'}">미복구 ${openN.toLocaleString()}</span>`;
+
+            if (!list.length) {
+                const msg = rawPlcLogs.length ? '조건에 맞는 수정일지가 없습니다.'
+                    : '아직 등록된 수정일지가 없습니다. <b>수정일지 등록</b>으로 첫 기록을 남겨보세요.';
+                tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-slate-400 text-xs md:text-sm bg-white">${msg}</td></tr>`;
+                cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">${msg}</div>`;
+                pagEl.innerHTML = '';
+                if (window.refreshFilterResetBtns) window.refreshFilterResetBtns();
+                return;
+            }
+
+            const totalPages = Math.ceil(list.length / PLC_PER_PAGE);
+            if (plcPage > totalPages) plcPage = Math.max(1, totalPages);
+            const start = (plcPage - 1) * PLC_PER_PAGE;
+            const paginated = list.slice(start, start + PLC_PER_PAGE);
+
+            const restoreCell = (r) => {
+                if (plcIsRestored(r)) {
+                    return canEditPlcLog(r)
+                        ? `<button onclick="revertPlcRestore('${r.id}')" title="복구 확인을 취소하고 다시 미복구로 되돌립니다" class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold"><i data-lucide="check" class="w-3 h-3"></i>복구완료</button>`
+                        : `<span class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold"><i data-lucide="check" class="w-3 h-3"></i>복구완료</span>`;
+                }
+                return canEditPlcLog(r)
+                    ? `<button onclick="openPlcRestoreModal('${r.id}')" title="원본 프로그램으로 되돌렸으면 눌러 완료 처리합니다" class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold"><i data-lucide="undo-2" class="w-3 h-3"></i>원상복구</button>`
+                    : `<span class="inline-flex items-center justify-center gap-0.5 w-24 px-1 py-0.5 rounded bg-red-100 border border-red-200 text-red-700 text-[10px] font-bold">미복구</span>`;
+            };
+            const photoCell = (r) => {
+                const n = (Array.isArray(r.photos) ? r.photos : []).filter(p => p && p.url).length;
+                return n
+                    ? `<button onclick="openPlcPhotos('${r.id}',0)" title="사진 ${n}장 보기" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700 text-[10px] font-bold"><i data-lucide="camera" class="w-3 h-3"></i>${n}</button>`
+                    : '<span class="text-slate-300 text-[10px]">-</span>';
+            };
+            const nameOf = (email, name) => name || String(email || '').split('@')[0] || '-';
+
+            tbody.innerHTML = paginated.map((r, i) => {
+                const done = plcIsRestored(r);
+                return `<tr class="${done ? 'bg-white hover:bg-slate-50' : 'bg-red-50/40 hover:bg-red-50'} transition-colors">
+                    <td class="py-2.5 px-2 text-center text-slate-500 font-medium">${start + i + 1}</td>
+                    <td class="py-2.5 px-2 text-center font-bold text-brand-600">${manualEsc(r.line) || '-'}</td>
+                    <td class="py-2.5 px-3 text-slate-600">${manualEsc(String(r.modifiedAt || '').replace('T', ' ')) || '-'}</td>
+                    <td class="py-2.5 px-3 font-bold text-slate-800 whitespace-normal min-w-[130px] leading-snug break-words">${manualEsc(r.equipmentName) || '-'}</td>
+                    <td class="py-2.5 px-3 text-slate-700 whitespace-normal min-w-[180px] leading-snug break-words">${manualEsc(r.reason) || '-'}</td>
+                    <td class="py-2.5 px-3 text-slate-600 whitespace-normal min-w-[200px] leading-snug break-words">${manualEsc(r.content) || '-'}</td>
+                    <td class="py-2.5 px-2 text-center">${photoCell(r)}</td>
+                    <td class="py-2.5 px-2 text-center text-slate-600">${manualEsc(nameOf(r.createdBy, r.createdByName))}</td>
+                    <td class="py-2.5 px-2 text-center">${restoreCell(r)}</td>
+                    <td class="py-2.5 px-3 text-center ${done ? 'text-slate-600' : 'text-slate-300'}">${done ? manualEsc(String(r.restoredAt || '').replace('T', ' ')) : '-'}</td>
+                    <td class="py-2.5 px-2 text-center ${done ? 'text-slate-600' : 'text-slate-300'}">${done ? manualEsc(nameOf(r.restoredBy, r.restoredByName)) : '-'}</td>
+                    <td class="py-2.5 px-2 text-center">${canEditPlcLog(r)
+                        ? `<button onclick="openPlcRegModal('${r.id}')" class="text-slate-400 hover:text-violet-600 transition p-1 bg-slate-100 hover:bg-violet-50 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>`
+                        : '<span class="text-slate-300 text-xs">-</span>'}</td>
+                </tr>`;
+            }).join('');
+
+            cardsEl.innerHTML = paginated.map(r => {
+                const done = plcIsRestored(r);
+                return `<div class="border rounded-xl p-3 shadow-sm ${done ? 'bg-white border-slate-200' : 'bg-red-50/50 border-red-200'}">
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="px-1.5 py-0.5 rounded bg-blue-50 text-brand-600 text-[10px] font-bold shrink-0">${manualEsc(r.line) || '-'}</span>
+                            <span class="font-bold text-slate-800 text-sm truncate">${manualEsc(r.equipmentName) || '-'}</span>
+                        </div>
+                        ${restoreCell(r)}
+                    </div>
+                    <p class="text-[11px] text-slate-400">${manualEsc(String(r.modifiedAt || '').replace('T', ' '))} · ${manualEsc(nameOf(r.createdBy, r.createdByName))}</p>
+                    <p class="text-xs text-slate-700 mt-1 leading-snug"><span class="text-slate-400 mr-1">사유</span>${manualEsc(r.reason) || '-'}</p>
+                    <p class="text-xs text-slate-600 mt-0.5 leading-snug"><span class="text-slate-400 mr-1">내용</span>${manualEsc(r.content) || '-'}</p>
+                    ${done ? `<p class="text-[11px] text-emerald-700 mt-1">복구 ${manualEsc(String(r.restoredAt || '').replace('T', ' '))} · ${manualEsc(nameOf(r.restoredBy, r.restoredByName))}</p>` : ''}
+                    <div class="flex items-center gap-1.5 mt-2">
+                        ${photoCell(r)}
+                        ${canEditPlcLog(r) ? `<button onclick="openPlcRegModal('${r.id}')" class="ml-auto text-slate-400 hover:text-violet-600 p-1 bg-slate-100 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+
+            pagEl.innerHTML = getPaginationHTML(plcPage, totalPages, 'window.changePlcPage');
+            if (window.lucide) { lucide.createIcons({ root: tbody }); lucide.createIcons({ root: cardsEl }); }
+            if (window.refreshFilterResetBtns) window.refreshFilterResetBtns();
+        };
+
+        // ----- 등록 / 수정 -----
+        window.updatePlcEquipList = () => {
+            const line = document.getElementById('plc-line').value;
+            const dl = document.getElementById('plc-equip-list');
+            if (!dl) return;
+            const set = new Set(line ? getDynamicEquipments(line) : []);
+            rawPlcLogs.forEach(r => { if ((!line || r.line === line) && r.equipmentName) set.add(String(r.equipmentName).trim()); });
+            dl.innerHTML = [...set].sort().map(n => `<option value="${manualEsc(n)}"></option>`).join('');
+        };
+
+        window.openPlcRegModal = (id) => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            const r = id ? rawPlcLogs.find(x => x.id === id) : null;
+            if (id && !r) return showToast('수정일지를 찾을 수 없습니다.', 'error');
+            if (r && !canEditPlcLog(r)) return showToast('작성자 본인·라인 담당자·관리자만 수정할 수 있습니다.', 'error');
+
+            const photos = (Array.isArray(r && r.photos) ? r.photos : []).map(p => ({ ...p }));
+            plcRegState = { mode: r ? 'edit' : 'create', id: id || null, photos, origPhotos: photos.map(p => ({ ...p })) };
+
+            document.getElementById('plc-reg-title').innerHTML = r
+                ? '<i data-lucide="edit" class="w-5 h-5 text-violet-600"></i> PLC 프로그램 수정일지 수정'
+                : '<i data-lucide="file-plus-2" class="w-5 h-5 text-violet-600"></i> PLC 프로그램 수정일지 등록';
+
+            const lineSel = document.getElementById('plc-line');
+            lineSel.innerHTML = NAV_LINES.map(l => `<option value="${l}">${l}</option>`).join('');
+            lineSel.value = (r && NAV_LINES.includes(r.line)) ? r.line : NAV_LINES[0];
+            document.getElementById('plc-equip').value = r ? (r.equipmentName || '') : '';
+            document.getElementById('plc-reason').value = r ? (r.reason || '') : '';
+            document.getElementById('plc-content').value = r ? (r.content || '') : '';
+            document.getElementById('plc-save-btn').innerText = r ? '저장' : '등록';
+            const del = document.getElementById('plc-delete-btn');
+            del.classList.toggle('hidden', !r);
+            del.classList.toggle('flex', !!r);
+
+            // 24시간제 날짜·시각 칸은 처음 열 때 한 번 만든다
+            const box = document.getElementById('plc-time-box');
+            if (!box.dataset.built) {
+                box.innerHTML = dt24Markup('plc-time', { cls: 'border border-slate-300 rounded-md px-2 py-2 text-sm outline-none bg-white' });
+                box.dataset.built = '1';
+                initDT24('plc-time');
+            }
+            document.getElementById('plc-time').value = (r && r.modifiedAt) || getLocalDateTimeString();
+
+            window.updatePlcEquipList();
+            window.renderPlcPhotos();
+            document.getElementById('plc-reg-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closePlcRegModal = () => {
+            // 등록을 취소하면 방금 올린 사진은 어디에도 연결되지 않으므로 지운다
+            const orig = new Set((plcRegState.origPhotos || []).map(p => p.storagePath).filter(Boolean));
+            (plcRegState.photos || []).forEach(p => { if (p.storagePath && !orig.has(p.storagePath)) deletePhotoObject(p.storagePath); });
+            plcRegState = { mode: 'create', id: null, photos: [], origPhotos: [] };
+            document.getElementById('plc-reg-modal').classList.add('hidden');
+        };
+
+        window.pickPlcPhoto = (mode) => document.getElementById(mode === 'camera' ? 'plc-photo-camera' : 'plc-photo-file').click();
+        window.onPlcPhotoPicked = (input) => attachBDPhotos(input, plcRegState.photos, window.renderPlcPhotos, false);
+        window.removePlcPhoto = async (idx) => {
+            const p = plcRegState.photos[idx];
+            if (!p || p.uploading) return;
+            plcRegState.photos.splice(idx, 1);
+            window.renderPlcPhotos();
+            const orig = new Set((plcRegState.origPhotos || []).map(x => x.storagePath).filter(Boolean));
+            if (p.storagePath && !orig.has(p.storagePath)) await deletePhotoObject(p.storagePath);
+        };
+        window.renderPlcPhotos = () => {
+            const box = document.getElementById('plc-photo-grid');
+            if (!box) return;
+            box.innerHTML = photoGridHtml(plcRegState.photos, 'plc-reg', 'removePlcPhoto');
+            if (window.lucide) lucide.createIcons({ root: box });
+        };
+
+        window.savePlcLog = async () => {
+            if (!currentUser) return showToast('로그인이 필요합니다.', 'error');
+            if (hasPendingPhotoUpload(plcRegState.photos)) return;
+            const line = document.getElementById('plc-line').value;
+            const equipmentName = document.getElementById('plc-equip').value.trim();
+            const reason = document.getElementById('plc-reason').value.trim();
+            const content = document.getElementById('plc-content').value.trim();
+            const modifiedAt = document.getElementById('plc-time').value;
+            if (!equipmentName) return showToast('설비·프로그램명을 입력하세요.', 'error');
+            if (!modifiedAt) return showToast('수정 일시를 입력하세요.', 'error');
+            if (!reason) return showToast('수정 사유를 입력하세요.', 'error');
+            if (!content) return showToast('수정 내용을 입력하세요.', 'error');
+
+            const btn = document.getElementById('plc-save-btn');
+            btn.disabled = true;
+            const payload = { line, equipmentName, reason, content, modifiedAt, photos: plcRegState.photos.map(toPhotoRecord) };
+            try {
+                if (plcRegState.mode === 'edit') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'plc_logs', plcRegState.id), {
+                        ...payload, updatedBy: normEmail(currentUser.email), updatedAt: serverTimestamp()
+                    });
+                    await deleteRemovedPhotoFiles(plcRegState.origPhotos, payload.photos);
+                    await logEditHistory('PLC 수정일지 (수정)', line, equipmentName, reason);
+                    showToast('수정일지를 저장했습니다.');
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'plc_logs'), {
+                        ...payload,
+                        restored: false, restoredAt: '', restoredBy: '', restoredByName: '', restoreNote: '',
+                        createdBy: normEmail(currentUser.email),
+                        createdByName: currentEditorFields().editorName,
+                        createdAt: serverTimestamp()
+                    });
+                    await logEditHistory('PLC 수정일지 (등록)', line, equipmentName, reason);
+                    showToast('수정일지를 등록했습니다. 되돌린 뒤 [원상복구]를 꼭 눌러주세요.');
+                }
+                plcRegState.photos = []; plcRegState.origPhotos = [];
+                closePlcRegModal();
+                if (currentTabId !== 'plc-log') switchTab('plc-log');
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패 — 권한이 없거나 통신에 문제가 있습니다.', 'error');
+            } finally { btn.disabled = false; }
+        };
+
+        window.deletePlcLog = async () => {
+            const r = rawPlcLogs.find(x => x.id === plcRegState.id);
+            if (!r) return;
+            if (!canEditPlcLog(r)) return showToast('삭제할 권한이 없습니다.', 'error');
+            if (!confirm(`'${r.equipmentName || ''}' 수정일지를 삭제할까요?\n\n첨부 사진도 함께 삭제되며 되돌릴 수 없습니다.`)) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'plc_logs', r.id));
+                await deleteRemovedPhotoFiles(r.photos, []);
+                await logEditHistory('PLC 수정일지 (삭제)', r.line || '-', r.equipmentName || '-', r.reason || '');
+                plcRegState.photos = []; plcRegState.origPhotos = [];
+                closePlcRegModal();
+                showToast('수정일지를 삭제했습니다.');
+            } catch (e) { console.error(e); showToast('삭제 실패', 'error'); }
+        };
+
+        // ----- 원상복구 확인 -----
+        window.openPlcRestoreModal = (id) => {
+            const r = rawPlcLogs.find(x => x.id === id);
+            if (!r) return showToast('수정일지를 찾을 수 없습니다.', 'error');
+            if (!canEditPlcLog(r)) return showToast('작성자 본인·라인 담당자·관리자만 확인할 수 있습니다.', 'error');
+            plcRestoreId = id;
+
+            document.getElementById('plc-restore-target').innerHTML = `
+                <p class="font-bold text-slate-800">${manualEsc(r.line || '-')} · ${manualEsc(r.equipmentName || '-')}</p>
+                <p class="text-slate-500 mt-0.5">수정 ${manualEsc(String(r.modifiedAt || '').replace('T', ' '))}</p>
+                <p class="text-slate-600 mt-1"><span class="text-slate-400 mr-1">내용</span>${manualEsc(r.content || '-')}</p>`;
+
+            const box = document.getElementById('plc-restore-time-box');
+            if (!box.dataset.built) {
+                box.innerHTML = dt24Markup('plc-restore-time', { cls: 'border border-slate-300 rounded-md px-2 py-2 text-sm outline-none bg-white' });
+                box.dataset.built = '1';
+                initDT24('plc-restore-time');
+            }
+            document.getElementById('plc-restore-time').value = getLocalDateTimeString();
+            document.getElementById('plc-restore-note').value = '';
+
+            const modal = document.getElementById('plc-restore-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons({ root: modal });
+        };
+
+        window.closePlcRestoreModal = () => {
+            plcRestoreId = null;
+            const modal = document.getElementById('plc-restore-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+
+        window.savePlcRestore = async () => {
+            if (!plcRestoreId) return;
+            const r = rawPlcLogs.find(x => x.id === plcRestoreId);
+            if (!r || !canEditPlcLog(r)) return showToast('확인 권한이 없습니다.', 'error');
+            const when = document.getElementById('plc-restore-time').value;
+            if (!when) return showToast('복구 완료 일시를 입력하세요.', 'error');
+            const btn = document.getElementById('plc-restore-save-btn');
+            btn.disabled = true;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'plc_logs', plcRestoreId), {
+                    restored: true, restoredAt: when,
+                    restoredBy: normEmail(currentUser.email),
+                    restoredByName: currentEditorFields().editorName,
+                    restoreNote: document.getElementById('plc-restore-note').value.trim()
+                });
+                await logEditHistory('PLC 수정일지 (원상복구)', r.line || '-', r.equipmentName || '-', `${when.replace('T', ' ')} 복구 확인`);
+                showToast('원상복구를 확인했습니다.');
+                closePlcRestoreModal();
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패', 'error');
+            } finally { btn.disabled = false; }
+        };
+
+        window.revertPlcRestore = async (id) => {
+            const r = rawPlcLogs.find(x => x.id === id);
+            if (!r || !canEditPlcLog(r)) return showToast('권한이 없습니다.', 'error');
+            if (!confirm('복구 확인을 취소하고 다시 미복구로 되돌릴까요?')) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'plc_logs', id), {
+                    restored: false, restoredAt: '', restoredBy: '', restoredByName: '', restoreNote: ''
+                });
+                await logEditHistory('PLC 수정일지 (복구 취소)', r.line || '-', r.equipmentName || '-', '미복구로 되돌림');
+                showToast('미복구로 되돌렸습니다.');
+            } catch (e) { console.error(e); showToast('저장 실패', 'error'); }
+        };
+
+        window.exportPlcLogsToExcel = () => {
+            const list = getFilteredPlcLogs();
+            if (!list.length) return showToast('출력할 데이터가 없습니다.', 'error');
+            const ws_data = [["라인", "수정일자", "설비·프로그램", "수정 사유", "수정 내용", "사진", "작성자", "원상복구", "복구 완료일시", "확인자", "복구 내용"]];
+            list.forEach(r => {
+                ws_data.push([r.line || '', String(r.modifiedAt || '').replace('T', ' '), r.equipmentName || '', r.reason || '', r.content || '',
+                    (Array.isArray(r.photos) ? r.photos.length : 0), r.createdByName || r.createdBy || '',
+                    plcIsRestored(r) ? '완료' : '미복구', String(r.restoredAt || '').replace('T', ' '),
+                    r.restoredByName || r.restoredBy || '', r.restoreNote || '']);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "PLC_Logs");
+            XLSX.writeFile(wb, "Seah_PLC_Logs.xlsx");
+        };
+
+        // ==========================================
         // 요청사항 등록 (시스템 수정·개선 요청 게시판)
         // ==========================================
         // 컬렉션: artifacts/{appId}/public/data/requests
@@ -10376,6 +11290,7 @@
             const open = rawRequests.filter(r => REQ_OPEN_STATUSES.includes(reqStatusOf(r)) && (isAdmin || isMyRequest(r)));
             el.textContent = open.length > 99 ? '99+' : String(open.length);
             el.classList.toggle('hidden', open.length === 0);
+            updateBoardBadge();   // 부모(게시판) 배지도 함께 맞춘다
         }
 
         window.renderRequestBoard = () => {
