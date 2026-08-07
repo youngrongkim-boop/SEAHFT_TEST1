@@ -129,7 +129,7 @@
         }
 
         /* 기능 버튼 색을 부드럽게 (너무 쨍한 채도 완화) — 사이드바 내비/토글 제외 */
-        button:not(.nav-btn):not(.nav-line):not(#desktop-sidebar-toggle),
+        button:not(.nav-btn):not(.nav-line):not(.nav-sec):not(#desktop-sidebar-toggle),
         label.cursor-pointer {
             filter: saturate(0.72);
         }
@@ -234,6 +234,11 @@
                 margin-left: 0 !important;
                 width: 2.25rem;
                 height: 2.25rem;
+            }
+            /* 아이콘만 보이는 상태에서는 분류 제목이 숨겨져 접을·펼칠 방법이 없다.
+               그대로 두면 접힌 분류의 아이콘에 영영 닿지 못하므로 전부 펼쳐 둔다. */
+            #main-sidebar.is-collapsed .nav-sec-body {
+                display: block !important;
             }
         }
 
@@ -811,7 +816,11 @@
             </button>
             <div class="space-y-0.5 hidden" id="nav-lines-container"></div>
 
-            <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">예방점검 관리</div>
+            <button type="button" onclick="toggleNavSection('pm')" id="nav-sec-pm-toggle" class="nav-sec w-full flex items-center px-6 py-2 mt-6 mb-1 text-[11px] font-bold text-brand-500 uppercase tracking-wider hover:text-brand-100 transition-colors sidebar-section-title whitespace-nowrap">
+                <span class="flex-1 text-left">예방점검 관리</span>
+                <span id="nav-sec-pm-chevron" class="shrink-0 transition-transform duration-200 inline-flex"><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></span>
+            </button>
+            <div id="nav-sec-pm" class="nav-sec-body">
             <button onclick="switchTab('pm-list')" id="nav-pm-list" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 리스트">
                 <i data-lucide="list-checks" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 리스트</span>
             </button>
@@ -827,8 +836,13 @@
             <button onclick="switchTab('pm-reg-adhoc')" id="nav-pm-reg-adhoc" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="주기 없이 수행한 일반·긴급 점검 실적을 바로 기록합니다">
                 <i data-lucide="zap-off" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">일반·긴급 점검 등록</span>
             </button>
+            </div>
 
-            <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">고장실적 관리</div>
+            <button type="button" onclick="toggleNavSection('bd')" id="nav-sec-bd-toggle" class="nav-sec w-full flex items-center px-6 py-2 mt-6 mb-1 text-[11px] font-bold text-brand-500 uppercase tracking-wider hover:text-brand-100 transition-colors sidebar-section-title whitespace-nowrap">
+                <span class="flex-1 text-left">고장실적 관리</span>
+                <span id="nav-sec-bd-chevron" class="shrink-0 transition-transform duration-200 inline-flex"><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></span>
+            </button>
+            <div id="nav-sec-bd" class="nav-sec-body">
             <button onclick="switchTab('bd-list')" id="nav-bd-list" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="고장실적 리스트">
                 <i data-lucide="activity" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">고장실적 리스트</span>
             </button>
@@ -838,14 +852,25 @@
             <button onclick="switchTab('manual-lib')" id="nav-manual-lib" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="등록된 메뉴얼 모아보기">
                 <i data-lucide="library" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">메뉴얼 자료실</span>
             </button>
+            </div>
 
-            <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">프로그램 수정일지</div>
+            <button type="button" onclick="toggleNavSection('plc')" id="nav-sec-plc-toggle" class="nav-sec w-full flex items-center px-6 py-2 mt-6 mb-1 text-[11px] font-bold text-brand-500 uppercase tracking-wider hover:text-brand-100 transition-colors sidebar-section-title whitespace-nowrap">
+                <span class="flex-1 text-left">프로그램 수정일지</span>
+                <span id="nav-sec-plc-badge" class="hidden shrink-0 mr-1 text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 leading-[16px] min-w-[16px] text-center normal-case" title="복구완료 처리가 아직 안 된 건수">0</span>
+                <span id="nav-sec-plc-chevron" class="shrink-0 transition-transform duration-200 inline-flex"><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></span>
+            </button>
+            <div id="nav-sec-plc" class="nav-sec-body">
             <button onclick="switchTab('plc-log')" id="nav-plc-log" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="PLC 프로그램 수정 이력과 복구완료 확인">
                 <i data-lucide="file-code-2" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">PLC 수정일지</span>
                 <span id="nav-plc-badge" class="sidebar-text hidden shrink-0 ml-2 text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 leading-[18px] min-w-[18px] text-center" title="복구완료 처리가 아직 안 된 건수">0</span>
             </button>
+            </div>
 
-            <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">시스템 관리</div>
+            <button type="button" onclick="toggleNavSection('sys')" id="nav-sec-sys-toggle" class="nav-sec w-full flex items-center px-6 py-2 mt-6 mb-1 text-[11px] font-bold text-brand-500 uppercase tracking-wider hover:text-brand-100 transition-colors sidebar-section-title whitespace-nowrap">
+                <span class="flex-1 text-left">시스템 관리</span>
+                <span id="nav-sec-sys-chevron" class="shrink-0 transition-transform duration-200 inline-flex"><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></span>
+            </button>
+            <div id="nav-sec-sys" class="nav-sec-body">
             <button onclick="openLineOwnerModal()" id="nav-line-owner" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="라인별 예방점검 담당자 지정 (알림·메일 수신자)">
                 <i data-lucide="users" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">라인별 담당자</span>
             </button>
@@ -855,6 +880,7 @@
             <button data-admin-only onclick="window.enterEditHistory()" id="nav-edit-history" class="hidden nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="데이터 수정 이력 (관리자 전용)">
                 <i data-lucide="history" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">데이터 수정 이력</span>
             </button>
+            </div>
         </nav>
 
         <div class="p-4 border-t border-brand-700 text-xs text-brand-100/60 text-center shrink-0 sidebar-footer whitespace-nowrap transition-opacity duration-300">
@@ -3857,6 +3883,57 @@
         })();
 
         // 사이드바 '라인별 현황' 접기/펼치기 (CPL, ARP … 라인 목록)
+        // ==========================================
+        // 사이드바 분류(예방점검 관리 · 고장실적 관리 …) 접기/펼치기
+        // ==========================================
+        // 어느 탭이 어느 분류에 속하는지. 탭을 열면 그 분류를 자동으로 펼쳐
+        // '왜 메뉴가 안 보이지' 가 되지 않게 한다.
+        const NAV_SECTIONS = {
+            pm:  ['pm-list', 'pm-result', 'pm-reg', 'adhoc-result', 'pm-reg-adhoc'],
+            bd:  ['bd-list', 'bd-reg', 'manual-lib'],
+            plc: ['plc-log'],
+            sys: ['edit-history']
+        };
+        const NAV_SEC_KEY = 'seahcm.navSections';
+
+        function readNavSecState() {
+            try { return JSON.parse(localStorage.getItem(NAV_SEC_KEY) || '{}') || {}; }
+            catch (e) { return {}; }
+        }
+        function writeNavSecState(s) {
+            try { localStorage.setItem(NAV_SEC_KEY, JSON.stringify(s)); } catch (e) {}
+        }
+
+        function setNavSection(key, open) {
+            const body = document.getElementById(`nav-sec-${key}`);
+            const chev = document.getElementById(`nav-sec-${key}-chevron`);
+            if (!body) return;
+            body.classList.toggle('hidden', !open);
+            if (chev) chev.style.transform = open ? '' : 'rotate(-90deg)';
+        }
+
+        window.toggleNavSection = (key) => {
+            const body = document.getElementById(`nav-sec-${key}`);
+            if (!body) return;
+            const open = body.classList.contains('hidden');   // 지금 접혀 있으면 펼친다
+            setNavSection(key, open);
+            const st = readNavSecState();
+            st[key] = open;
+            writeNavSecState(st);
+        };
+
+        // 탭이 바뀌면 그 탭이 든 분류를 펼친다 (접혀 있어도 지금 어디에 있는지 보이게)
+        function openNavSectionOf(tabId) {
+            const key = Object.keys(NAV_SECTIONS).find(k => NAV_SECTIONS[k].includes(tabId));
+            if (key) setNavSection(key, true);
+        }
+
+        // 첫 화면에서는 모두 접어 두되, 지난번에 펼쳐 둔 분류는 그대로 살린다
+        (function initNavSections() {
+            const st = readNavSecState();
+            Object.keys(NAV_SECTIONS).forEach(k => setNavSection(k, st[k] === true));
+        })();
+
         window.toggleNavLines = () => {
             const c = document.getElementById('nav-lines-container');
             const chev = document.getElementById('nav-lines-chevron');
@@ -4129,6 +4206,7 @@
             if(view) { view.classList.remove('hidden'); view.classList.add('flex'); }
             
             if (tabId === 'notice-board' || tabId === 'req-board') openNavBoard(); // 하위 탭이면 부모 메뉴를 펼쳐 둔다
+            openNavSectionOf(tabId); // 그 탭이 속한 분류도 펼친다
             updatePageTitle();
             closeSidebarIfMobile();
 
@@ -10979,11 +11057,15 @@
 
         // 사이드바 배지 = 아직 복구완료 처리 안 된 건수 (되돌리지 않고 잊는 것을 막는 장치)
         function updatePlcBadge() {
-            const el = document.getElementById('nav-plc-badge');
-            if (!el) return;
             const open = rawPlcLogs.filter(r => !plcIsRestored(r)).length;
-            el.textContent = open > 99 ? '99+' : String(open);
-            el.classList.toggle('hidden', open === 0);
+            const txt = open > 99 ? '99+' : String(open);
+            // 분류가 접혀 있으면 메뉴 안의 배지가 안 보이므로 분류 제목에도 같이 띄운다
+            ['nav-plc-badge', 'nav-sec-plc-badge'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = txt;
+                el.classList.toggle('hidden', open === 0);
+            });
         }
 
         window.openPlcPhotos = (id, idx) => {
