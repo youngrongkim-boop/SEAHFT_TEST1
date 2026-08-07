@@ -785,11 +785,14 @@
             <button onclick="switchTab('pm-result')" id="nav-pm-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방점검 실적 (주기가 있는 예방점검 이력만)">
                 <i data-lucide="clipboard-check" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 실적</span>
             </button>
+            <button onclick="switchTab('pm-reg')" id="nav-pm-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="주기가 있는 예방점검 항목을 만듭니다">
+                <i data-lucide="plus-square" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">예방점검 등록</span>
+            </button>
             <button onclick="switchTab('adhoc-result')" id="nav-adhoc-result" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="일반·긴급 점검 실적 (주기 없이 수시로 수행한 점검)">
                 <i data-lucide="zap" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">일반·긴급 점검 실적</span>
             </button>
-            <button onclick="switchTab('pm-reg')" id="nav-pm-reg" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="예방·법정·특별·돌발·긴급 등 모든 점검 등록">
-                <i data-lucide="plus-square" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">점검항목 등록</span>
+            <button onclick="switchTab('pm-reg-adhoc')" id="nav-pm-reg-adhoc" class="nav-btn w-full flex items-center px-6 py-2.5 text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors border-l-4 border-transparent text-slate-300" title="주기 없이 수행한 일반·긴급 점검 실적을 바로 기록합니다">
+                <i data-lucide="zap-off" class="w-4 h-4 mr-3 shrink-0 transition-all duration-300"></i> <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">일반·긴급 점검 등록</span>
             </button>
 
             <div class="px-6 py-2 text-[11px] font-bold text-brand-500 uppercase tracking-wider mt-6 mb-1 sidebar-section-title whitespace-nowrap transition-opacity duration-300">고장실적 관리</div>
@@ -1309,7 +1312,7 @@
                                 <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> 엑셀 출력
                             </button>
                         </div>
-                        <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">주기 없이 수시로 수행한 <b class="text-amber-700">일반점검·긴급점검</b> 실적입니다. 좌측 <b>점검항목 등록</b>에서 유형을 일반점검·긴급점검으로 고르고 등록하면 여기에 쌓입니다.</p>
+                        <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">주기 없이 수시로 수행한 <b class="text-amber-700">일반점검·긴급점검</b> 실적입니다. 좌측 <b>일반·긴급 점검 등록</b>에서 기록하면 여기에 쌓입니다.</p>
                     </div>
 
                     <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-190px)] hidden md:block">
@@ -4085,7 +4088,10 @@
             }
             
             document.querySelectorAll('.view-section').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
-            const view = document.getElementById(`view-${tabId}`);
+            // 예방점검 등록과 일반·긴급 등록은 입력 항목이 거의 같아 화면 하나를 나눠 쓴다.
+            // 탭만 둘로 두고 여기서 같은 화면을 가리킨다 (마크업을 복제하면 id가 겹쳐 깨진다).
+            const VIEW_ALIAS = { 'pm-reg-adhoc': 'pm-reg' };
+            const view = document.getElementById(`view-${VIEW_ALIAS[tabId] || tabId}`);
             if(view) { view.classList.remove('hidden'); view.classList.add('flex'); }
             
             if (tabId === 'notice-board' || tabId === 'req-board') openNavBoard(); // 하위 탭이면 부모 메뉴를 펼쳐 둔다
@@ -4150,8 +4156,10 @@
                     } else if (tabId === 'bd-list') {
                         bdListPage = 1;
                         window.debouncedRenderBDList();
-                    } else if (tabId === 'pm-reg') {
-                        window.setPMWorkType(window.__pmRegWorkType || '예방점검');
+                    } else if (tabId === 'pm-reg' || tabId === 'pm-reg-adhoc') {
+                        // 어느 탭으로 들어왔는지에 따라 기본 유형이 정해진다
+                        const dflt = tabId === 'pm-reg-adhoc' ? '일반점검' : '예방점검';
+                        window.setPMWorkType(window.__pmRegWorkType || dflt);
                         window.__pmRegWorkType = null;
                     } else if (tabId === 'bd-reg') {
                         initCategorySelects(); // 등록 폼 진입 시 실제 사용된 분류값을 반영
@@ -4209,7 +4217,7 @@
         }
 
         function updatePageTitle() {
-            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '예방점검 실적', 'adhoc-result': '일반·긴급 점검 실적', 'pm-reg': '점검항목 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'plc-log': 'PLC 프로그램 수정일지', 'notice-board': '공지사항', 'req-board': '요청사항 등록', 'edit-history': '데이터 수정 이력' };
+            const titles = { 'dashboard': '종합현황 대시보드', 'pm-list': '예방점검 리스트', 'pm-result': '예방점검 실적', 'adhoc-result': '일반·긴급 점검 실적', 'pm-reg': '예방점검 등록', 'pm-reg-adhoc': '일반·긴급 점검 등록', 'check-board': '일일점검 현황판', 'risk-analysis': '고장 예측 · 위험도', 'bd-list': '고장실적 리스트', 'bd-reg': '고장실적 등록', 'manual-lib': '메뉴얼 자료실', 'plc-log': 'PLC 프로그램 수정일지', 'notice-board': '공지사항', 'req-board': '요청사항 등록', 'edit-history': '데이터 수정 이력' };
             
             if(currentTabId === 'dashboard' && currentLineFilter !== 'ALL') {
                 document.getElementById('page-title').innerText = `${currentLineFilter} 라인 상세 대시보드`;
@@ -5795,10 +5803,14 @@
             const el = (id) => document.getElementById(id);
             el('pm-worktype').value = t;
 
-            // 유형 탭
+            // 유형 탭 — 지금 들어와 있는 등록 탭이 다룰 유형만 보여 준다.
+            // (예방점검 등록에서 긴급점검이 같이 보이면 사이드바 탭을 나눈 뜻이 없다)
+            const allowed = adhoc ? ADHOC_WORK_TYPES : PLANNED_WORK_TYPES;
             const tabs = el('pm-worktype-tabs');
             if (tabs) {
-                tabs.innerHTML = WORK_TYPES.map(w => {
+                // 고를 것이 하나뿐이면 탭 줄 자체를 감춘다
+                tabs.classList.toggle('hidden', allowed.length < 2);
+                tabs.innerHTML = allowed.map(w => {
                     const on = w === t;
                     const base = isAdhocType(w) ? 'amber' : 'brand';
                     return `<button type="button" onclick="setPMWorkType('${w}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition border ${on
@@ -7211,7 +7223,7 @@
             if (!list.length) {
                 const msg = rawPMResultsData.some(r => isAdhocType(r.workType))
                     ? '조건에 맞는 일반·긴급 점검 실적이 없습니다.'
-                    : '아직 등록된 일반·긴급 점검 실적이 없습니다.<br><span class="text-[11px]">좌측 <b>점검항목 등록</b>에서 유형을 <b>일반점검</b> 또는 <b>긴급점검</b>으로 골라 등록하세요.</span>';
+                    : '아직 등록된 일반·긴급 점검 실적이 없습니다.<br><span class="text-[11px]">좌측 <b>일반·긴급 점검 등록</b>에서 기록하세요.</span>';
                 tbody.innerHTML = `<tr><td colspan="14" class="py-12 text-center text-slate-400 bg-white text-xs md:text-sm">${msg}</td></tr>`;
                 if (cardsEl) cardsEl.innerHTML = `<div class="py-12 text-center text-slate-400 text-sm">${msg}</div>`;
                 if (pagEl) pagEl.innerHTML = '';
@@ -8619,7 +8631,7 @@
             L.push(`## ${label} 현황`);
             L.push(laHead(sc));
             L.push('');
-            if (!list.length) return L.join('\n') + `이 범위에 등록된 **${label}이 없습니다.**\n\n_좌측 [점검항목 등록]에서 유형을 ${ADHOC_WORK_TYPES.join('·')}으로 골라 기록합니다._`;
+            if (!list.length) return L.join('\n') + `이 범위에 등록된 **${label}이 없습니다.**\n\n_좌측 [일반·긴급 점검 등록]에서 기록합니다._`;
 
             const bad = list.filter(r => r.result === '불량');
             L.push(`${label} **${laNum(list.length)}건** (전체 점검 실적 ${laNum(all.length)}건의 ${laPct(list.length, all.length)}) · 불량 ${laNum(bad.length)}건`);
@@ -11270,8 +11282,8 @@
         const REQ_STATUSES = ['접수', '검토중', '완료', '보류'];
         const REQ_OPEN_STATUSES = ['접수', '검토중']; // 아직 관리자가 끝내지 않은 상태
         const REQ_MENUS = ['종합현황 대시보드', '일일점검 현황판', '고장 예측 · 위험도', 'AI에게 질문하기', '라인별 현황 (대시보드)',
-            '예방점검 리스트', '점검 실적', '점검항목 등록', '고장실적 리스트', '고장실적 등록', '메뉴얼 자료실',
-            '라인별 담당자', '데이터 수정 이력', '요청사항 등록', '기타 · 전체'];
+            '예방점검 리스트', '예방점검 실적', '일반·긴급 점검 실적', '예방점검 등록', '일반·긴급 점검 등록', '고장실적 리스트', '고장실적 등록', '메뉴얼 자료실',
+            'PLC 프로그램 수정일지', '라인별 담당자', '데이터 수정 이력', '공지사항', '요청사항 등록', '기타 · 전체'];
         const REQ_MAX_BYTES = 20 * 1024 * 1024;
 
         const REQ_STATUS_STYLE = {
