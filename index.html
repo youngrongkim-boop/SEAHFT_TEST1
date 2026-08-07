@@ -2,7 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- viewport-fit=cover : 아이폰 노치·홈 인디케이터 영역까지 화면으로 쓰되,
+         가려지는 만큼은 아래 CSS 의 safe-area 여백으로 되돌려 준다. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>세아씨엠 예방보전 및 고장 실적 분석 시스템</title>
     
     <!-- Tailwind CSS -->
@@ -132,6 +134,21 @@
             filter: saturate(0.72);
         }
 
+        /* ===== 화면 높이 · 안전영역 =====
+           휴대폰은 기종마다 주소창·홈 인디케이터가 차지하는 높이가 달라서
+           100vh 로 잡으면 실제로 보이는 높이보다 커진다. 그만큼 화면 맨 아래가
+           잘려 버튼이 가려지고 눌리지도 않는다.
+             · 100dvh : 주소창이 접히고 펴지는 만큼 실제 보이는 높이를 따라간다
+             · safe-area-inset-bottom : 아이폰 홈 인디케이터에 가려지는 만큼 띄운다
+           dvh 를 모르는 옛 브라우저를 위해 vh 를 먼저 쓰고 dvh 로 덮어쓴다. */
+        html, body { height: 100vh; height: 100dvh; }
+        body { overscroll-behavior-y: none; }   /* 당겨서 새로고침에 화면이 끌려가지 않게 */
+
+        @supports (padding: env(safe-area-inset-bottom)) {
+            .safe-b { padding-bottom: env(safe-area-inset-bottom); }
+            .safe-b-plus { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)); }
+        }
+
         /* ===== 모바일 최적화 ===== */
         @media (max-width: 767px) {
             /* iOS에서 입력창 터치 시 화면 확대되는 현상 방지 (16px 미만이면 확대됨) */
@@ -140,6 +157,22 @@
             .custom-scroll, [class*="overflow-x-"] { -webkit-overflow-scrolling: touch; }
             /* 모달 여백 줄여 화면 활용 극대화 */
             .modal-mobile-tight { padding: 0.5rem !important; }
+
+            /* 목록·표의 고정 높이(h-[calc(100dvh-Npx)])는 데스크톱 기준이라
+               좁은 화면에서는 아래가 잘린다. 남는 공간을 쓰도록 풀어 준다. */
+            [class*="h-[calc(100dvh-"] {
+                height: auto !important;
+                max-height: none !important;
+                flex: 1 1 auto;
+                min-height: 0;
+            }
+
+            /* 모달은 화면 대부분을 쓰되, 바닥 버튼이 홈 인디케이터에 가리지 않게 띄운다 */
+            .modal-panel { max-height: calc(100dvh - 1rem) !important; }
+            .modal-foot { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important; }
+
+            /* 손가락으로 누를 수 있는 최소 크기 확보 */
+            .nav-btn, .nav-line { min-height: 44px; }
         }
 
         /* Desktop Sidebar Collapse Styles */
@@ -224,7 +257,7 @@
         .min-box { display: inline-block; }
     </style>
 </head>
-<body class="flex h-screen w-full overflow-hidden text-slate-800 relative">
+<body class="flex w-full overflow-hidden text-slate-800 relative">
     <!-- 인트로 스플래시 (세아씨엠 브랜드 리빌 · 클릭/터치 시 스킵) -->
     <div id="intro-splash">
         <img src="./SEAHCM.PNG" alt="세아씨엠" class="intro-logo" onerror="this.style.display='none'; var t=document.getElementById('intro-fallback'); if(t){t.style.display='block';}">
@@ -273,7 +306,7 @@
 
     <!-- 메뉴얼 등록 / 수정 모달 (자료실에서 직접 등록) -->
     <div id="manual-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 id="mreg-title-head" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-plus" class="w-5 h-5 text-emerald-600"></i> 메뉴얼 등록</h3>
                 <button type="button" onclick="closeManualRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -303,7 +336,7 @@
                 </div>
             </div>
 
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <button type="button" id="mreg-delete-btn" onclick="deleteManualDoc()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
                 <div class="flex gap-2 ml-auto">
                     <button type="button" onclick="closeManualRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
@@ -315,7 +348,7 @@
 
     <!-- 공지사항 등록 / 수정 (관리자 전용) -->
     <div id="notice-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-3 md:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 id="notice-reg-title" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="megaphone" class="w-5 h-5 text-rose-600"></i> 공지사항 등록</h3>
                 <button type="button" onclick="closeNoticeRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -344,7 +377,7 @@
                     <div id="notice-file-box" class="border border-slate-300 rounded-md p-3 bg-slate-50 space-y-2"></div>
                 </div>
             </div>
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <button type="button" id="notice-delete-btn" onclick="deleteNotice()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
                 <div class="flex gap-2 ml-auto">
                     <button type="button" onclick="closeNoticeRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
@@ -356,7 +389,7 @@
 
     <!-- PLC 프로그램 수정일지 등록 / 수정 -->
     <div id="plc-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-3 md:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 id="plc-reg-title" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-plus-2" class="w-5 h-5 text-violet-600"></i> PLC 프로그램 수정일지 등록</h3>
                 <button type="button" onclick="closePlcRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -405,7 +438,7 @@
                 </div>
             </div>
 
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <button type="button" id="plc-delete-btn" onclick="deletePlcLog()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
                 <div class="flex gap-2 ml-auto">
                     <button type="button" onclick="closePlcRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
@@ -417,12 +450,12 @@
 
     <!-- 복구완료 확인 -->
     <div id="plc-restore-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="undo-2" class="w-5 h-5 text-emerald-600"></i> 복구완료 확인</h3>
                 <button type="button" onclick="closePlcRestoreModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-5 space-y-3">
+            <div class="p-5 space-y-3 flex-1 overflow-y-auto custom-scroll">
                 <div id="plc-restore-target" class="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 leading-relaxed"></div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1.5">복구 완료 일시 <span class="text-red-500">*</span></label>
@@ -434,7 +467,7 @@
                 </div>
                 <p class="text-[11px] text-slate-500 leading-relaxed">확인하면 <b>복구완료</b>로 바뀌고 누가 언제 되돌렸는지 기록됩니다.</p>
             </div>
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2 modal-foot">
                 <button type="button" onclick="closePlcRestoreModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
                 <button type="button" id="plc-restore-save-btn" onclick="savePlcRestore()" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-60">복구완료</button>
             </div>
@@ -443,12 +476,12 @@
 
     <!-- 점검지연 사유 확인 (관리자 전용) -->
     <div id="pm-overdue-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i> 점검지연 사유 확인</h3>
                 <button type="button" onclick="closeOverdueExcuseModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-5 space-y-3">
+            <div class="p-5 space-y-3 flex-1 overflow-y-auto custom-scroll">
                 <div id="pmo-target" class="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 leading-relaxed"></div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1.5">지연 사유 <span class="text-red-500">*</span></label>
@@ -461,7 +494,7 @@
                 <p id="pmo-effect" class="text-[11px] text-slate-500 leading-relaxed"></p>
                 <p class="text-[11px] text-slate-400 leading-relaxed">누가 언제 어떤 사유로 처리했는지는 <b>데이터 수정 이력</b>에 남습니다.</p>
             </div>
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2 modal-foot">
                 <button type="button" onclick="closeOverdueExcuseModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
                 <button type="button" id="pmo-save-btn" onclick="saveOverdueExcuse()" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-60">사유 확인</button>
             </div>
@@ -480,7 +513,7 @@
             </div>
             <div class="flex-1 min-h-0 flex items-center justify-center relative">
                 <button type="button" id="photo-viewer-prev" onclick="stepPhotoViewer(-1)" class="absolute left-0 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 text-white"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
-                <img id="photo-viewer-img" src="" alt="현장 사진" class="max-w-full max-h-[78vh] object-contain rounded-lg">
+                <img id="photo-viewer-img" src="" alt="현장 사진" class="max-w-full max-h-full object-contain rounded-lg">
                 <button type="button" id="photo-viewer-next" onclick="stepPhotoViewer(1)" class="absolute right-0 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 text-white"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
             </div>
             <p id="photo-viewer-count" class="text-center text-xs text-white/70 mt-2 shrink-0"></p>
@@ -489,7 +522,7 @@
 
     <!-- 요청사항 등록 / 수정 모달 -->
     <div id="req-reg-modal" class="hidden fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 id="rreg-title-head" class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="message-square-plus" class="w-5 h-5 text-indigo-600"></i> 요청사항 등록</h3>
                 <button type="button" onclick="closeReqRegModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -536,7 +569,7 @@
                 </div>
             </div>
 
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <button type="button" id="rreg-delete-btn" onclick="deleteRequest()" class="hidden px-3 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
                 <div class="flex gap-2 ml-auto">
                     <button type="button" onclick="closeReqRegModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
@@ -548,13 +581,13 @@
 
     <!-- 요청사항 상세 · 처리 모달 -->
     <div id="req-detail-modal" class="hidden fixed inset-0 z-[136] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-600"></i> 요청사항 상세</h3>
                 <button type="button" onclick="closeReqDetailModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div id="req-detail-body" class="p-5 space-y-4 overflow-y-auto custom-scroll flex-1"></div>
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <button type="button" id="rdet-edit-btn" onclick="editRequestFromDetail()" class="hidden px-3 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg items-center gap-1"><i data-lucide="edit" class="w-4 h-4"></i> 요청 수정</button>
                 <div class="flex gap-2 ml-auto">
                     <button type="button" onclick="closeReqDetailModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
@@ -566,14 +599,14 @@
 
     <!-- 접속 시 예방점검 알림 팝업 -->
     <div id="pm-alert-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bell-ring" class="w-5 h-5 text-amber-500"></i> 예방점검 알림</h3>
                 <button type="button" onclick="closePMAlert()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <p id="pm-alert-scope" class="px-5 pt-3 text-[11px] font-bold text-slate-500 shrink-0"></p>
             <div id="pm-alert-body" class="px-5 py-3 space-y-4 overflow-y-auto custom-scroll flex-1"></div>
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <button type="button" onclick="dismissPMAlertToday()" class="text-[11px] font-bold text-slate-500 hover:text-slate-700 underline underline-offset-2">오늘 하루 안 보기</button>
                 <div class="flex gap-2">
                     <button type="button" onclick="closePMAlert()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
@@ -585,7 +618,7 @@
 
     <!-- 라인별 담당자 모달 (담당 라인 수정 권한 + 알림 대상) -->
     <div id="line-owner-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 gap-2">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-brand-600"></i> 라인별 담당자</h3>
                 <div class="flex items-center gap-2">
@@ -610,7 +643,7 @@
                     <span id="report-mail-hint" class="text-[11px] text-slate-400">매주 월요일 06:00 자동 발송</span>
                     <i data-lucide="chevron-down" id="report-mail-chevron" class="w-4 h-4 text-slate-400 shrink-0 transition-transform"></i>
                 </button>
-                <div id="report-mail-panel" class="hidden px-5 pb-3.5 max-h-[45vh] overflow-y-auto custom-scroll">
+                <div id="report-mail-panel" class="hidden px-5 pb-3.5 max-h-[45dvh] overflow-y-auto custom-scroll">
                     <!-- 자동 발송 스케줄 — 저장하면 재배포 없이 바로 적용된다 -->
                     <div class="mb-2.5 p-2.5 rounded-lg border border-slate-200 bg-white">
                         <div class="flex flex-wrap items-center gap-2">
@@ -653,7 +686,7 @@
                 </div>
             </div>
 
-            <div class="px-5 py-2.5 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-2.5 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <span class="text-[11px] text-slate-400">변경은 즉시 저장됩니다.</span>
                 <button type="button" onclick="closeLineOwnerModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
             </div>
@@ -662,7 +695,7 @@
 
     <!-- 관리자 설정 모달 -->
     <div id="admin-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5 text-amber-600"></i> 관리자 설정</h3>
                 <button type="button" onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -686,7 +719,7 @@
                     <div id="admin-list" class="space-y-1.5"></div>
                 </div>
             </div>
-            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2 modal-foot">
                 <span class="text-[11px] text-slate-400">변경은 즉시 모든 사용자에게 적용됩니다.</span>
                 <button type="button" onclick="closeAdminModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">닫기</button>
             </div>
@@ -695,7 +728,7 @@
 
     <!-- 설비명 매핑 관리 모달 -->
     <div id="equip-map-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 md:p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[92vh] flex flex-col">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[92dvh] flex flex-col modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="link" class="w-5 h-5 text-brand-500"></i> 설비명 매핑 관리</h3>
                 <button onclick="closeEquipMapModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -859,7 +892,7 @@
         </header>
 
         <!-- Scrollable Views Area -->
-        <div class="flex-1 overflow-y-auto p-3 md:p-5 relative min-w-0 custom-scroll" id="views-container">
+        <div class="flex-1 overflow-y-auto p-3 md:p-5 relative min-w-0 custom-scroll safe-b" id="views-container">
             
 
             <!-- VIEW: DASHBOARD -->
@@ -1143,7 +1176,7 @@
                         </div>
                     </div>
                     
-                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-175px)] hidden md:block">
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100dvh-175px)] hidden md:block">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -1167,7 +1200,7 @@
                         </table>
                     </div>
                     <!-- 모바일 카드 뷰 -->
-                    <div id="pm-list-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-175px)] pb-2"></div>
+                    <div id="pm-list-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100dvh-175px)] pb-2"></div>
                     <div id="pm-list-pagination"></div>
                 </div>
 
@@ -1245,7 +1278,7 @@
                         </div>
                     </div>
 
-                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-152px)] hidden md:block">
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100dvh-152px)] hidden md:block">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -1267,7 +1300,7 @@
                         </table>
                     </div>
                     <!-- 모바일 카드 뷰 -->
-                    <div id="pm-res-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-152px)] pb-2"></div>
+                    <div id="pm-res-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100dvh-152px)] pb-2"></div>
                     <div id="pm-history-pagination"></div>
                 </div>
             </div>
@@ -1315,7 +1348,7 @@
                         <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">주기 없이 수시로 수행한 <b class="text-amber-700">일반점검·긴급점검</b> 실적입니다. 좌측 <b>일반·긴급 점검 등록</b>에서 기록하면 여기에 쌓입니다.</p>
                     </div>
 
-                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100vh-190px)] hidden md:block">
+                    <div class="overflow-auto border border-slate-200 rounded w-full custom-scroll relative h-[calc(100dvh-190px)] hidden md:block">
                         <table class="w-full text-left text-[11px] md:text-xs whitespace-nowrap min-w-max">
                             <thead class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm z-10">
                                 <tr>
@@ -1338,7 +1371,7 @@
                             <tbody id="ah-body" class="divide-y divide-slate-200 text-slate-700"></tbody>
                         </table>
                     </div>
-                    <div id="ah-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100vh-190px)] pb-2"></div>
+                    <div id="ah-cards" class="md:hidden overflow-y-auto custom-scroll space-y-2 h-[calc(100dvh-190px)] pb-2"></div>
                     <div id="ah-pagination"></div>
                 </div>
             </div>
@@ -1920,7 +1953,7 @@
 
     <!-- 라인별 고장 목표 설정 모달 -->
     <div id="target-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="target" class="w-5 h-5 mr-2 text-indigo-500"></i> 라인별 고장 목표 설정</h3>
                 <div class="flex items-center gap-2">
@@ -1950,7 +1983,7 @@
                     </table>
                 </div>
             </div>
-            <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0">
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0 modal-foot">
                 <button type="button" onclick="closeTargetModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
                 <button type="button" onclick="saveTargets()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700">저장</button>
             </div>
@@ -1960,7 +1993,7 @@
     <!-- Master Edit Modal (PM) -->
     <!-- 고장실적 일괄 관리 모달 -->
     <div id="bd-master-edit-modal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center z-[110] backdrop-blur-sm p-4 md:p-8">
-        <div class="bg-white rounded-2xl shadow-2xl w-full h-[90vh] flex flex-col overflow-hidden transform scale-95 transition-transform max-w-[1600px]" id="bd-master-edit-modal-content">
+        <div class="bg-white rounded-2xl shadow-2xl w-full h-[90dvh] flex flex-col overflow-hidden transform scale-95 transition-transform max-w-[1600px] modal-panel" id="bd-master-edit-modal-content">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 class="text-lg md:text-xl font-bold text-slate-800 flex items-center"><i data-lucide="database" class="w-6 h-6 mr-2 text-red-500"></i> 전체 고장실적 데이터 일괄 관리</h3>
                 <button onclick="closeBDMasterModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
@@ -2019,7 +2052,7 @@
     </div>
 
     <div id="pm-master-edit-modal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center z-[110] backdrop-blur-sm p-4 md:p-8">
-        <div class="bg-white rounded-2xl shadow-2xl w-full h-[90vh] flex flex-col overflow-hidden transform scale-95 transition-transform max-w-[1600px]" id="pm-master-edit-modal-content">
+        <div class="bg-white rounded-2xl shadow-2xl w-full h-[90dvh] flex flex-col overflow-hidden transform scale-95 transition-transform max-w-[1600px] modal-panel" id="pm-master-edit-modal-content">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 class="text-lg md:text-xl font-bold text-slate-800 flex items-center"><i data-lucide="database" class="w-6 h-6 mr-2 text-blue-600"></i> 전체 예방점검 데이터 일괄 관리</h3>
                 <button onclick="closePMMasterModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
@@ -2083,7 +2116,7 @@
     <!-- PM Single Edit Modal -->
     <!-- 고장 분류(대/중/소) 관리 모달 -->
     <div id="category-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="folder-tree" class="w-5 h-5 mr-2 text-blue-500"></i> 고장 분류 관리 (대 / 중 / 소)</h3>
                 <button type="button" onclick="closeCategoryModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -2115,7 +2148,7 @@
                     </div>
                 </div>
             </div>
-            <div class="px-6 py-4 border-t border-slate-100 flex justify-between items-center shrink-0">
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-between items-center shrink-0 modal-foot">
                 <span class="text-[11px] text-slate-400">저장 시 모든 사용자에게 반영됩니다.</span>
                 <div class="flex gap-2">
                     <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200">취소</button>
@@ -2127,7 +2160,7 @@
 
     <!-- 메뉴얼 뷰어 모달 (PDF 즉시 미리보기) -->
     <div id="manual-viewer-modal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center z-[140] backdrop-blur-sm p-2 md:p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[92dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0 bg-slate-50 gap-2">
                 <h3 id="manual-viewer-title" class="text-sm font-bold text-slate-800 flex items-center min-w-0"><i data-lucide="file-text" class="w-4 h-4 mr-2 text-emerald-600 shrink-0"></i><span class="truncate">메뉴얼</span></h3>
                 <div class="flex items-center gap-2 shrink-0">
@@ -2141,7 +2174,7 @@
 
     <!-- 보고서 미리보기 모달 (리스트 화면의 필터 결과를 보고서로) -->
     <div id="report-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[145] backdrop-blur-sm p-2 md:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[92dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-slate-200 shrink-0 bg-slate-50">
                 <h3 id="report-modal-title" class="text-sm md:text-base font-bold text-slate-800 flex items-center"><i data-lucide="file-text" class="w-5 h-5 mr-2 text-brand-600"></i> 보고서</h3>
                 <div class="flex items-center gap-1.5">
@@ -2160,7 +2193,7 @@
 
     <!-- AI 데이터 분석 모달 (Gemini 자연어 질문) -->
     <div id="ai-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[135] backdrop-blur-sm p-2 md:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 shrink-0 bg-gradient-to-r from-indigo-50 to-white">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="sparkles" class="w-5 h-5 mr-2 text-indigo-600"></i> AI 데이터 분석</h3>
                 <div class="flex items-center gap-2">
@@ -2180,7 +2213,7 @@
 
             <div id="ai-messages" class="flex-1 overflow-y-auto custom-scroll p-4 md:p-5 space-y-3"></div>
 
-            <div class="px-4 md:px-5 py-3 border-t border-slate-100 shrink-0 bg-white">
+            <div class="px-4 md:px-5 py-3 border-t border-slate-100 shrink-0 bg-white modal-foot">
                 <div class="flex items-end gap-2">
                     <textarea id="ai-input" rows="1" placeholder="예: 이번 달 보고서 써줘 / 고장 잦은 설비 10개 / 지연된 점검  (Enter 전송 · Shift+Enter 줄바꿈)"
                         class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none max-h-32"
@@ -2194,12 +2227,12 @@
 
     <!-- 예방점검 실적 등록 모달 (점검 일시 입력) -->
     <div id="pm-result-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[92dvh] flex flex-col overflow-hidden modal-panel">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="clipboard-check" class="w-5 h-5 mr-2 text-blue-500"></i> 점검 실적 등록</h3>
                 <button type="button" onclick="closePMResultModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-5 space-y-4">
+            <div class="p-5 space-y-4 flex-1 overflow-y-auto custom-scroll">
                 <div id="pm-result-info" class="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 leading-relaxed"></div>
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-bold text-slate-700">점검 결과</span>
@@ -2211,7 +2244,7 @@
                     <p class="text-[10px] text-slate-400 mt-1">실제 점검한 시각을 입력하세요. (기본값: 현재 시각)</p>
                 </div>
             </div>
-            <div class="px-5 py-4 border-t border-slate-100 flex justify-end gap-2">
+            <div class="px-5 py-4 border-t border-slate-100 flex justify-end gap-2 modal-foot">
                 <button type="button" onclick="closePMResultModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">취소</button>
                 <button type="button" onclick="confirmPMResult()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700">실적 등록</button>
             </div>
@@ -2219,12 +2252,12 @@
     </div>
 
     <div id="pm-edit-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[110] backdrop-blur-sm p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform" id="pm-edit-modal-content">
-            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[92dvh] flex flex-col overflow-hidden transform scale-95 transition-transform modal-panel" id="pm-edit-modal-content">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="edit" class="w-5 h-5 mr-2 text-blue-500"></i> 예방점검 데이터 수정</h3>
                 <button onclick="closePMEditModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-5 max-h-[70vh] overflow-y-auto custom-scroll">
+            <div class="p-5 flex-1 overflow-y-auto custom-scroll">
                 <form id="pm-edit-form" class="space-y-4">
                     <input type="hidden" id="edit-pm-id">
                     <div class="grid grid-cols-2 gap-4">
@@ -2270,12 +2303,13 @@
                         </div>
                     </div>
                 </form>
-                <div class="flex justify-between items-center gap-2 mt-6">
-                    <button onclick="deletePMFromEdit()" class="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition flex items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
-                    <div class="flex gap-2">
-                        <button onclick="closePMEditModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
-                        <button onclick="savePMEdit()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm">수정 내용 저장</button>
-                    </div>
+            </div>
+            <!-- 저장·삭제는 스크롤과 무관하게 항상 보이도록 본문 밖에 둔다 -->
+            <div class="px-5 py-3 border-t border-slate-100 bg-white shrink-0 flex justify-between items-center gap-2 modal-foot">
+                <button onclick="deletePMFromEdit()" class="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition flex items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
+                <div class="flex gap-2">
+                    <button onclick="closePMEditModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
+                    <button onclick="savePMEdit()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm">수정 내용 저장</button>
                 </div>
             </div>
         </div>
@@ -2285,7 +2319,7 @@
     <!-- 고장 상세 팝업 -->
     <!-- 설비별 고장 이력 팝업 (Top 설비 클릭) -->
     <div id="equip-faults-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 bg-slate-50">
                 <h3 class="text-sm md:text-base font-bold text-slate-800 flex items-center min-w-0"><i data-lucide="siren" class="w-5 h-5 mr-2 text-red-500 shrink-0"></i> <span id="equip-faults-title" class="truncate">설비 고장 이력</span></h3>
                 <button type="button" onclick="closeEquipFaults()" class="text-slate-400 hover:text-slate-700 shrink-0 ml-2"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -2308,7 +2342,7 @@
     </div>
 
     <div id="bd-detail-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[120] backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden modal-panel">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 bg-slate-50">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="clipboard-list" class="w-5 h-5 mr-2 text-red-500"></i> 고장 상세 내용</h3>
                 <button type="button" onclick="closeBDDetail()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -2318,7 +2352,7 @@
     </div>
 
     <div id="bd-edit-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[110] backdrop-blur-sm p-2 md:p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-[1600px] h-[96vh] flex flex-col overflow-hidden transform scale-95 transition-transform" id="bd-edit-modal-content">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-[1600px] h-[96dvh] flex flex-col overflow-hidden transform scale-95 transition-transform modal-panel" id="bd-edit-modal-content">
             <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="edit" class="w-5 h-5 mr-2 text-red-500"></i> 고장실적 데이터 수정</h3>
                 <button onclick="closeBDEditModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -2370,11 +2404,11 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">발생원인</label>
-                            <textarea id="edit-bd-cause" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38vh] min-h-[200px]"></textarea>
+                            <textarea id="edit-bd-cause" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38dvh] min-h-[200px]"></textarea>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">조치내용</label>
-                            <textarea id="edit-bd-content" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38vh] min-h-[200px]"></textarea>
+                            <textarea id="edit-bd-content" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38dvh] min-h-[200px]"></textarea>
                         </div>
                         <div>
                             <div class="flex items-center justify-between gap-2 mb-1">
@@ -2382,7 +2416,7 @@
                                 <button type="button" onclick="pickBDEditManual()" title="PDF 메뉴얼을 추가합니다 (최대 20MB)" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 shrink-0"><i data-lucide="paperclip" class="w-3.5 h-3.5"></i> 메뉴얼 추가</button>
                                 <input type="file" id="edit-bd-manual-file" accept="application/pdf,.pdf" multiple class="hidden" onchange="onBDEditManualPicked(this)">
                             </div>
-                            <textarea id="edit-bd-prevention" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38vh] min-h-[200px]"></textarea>
+                            <textarea id="edit-bd-prevention" rows="14" class="w-full border border-slate-300 rounded-md px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-y h-[38dvh] min-h-[200px]"></textarea>
                         </div>
                     </div>
                     <!-- 일시·첨부·사진을 한 줄에 나란히 두어 세로 공간을 아낀다 -->
@@ -2417,7 +2451,7 @@
                 </form>
             </div>
             <!-- 저장·삭제는 스크롤과 무관하게 항상 보이도록 본문 밖에 둔다 -->
-            <div class="px-5 py-3 border-t border-slate-100 bg-white shrink-0 flex justify-between items-center gap-2">
+            <div class="px-5 py-3 border-t border-slate-100 bg-white shrink-0 flex justify-between items-center gap-2 modal-foot">
                 <button onclick="deleteBDFromEdit()" class="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition flex items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> 삭제</button>
                 <div class="flex gap-2">
                     <button onclick="closeBDEditModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
@@ -2429,12 +2463,12 @@
 
     <!-- Remarks Modal -->
     <div id="remarks-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[100] backdrop-blur-sm p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform" id="remarks-modal-content">
-            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[92dvh] flex flex-col overflow-hidden transform scale-95 transition-transform modal-panel" id="remarks-modal-content">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center"><i data-lucide="message-square" class="w-5 h-5 mr-2 text-blue-500"></i> 특이사항 작성</h3>
                 <button onclick="closeRemarksModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-5">
+            <div class="p-5 flex-1 overflow-y-auto custom-scroll">
                 <textarea id="modal-remarks-text" class="w-full border border-slate-300 rounded-lg p-3 h-32 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="여기에 특이사항을 기록하세요..."></textarea>
                 <div class="flex justify-end gap-2 mt-4">
                     <button onclick="closeRemarksModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">취소</button>
